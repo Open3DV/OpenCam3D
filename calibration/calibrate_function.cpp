@@ -1,0 +1,766 @@
+#include "calibrate_function.h"
+#include <windows.h>
+#include <assert.h>
+#include <fstream> 
+#include <iomanip>
+
+Calibrate_Function::Calibrate_Function()
+{
+	board_size_.width = 11;
+	board_size_.height = 9;
+
+	dlp_width_ = 1280;
+	dlp_height_ = 720;
+}
+Calibrate_Function::~Calibrate_Function()
+{
+
+}
+
+
+double Calibrate_Function::computeLineError(std::vector<cv::Point2f> points, double max_err)
+{
+	double err = 0;
+
+	cv::Point2f f_p = points.front();
+	cv::Point2f l_p = points.back();
+
+	double k = (f_p.y - l_p.y) / (f_p.x - l_p.x);
+
+	double b = f_p.y - k * f_p.x;
+
+	double max_e = 0;
+
+	for (int i = 0; i < points.size(); i++)
+	{
+		double e = std::abs((k * points[i].x - points[i].y + b) / (std::sqrt(k * k + 1)));
+		err += e;
+
+		if (max_e < e)
+		{
+			max_e = e;
+		}
+
+
+
+	}
+
+	std::cout << "max err: " << max_e << "      ";
+
+	max_err = max_e;
+
+	err /= points.size();
+
+	return err;
+}
+
+
+bool Calibrate_Function::saveMatTxt(cv::Mat mat, std::string path)
+{
+	if(mat.empty())
+	{
+		return false;
+	}
+
+	int nr = mat.rows;
+	int nc = mat.cols;
+
+	//保存txt 
+	std::ofstream stream(path, std::ios::trunc);
+
+	for (int r = 0; r < nr; r++)
+	{ 
+		for(int c = 0;c< nc;c++)
+		{
+			stream << mat.at<double>(r, c)<<" ";
+		}
+
+		stream  << "\n";
+	}
+	stream.close();
+
+
+	return true;
+}
+
+bool Calibrate_Function::savePointsTxt(std::vector<cv::Point2f> points, std::string path)
+{
+
+	if (points.empty())
+		return false;
+
+	/*************************************************************************************************************************/
+	//保存txt 
+	std::ofstream stream(path, std::ios::trunc);
+
+	for(int i= 0;i< points.size();i++)
+	{
+		stream << points[i].x<<" " << points[i].y << "\n";
+	}
+	stream.close();
+
+	return false;
+}
+
+
+//写xml
+bool Calibrate_Function::writeCalibXml(cv::Mat camera_intrinsic, cv::Mat camera_distortion, cv::Mat projector_instrinsic, cv::Mat projector_distortion, cv::Mat s_r, cv::Mat s_t)
+{
+	if (!camera_intrinsic.data || !camera_distortion.data || !projector_instrinsic.data || !projector_distortion.data || !s_r.data || !s_t.data)
+	{
+		return false;
+	}
+
+	cv::FileStorage fswrite("./calib.xml", cv::FileStorage::WRITE);
+	
+	fswrite << "camera_intrinsic" << camera_intrinsic;
+	fswrite << "camera_distortion" << camera_distortion;
+	fswrite << "projector_instrinsic" << projector_instrinsic;
+	fswrite << "projector_distortion" << projector_distortion;
+	fswrite << "s_r" << s_r;
+	fswrite << "s_t" << s_t;
+
+	fswrite.release();
+
+	std::cout << "Write Calib Success!"<<std::endl;
+
+	return true;
+}
+
+bool Calibrate_Function::writeCalibTxt(cv::Mat camera_intrinsic, cv::Mat camera_distortion, cv::Mat projector_instrinsic, 
+	cv::Mat projector_distortion, cv::Mat s_r, cv::Mat s_t, std::string path)
+{
+	if (!camera_intrinsic.data || !camera_distortion.data || !projector_instrinsic.data || !projector_distortion.data || !s_r.data || !s_t.data)
+	{
+		return false;
+	}
+
+	/*************************************************************************************************************************/
+	//保存txt 
+	std::ofstream stream(path, std::ios::trunc);
+
+	stream << camera_intrinsic.at<double>(0, 0) << "\n";
+	stream << camera_intrinsic.at<double>(0, 1) << "\n";
+	stream << camera_intrinsic.at<double>(0, 2) << "\n";
+	stream << camera_intrinsic.at<double>(1, 0) << "\n"; 
+	stream << camera_intrinsic.at<double>(1, 1) << "\n";
+	stream << camera_intrinsic.at<double>(1, 2) << "\n";
+	stream << camera_intrinsic.at<double>(2, 0) << "\n";
+	stream << camera_intrinsic.at<double>(2, 1) << "\n";
+	stream << camera_intrinsic.at<double>(2, 2) << "\n";
+
+
+	stream << camera_distortion.at<double>(0, 0) << "\n";
+	stream << camera_distortion.at<double>(0, 1) << "\n";
+	stream << camera_distortion.at<double>(0, 2) << "\n";
+	stream << camera_distortion.at<double>(0, 3) << "\n";
+	stream << camera_distortion.at<double>(0, 4) << "\n";
+
+
+
+	stream << projector_instrinsic.at<double>(0, 0) << "\n";
+	stream << projector_instrinsic.at<double>(0, 1) << "\n";
+	stream << projector_instrinsic.at<double>(0, 2) << "\n";
+	stream << projector_instrinsic.at<double>(1, 0) << "\n";
+	stream << projector_instrinsic.at<double>(1, 1) << "\n";
+	stream << projector_instrinsic.at<double>(1, 2) << "\n";
+	stream << projector_instrinsic.at<double>(2, 0) << "\n";
+	stream << projector_instrinsic.at<double>(2, 1) << "\n";
+	stream << projector_instrinsic.at<double>(2, 2) << "\n";
+
+
+	stream << projector_distortion.at<double>(0, 0) << "\n";
+	stream << projector_distortion.at<double>(0, 1) << "\n";
+	stream << projector_distortion.at<double>(0, 2) << "\n";
+	stream << projector_distortion.at<double>(0, 3) << "\n";
+	stream << projector_distortion.at<double>(0, 4) << "\n";
+
+	stream << s_r.at<double>(0, 0) << "\n";
+	stream << s_r.at<double>(0, 1) << "\n";
+	stream << s_r.at<double>(0, 2) << "\n";
+	stream << s_r.at<double>(1, 0) << "\n";
+	stream << s_r.at<double>(1, 1) << "\n";
+	stream << s_r.at<double>(1, 2) << "\n";
+	stream << s_r.at<double>(2, 0) << "\n";
+	stream << s_r.at<double>(2, 1) << "\n";
+	stream << s_r.at<double>(2, 2) << "\n";
+
+	stream << s_t.at<double>(0, 0) << "\n";
+	stream << s_t.at<double>(1, 0) << "\n";
+	stream << s_t.at<double>(2, 0) << "\n";
+
+	//for(int r= 0;r< s_r.rows;r++)
+	//{
+	//	
+	//	for(int c= 0;c< s_r.cols;c++)
+	//	{
+	//		stream << QString::number(s_r.at<double>(r, c));
+
+	//		if(c!= s_r.cols -1)
+	//		{
+	//			stream << " ";
+	//		}
+	//	}
+
+	//	stream << "\n";
+	//}
+
+	stream.close();
+
+	/*************************************************************************************************************************/
+	 
+	return true;
+
+}
+
+
+cv::Vec3f Calibrate_Function::rotationMatrixToEulerAngles(cv::Mat& R)
+{
+	float sy = sqrt(R.at<double>(0, 0) * R.at<double>(0, 0) + R.at<double>(1, 0) * R.at<double>(1, 0));
+	bool singular = sy < 1e-6; // If
+	float x, y, z;
+	if (!singular)
+	{
+		x = atan2(R.at<double>(2, 1), R.at<double>(2, 2));
+		y = atan2(-R.at<double>(2, 0), sy);
+		z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
+	}
+	else
+	{
+		x = atan2(-R.at<double>(1, 2), R.at<double>(1, 1));
+		y = atan2(-R.at<double>(2, 0), sy);
+		z = 0;
+	}
+#if 1
+	x = x * 180.0f / 3.141592653589793f;
+	y = y * 180.0f / 3.141592653589793f;
+	z = z * 180.0f / 3.141592653589793f;
+#endif
+	return cv::Vec3f(x, y, z);
+}
+
+
+double Calibrate_Function::calibrateStereo(std::vector<std::vector<cv::Point2f>> camera_points_list, std::vector<std::vector<cv::Point2f>> dlp_points_list, std::string path)
+{
+	std::vector<std::vector<cv::Point3f>> world_feature_points;
+
+
+	for (int g_i = 0; g_i < camera_points_list.size(); g_i++)
+	{
+		std::vector<cv::Point3f> objectCorners;
+		for (int i = 0; i < board_size_.height; i++) {
+			for (int j = 0; j < board_size_.width; j++) {
+				objectCorners.push_back(cv::Point3f(10 * i, 10 * j, 0.0f));
+			}
+		}
+		world_feature_points.push_back(objectCorners);
+	}
+
+	/********************************************************************************************************************/
+
+
+
+	//标定
+	bool mustInitUndistort = true;
+	int flag = 0;
+
+	std::vector<cv::Mat> left_rvecs, left_tvecs;
+	std::vector<cv::Mat> right_rvecs, right_tvecs;
+
+	cv::Mat camera_intrinsic, projector_intrinsic;
+	cv::Mat camera_distortion, projector_distortion;
+	cv::Mat _R, _T, _E, _F;
+
+	double cameraError = cv::calibrateCamera(world_feature_points,
+		camera_points_list,
+		board_size_,
+		camera_intrinsic,
+		camera_distortion,
+		left_rvecs, left_tvecs,
+		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+
+
+	double dlpError = cv::calibrateCamera(world_feature_points,
+		dlp_points_list,
+		board_size_,
+		projector_intrinsic,
+		projector_distortion,
+		right_rvecs, right_tvecs,
+		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 100, DBL_EPSILON));
+
+
+
+	cv::Mat s_camera_intrinsic = camera_intrinsic.clone(), s_project_intrinsic = projector_intrinsic.clone();
+	cv::Mat s_camera_distortion = camera_distortion.clone(), s_projector_distortion = projector_distortion.clone();
+
+	cv::TermCriteria term_criteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON);
+
+	double stereoError = cv::stereoCalibrate(world_feature_points, camera_points_list, dlp_points_list, s_camera_intrinsic, s_camera_distortion,
+		s_project_intrinsic, s_projector_distortion, board_size_, _R, _T, _E, _F,/*cv::CALIB_FIX_INTRINSIC*/ cv::CALIB_USE_INTRINSIC_GUESS /*+ cal_flags*/, term_criteria);
+
+
+	/***********************************************************************************************************/
+	 
+
+
+	std::cout << "camera intrinsic: " << "\n" << s_camera_intrinsic << "\n";
+	std::cout << "camera distortion: " << "\n" << s_camera_distortion << "\n";
+	std::cout << "project intrinsic: " << "\n" << s_project_intrinsic << "\n";
+	std::cout << "projector distortion: " << "\n" << s_projector_distortion << "\n";
+
+
+	std::cout << "R: " << "\n" << _R << "\n";
+	std::cout << "T: " << "\n" << _T << "\n";
+
+	std::cout.flush();
+
+	/******************************************************************************************************************/
+
+	bool ret = writeCalibTxt(s_camera_intrinsic, s_camera_distortion, s_project_intrinsic, s_projector_distortion, _R, _T,path);
+	//writeCalibXml(s_camera_intrinsic, s_camera_distortion, s_project_intrinsic, s_projector_distortion, _R, _T);
+
+	if (ret)
+	{
+		std::cout << "Save Calib: " << path << std::endl;
+	}
+	else
+	{
+		std::cout << "Save Calib Error: " << path << std::endl;
+	}
+
+
+	return stereoError;
+
+	/****************************************************************************************************************/
+
+}
+
+
+
+double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2f>> dlp_points_list, std::map<int, bool>& select_group)
+{
+	std::vector<std::vector<cv::Point3f>> world_feature_points;
+
+
+	for (int g_i = 0; g_i < dlp_points_list.size(); g_i++)
+	{
+		select_group.insert(std::pair<int, bool>(g_i, true));
+
+		std::vector<cv::Point3f> objectCorners;
+		for (int i = 0; i < board_size_.height; i++) {
+			for (int j = 0; j < board_size_.width; j++) {
+				objectCorners.push_back(cv::Point3f(25 * i, 25 * j, 0.0f));
+			}
+		}
+
+
+		world_feature_points.push_back(objectCorners);
+	}
+
+
+	if(dlp_points_list.size()< 6)
+	{
+
+		std::cout << "Error: "  << std::endl;
+		std::cout << "Group Num: "<< dlp_points_list.size() << std::endl;
+		return false;
+	}
+
+	cv::Mat cameraMatrix;
+	cv::Mat distCoeffs;
+	std::vector<cv::Mat> rvecsMat, tvecsMat;
+	int flag = 0;
+	/* 运行标定函数 */
+	double err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
+		flag,cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+
+	//std::cout << "First calibrate error: " << err_first << std::endl;
+
+
+	double total_err = 0.0;            // 所有图像的平均误差的总和 
+	double err = 0.0;                  // 每幅图像的平均误差
+	double totalErr = 0.0;
+	double totalPoints = 0.0;
+	std::vector<cv::Point2f> image_points_pro;     // 保存重新计算得到的投影点
+
+	std::vector<std::vector<cv::Point2f>> select_camera_points;
+	std::vector<std::vector<cv::Point3f>> select_world_points;
+
+	/******************************************************************************************************/
+
+	double select_err = err_first;
+	int max_series = -1;
+	double max_err = 0;
+
+	while (select_err > 0.2 && dlp_points_list.size() > 6)
+	{
+		total_err = 0;
+
+		for (int i = 0; i < dlp_points_list.size(); i++)
+		{
+
+			projectPoints(world_feature_points[i], rvecsMat[i], tvecsMat[i], cameraMatrix, distCoeffs, image_points_pro);   //通过得到的摄像机内外参数，对角点的空间三维坐标进行重新投影计算
+			err = cv::norm(cv::Mat(dlp_points_list[i]), cv::Mat(image_points_pro), cv::NORM_L2);
+
+
+
+			totalErr += err * err;
+			totalPoints += world_feature_points[i].size();
+
+			err /= world_feature_points[i].size();
+			//std::cout << i + 1 << " err: " << err << " pixel" << std::endl;
+			total_err += err;
+
+			if (err > max_err)
+			{
+				max_err = err;
+				max_series = i;
+			}
+
+		}
+
+		double ave_err = total_err / dlp_points_list.size();
+
+		if (-1 != max_series)
+		{
+			for (int g_i = 0, select_i = 0; g_i < select_group.size(); g_i++)
+			{
+				if (select_group[g_i])
+				{
+					select_i++;
+				}
+
+				if (max_series + 1 == select_i)
+				{
+					select_group[g_i] = false;
+
+					break;
+					//max_series = -10;
+				}
+
+			}
+
+			int false_num = 0;
+			for (int g_i = 0; g_i < select_group.size(); g_i++)
+			{
+				if (!select_group[g_i])
+				{
+					false_num++;
+				}
+			}
+
+			//std::cout << "False num: " << false_num << std::endl;
+
+
+			dlp_points_list.erase(dlp_points_list.begin() + max_series);
+			world_feature_points.erase(world_feature_points.begin() + max_series);
+			max_series = -1;
+			max_err = 0;
+
+			err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat, 
+				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+
+			//std::cout << "Dlp error: " << err_first << std::endl;
+
+		}
+
+		std::cout << "projector calibrate err: " << ave_err << std::endl;
+
+		select_err = ave_err;
+
+	}
+
+	/******************************************************************************************************/
+	return select_err;
+}
+
+
+double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& mapping)
+{
+
+	int x1 = floor(x);
+	int y1 = floor(y);
+	int x2 = x1 + 1;
+	int y2 = y1 + 1;
+
+	//row-y,col-x
+
+	//if (x1 == 1919) {
+	//	double out = mapping.at<cv::Vec3d>(y1, x1)[2];
+	//	return out;
+	//}
+	//else {
+	double fq11 = mapping.at<double>(y1, x1);
+	double fq21 = mapping.at<double>(y1, x2);
+	double fq12 = mapping.at<double>(y2, x1);
+	double fq22 = mapping.at<double>(y2, x2);
+
+
+
+	double out = 0;
+
+	if (fq11 > 0.5 && fq21 > 0.5 || fq12 > 0.5 || fq22 > 0.5)
+	{
+		out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
+	}
+
+
+	return out;
+	//}
+
+
+}
+
+bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_points, cv::Mat unwrap_map_hor, cv::Mat unwrap_map_ver, int group_num, int dlp_width, int dlp_height, std::vector<cv::Point2f>& dlp_points)
+{
+	if (camera_points.empty() || !unwrap_map_hor.data || !unwrap_map_ver.data)
+		return false;
+
+	bool ret = true;
+
+	dlp_points.clear();
+
+	double phase_max = 2 * CV_PI * std::pow(2.0, group_num - 1);
+
+	for (int p_i = 0; p_i < camera_points.size(); p_i++)
+	{
+		cv::Point2f pos = camera_points[p_i];
+
+		//cv::Point d_p;
+		//d_p.x = pos.x + 0.5;
+		//d_p.y = pos.y + 0.5;
+		//可以插值优化
+
+
+		double  hor_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_hor);
+		double  ver_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_ver);
+
+		if(hor_val< 0.5 || ver_val< 0.5)
+		{
+			ret = false;
+		}
+
+		//int x = pos.x;
+		//int y = pos.y;
+
+		//double hor_val_0 = unwrap_map_hor.at<double>(y, x);
+		//double hor_val_1 = unwrap_map_hor.at<double>(y+1, x);
+
+		//double ver_val_0 = unwrap_map_ver.at<double>(y,  x);
+		//double ver_val_1 = unwrap_map_ver.at<double>(y , x+1);
+
+		//double hor_val = hor_val_0 + (pos.y - y) * (hor_val_1 - hor_val_0);
+		//double ver_val = ver_val_0 + (pos.x - x) * (ver_val_1 - ver_val_0);
+
+
+		//if (hor_val_0 < 0.5 || hor_val_1 < 0.5 || ver_val_0 < 0.5 || ver_val_1 < 0.5)
+		//{
+		//	ret = false;
+		//}
+
+
+
+		cv::Point2f dlp_p;
+
+		dlp_p.x = dlp_width * ver_val / phase_max;
+		dlp_p.y = dlp_height * hor_val / phase_max;
+
+		dlp_points.push_back(dlp_p);
+
+	}
+
+	return ret;
+
+}
+
+
+double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>> camera_points_list, std::map<int, bool>& select_group)
+{
+	select_group.clear();
+	for (int g_i = 0; g_i < camera_points_list.size(); g_i++)
+	{
+		select_group.insert(std::pair<int, bool>(g_i, true));
+	}
+
+	std::vector<std::vector<cv::Point3f>> world_feature_points;
+	for (int g_i = 0; g_i < camera_points_list.size(); g_i++)
+	{
+		select_group.insert(std::pair<int, bool>(g_i, true));
+
+		std::vector<cv::Point3f> objectCorners;
+		for (int i = 0; i < board_size_.height; i++) {
+			for (int j = 0; j < board_size_.width; j++) {
+				objectCorners.push_back(cv::Point3f(25 * i, 25 * j, 0.0f));
+			}
+		}
+
+
+		world_feature_points.push_back(objectCorners);
+	}
+
+	cv::Mat cameraMatrix;
+	cv::Mat distCoeffs;
+	std::vector<cv::Mat> rvecsMat, tvecsMat;
+	int flag = 0;
+
+	/* 运行标定函数 */
+	double err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat, 
+		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+
+	//std::cout << "First calibrate error: " << err_first<<std::endl;
+
+
+	double total_err = 0.0;            // 所有图像的平均误差的总和 
+	double err = 0.0;                  // 每幅图像的平均误差
+	double totalErr = 0.0;
+	double totalPoints = 0.0;
+	std::vector<cv::Point2f> image_points_pro;     // 保存重新计算得到的投影点
+
+	std::vector<std::vector<cv::Point2f>> select_camera_points;
+	std::vector<std::vector<cv::Point3f>> select_world_points;
+
+	/******************************************************************************************************/
+
+	double select_err = err_first;
+	int max_series = -1;
+	double max_err = 0;
+
+	while (select_err > 0.1 && camera_points_list.size() > 5)
+	{
+		total_err = 0;
+
+		for (int i = 0; i < camera_points_list.size(); i++)
+		{
+
+			projectPoints(world_feature_points[i], rvecsMat[i], tvecsMat[i], cameraMatrix, distCoeffs, image_points_pro);   //通过得到的摄像机内外参数，对角点的空间三维坐标进行重新投影计算
+			err = cv::norm(cv::Mat(camera_points_list[i]), cv::Mat(image_points_pro), cv::NORM_L2);
+
+
+
+			totalErr += err * err;
+			totalPoints += world_feature_points[i].size();
+
+			err /= world_feature_points[i].size();
+			//std::cout << i + 1 << " err:" << err << " pixel" << std::endl;
+			total_err += err;
+
+			if (err > max_err)
+			{
+				max_err = err;
+				max_series = i;
+			}
+
+		}
+
+		double ave_err = total_err / camera_points_list.size();
+
+		if (-1 != max_series)
+		{
+			for (int g_i = 0, select_i = 0; g_i < select_group.size(); g_i++)
+			{
+				if (select_group[g_i])
+				{
+					select_i++;
+				}
+
+				if (max_series + 1 == select_i)
+				{
+					select_group[g_i] = false;
+
+					break;
+					//max_series = -10;
+				}
+
+			}
+
+			int false_num = 0;
+			for (int g_i = 0; g_i < select_group.size(); g_i++)
+			{
+				if (!select_group[g_i])
+				{
+					false_num++;
+				}
+			}
+
+			//std::cout << "False num: " << false_num << std::endl;
+
+
+			camera_points_list.erase(camera_points_list.begin() + max_series);
+			world_feature_points.erase(world_feature_points.begin() + max_series);
+			max_series = -1;
+			max_err = 0;
+
+			err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat, 
+				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+
+			//std::cout  << "calibrate error: " << err_first << std::endl;
+
+		}
+
+		std::cout << "camera calibrate err: " << ave_err << std::endl;
+
+		select_err = ave_err;
+
+	}
+
+	/******************************************************************************************************/
+
+
+	//std::cout << "cameraMatrix: " << "\n" << cameraMatrix << "\n";
+
+	return select_err;
+
+
+}
+
+
+bool Calibrate_Function::findCircleBoardFeature(cv::Mat img, std::vector<cv::Point2f>& points)
+{
+	std::vector<cv::Point2f> circle_points;
+	cv::Mat img_inv = inv_image(img);
+	bool found = cv::findCirclesGrid(img_inv, board_size_, circle_points, cv::CALIB_CB_SYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING);
+
+	if (!found)
+		return false;
+
+	points = circle_points;
+
+
+	return true;
+
+}
+
+cv::Mat Calibrate_Function::inv_image(cv::Mat img)
+{
+	if (!img.data)
+	{
+		return cv::Mat();
+	}
+
+	int nl = img.rows;
+	int nc = img.cols * img.channels();
+
+	if (img.isContinuous())
+	{
+
+		nc = nc * nl;
+		nl = 1;
+
+	}
+
+	cv::Mat result(img.size(), CV_8U, cv::Scalar(0));
+
+
+	for (int i = 0; i < nl; i++)
+	{
+		uchar* ptr1 = img.ptr<uchar>(i);
+
+		uchar* ptr_r = result.ptr<uchar>(i);
+		for (int j = 0; j < nc; j++)
+		{
+			ptr_r[j] = 255 - ptr1[j];
+		}
+	}
+
+	return result;
+}
