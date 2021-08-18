@@ -79,20 +79,36 @@ bool CameraDh::openCamera()
         return 0;
     }
 
-       
+    char cam_idx[8] = "0";
+    if (status == GX_STATUS_SUCCESS && nDeviceNum > 0)
+    {
+        GX_DEVICE_BASE_INFO *pBaseinfo = new GX_DEVICE_BASE_INFO[nDeviceNum];
+        size_t nSize = nDeviceNum * sizeof(GX_DEVICE_BASE_INFO);
+        // Gets the basic information of all devices.
+        status = GXGetAllDeviceBaseInfo(pBaseinfo, &nSize);
+	for(int i=0; i<nDeviceNum; i++)
+	{
+	    if(GX_DEVICE_CLASS_U3V == pBaseinfo[i].deviceClass)
+	    {
+		//camera index starts from 1
+		snprintf(cam_idx, 8, "%d", i+1);
+	    }
+	}
 
+        delete []pBaseinfo;
+    }
 
     
     GX_OPEN_PARAM stOpenParam;
     stOpenParam.accessMode = GX_ACCESS_EXCLUSIVE;
-    stOpenParam.openMode = GX_OPEN_SN;
-    stOpenParam.pszContent = (char*)"FDG20050017";
+    stOpenParam.openMode = GX_OPEN_INDEX;
+    stOpenParam.pszContent = cam_idx;
     status = GXOpenDevice(&stOpenParam, &hDevice_);
    
     if (status != GX_STATUS_SUCCESS)
     {
    
-	LOG(INFO)<<"Open Camera Error!";    
+	LOG(FATAL)<<"Open Camera Error!";
 	return 0;
     }
 
