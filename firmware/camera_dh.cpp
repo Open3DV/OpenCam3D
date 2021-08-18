@@ -119,7 +119,7 @@ bool CameraDh::openCamera()
 
         /***********************************************************************************************/
         //�� �� �� �� ֵ
-        status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, 12000);
+        status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, 21000);
         //�� �� �� �� �� �� �� ��
         status = GXSetEnum(hDevice_, GX_ENUM_EXPOSURE_AUTO, GX_EXPOSURE_AUTO_OFF);
 
