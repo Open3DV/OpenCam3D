@@ -6,14 +6,19 @@
 #include <vector>
 #include <sstream>
 
-  std::string &StringTrim(std::string &str);
-  std::vector<std::string> vStringSplit(const std::string &s, const std::string &delim);
+std::string &StringTrim(std::string &str);
+std::vector<std::string> vStringSplit(const std::string &s, const std::string &delim);
+
+struct SystemConfigParam
+{
+	int led_current;
+};
 
 struct SystemConfigDataStruct
 {
 	SystemConfigDataStruct();
 
-	int led_current; 
+	SystemConfigParam config_param_;
   
 	bool loadFromSettings(const std::string& f);
 	bool saveToSettings(const std::string& f);

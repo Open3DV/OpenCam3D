@@ -1114,6 +1114,80 @@ int handle_get_camera_parameters(int client_sock)
 
 }
 
+/*****************************************************************************************/
+//system config param 
+int handle_get_system_config_parameters(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	return DF_FAILED;
+    }
+
+    read_calib_param();
+	
+    int ret = send_buffer(client_sock, (char*)(&system_config_settings_machine_.Instance().config_param_), sizeof(system_config_settings_machine_.Instance().config_param_));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	return DF_FAILED;
+    }
+    return DF_SUCCESS;
+
+}
+
+bool set_system_config(SystemConfigParam &rect_config_param)
+{
+
+    //set led current
+    if(rect_config_param.led_current != system_config_settings_machine_.Instance().config_param_.led_current)
+    { 
+        if(0<= rect_config_param.led_current && rect_config_param.led_current< 1024)
+        {
+            brightness_current = rect_config_param.led_current;
+            lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
+
+            system_config_settings_machine_.Instance().config_param_.led_current = brightness_current;
+        }
+ 
+    }
+
+
+    return true;
+}
+
+int handle_set_system_config_parameters(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	
+     
+
+    SystemConfigParam rect_config_param;
+
+
+    int ret = recv_buffer(client_sock, (char*)(&rect_config_param), sizeof(rect_config_param));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    bool ok = set_system_config(rect_config_param);    
+
+    if(!ok)
+    {
+        return DF_FAILED;
+    }
+
+    return DF_SUCCESS;
+
+}
+
+
+/*****************************************************************************************/
+
 int write_calib_param()
 {
     std::ofstream ofile;
@@ -1228,6 +1302,15 @@ int handle_commands(int client_sock)
 	    handle_set_camera_parameters(client_sock);
         read_calib_param();
 	    break;
+	case DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS:
+	    LOG(INFO)<<"DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS";
+	    handle_get_system_config_parameters(client_sock);
+	    break;
+	case DF_CMD_SET_SYSTEM_CONFIG_PARAMETERS:
+	    LOG(INFO)<<"DF_CMD_SET_SYSTEM_CONFIG_PARAMETERS";
+	    handle_set_system_config_parameters(client_sock);
+        saveSystemConfig();
+	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
 	    break;
@@ -1242,7 +1325,7 @@ int init()
 
     readSystemConfig();
 
-    brightness_current = system_config_settings_machine_.Instance().led_current;
+    brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
 
     camera.openCamera();
     camera.warmupCamera();

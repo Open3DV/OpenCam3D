@@ -8,7 +8,7 @@
 SystemConfigDataStruct SystemConfigDataStruct::instance_;
 SystemConfigDataStruct::SystemConfigDataStruct()
 {
-    instance_.led_current = 255;
+    instance_.config_param_.led_current = 255;
 }
 
 bool SystemConfigDataStruct::loadFromSettings(const std::string& f)
@@ -46,7 +46,7 @@ bool SystemConfigDataStruct::loadFromSettings(const std::string& f)
      
             if( "led_current" == param_list[0])
             {
-                    instance_.led_current = atoi(param_list[1].c_str());
+                    instance_.config_param_.led_current = atoi(param_list[1].c_str());
             }
        
 
@@ -70,7 +70,7 @@ bool SystemConfigDataStruct::saveToSettings(const std::string& f)
         return false;
     }
   
-    ofile << "led_current: " << instance_.led_current << std::endl; 
+    ofile << "led_current: " << instance_.config_param_.led_current << std::endl; 
   
     ofile.close();
    
