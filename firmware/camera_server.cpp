@@ -18,6 +18,7 @@
 #include "lightcrafter3010.h"
 #include "easylogging++.h"
 #include "encode_cuda.cuh"
+#include "system_config_settings.h"
 
 
 INITIALIZE_EASYLOGGINGPP 
@@ -33,7 +34,19 @@ CameraDh camera;
 LightCrafter3010 lc3010;
 struct CameraCalibParam param;
 
-int brightness_current = 200;
+int brightness_current = 100;
+ 
+SystemConfigDataStruct system_config_settings_machine_;
+
+bool readSystemConfig()
+{
+    return system_config_settings_machine_.loadFromSettings("../system_config.ini");
+}
+
+bool saveSystemConfig()
+{
+    return system_config_settings_machine_.saveToSettings("../system_config.ini");
+}
 
 int heartbeat_check()
 {
@@ -1225,6 +1238,11 @@ int handle_commands(int client_sock)
 
 int init()
 {
+
+    readSystemConfig();
+
+    brightness_current = system_config_settings_machine_.Instance().led_current;
+
     camera.openCamera();
     camera.warmupCamera();
     //int brightness = 255;
@@ -1232,6 +1250,7 @@ int init()
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
     cuda_malloc_memory();
     read_calib_param();
+       
     cuda_copy_calib_data(param.camera_intrinsic, 
 		         param.projector_intrinsic, 
 			 param.camera_distortion,

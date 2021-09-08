@@ -1,3 +1,4 @@
 x64
 .vs
 firmware/build
+*.ini
