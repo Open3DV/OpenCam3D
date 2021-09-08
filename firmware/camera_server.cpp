@@ -1226,6 +1226,7 @@ int handle_commands(int client_sock)
 	case DF_CMD_SET_CAMERA_PARAMETERS:
 	    LOG(INFO)<<"DF_CMD_SET_CAMERA_PARAMETERS";
 	    handle_set_camera_parameters(client_sock);
+        read_calib_param();
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
