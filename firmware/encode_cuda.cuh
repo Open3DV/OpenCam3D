@@ -9,6 +9,30 @@
 #include <stdint.h>
 #include <vector>
 
+
+/**********************************************************************************************/
+//并行于图像采集
+
+bool parallel_cuda_copy_signal_patterns(unsigned char* patterns_ptr,int serial_flag);
+
+bool parallel_cuda_compute_phase(int serial_flag);
+
+bool parallel_cuda_unwrap_phase(int serial_flag);
+
+bool parallel_cuda_reconstruct();
+
+bool parallel_cuda_copy_result_from_gpu(float* depth,unsigned char* brightness);
+
+bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* brightness); 
+
+bool parallel_cuda_copy_result_to_hdr(int serial_flag);
+
+__global__ void parallel_cuda_merge_hdr_3(const float*  depth_map_0,const float*  depth_map_1,const float*  depth_map_2,const unsigned char* brightness_0,const unsigned char* brightness_1,
+	const unsigned char* brightness_2,uint32_t img_height, uint32_t img_width, float* const depth_map,unsigned char * const brightness);
+
+__global__ void parallel_cuda_merge_hdr_2(const float*  depth_map_0,const float*  depth_map_1,const unsigned char* brightness_0,const unsigned char* brightness_1,
+	uint32_t img_height, uint32_t img_width, float* const depth_map,unsigned char * const brightness);
+
 /*******************************************************************************************/
 //����device�ڴ�
 bool cuda_malloc_memory();
