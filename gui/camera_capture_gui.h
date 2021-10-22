@@ -121,6 +121,8 @@ private:
 
 	bool start_timer_flag_;
 	QTimer capture_timer_;
+
+	QString camera_ip_;
  
 
 };

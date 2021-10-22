@@ -21,7 +21,8 @@ const int image_height = 1200;
 const int image_size = image_width * image_height;
 bool connected = false;
 long long token = 0;
-const char* camera_id;
+//const char* camera_id_;
+std::string camera_id_;
 std::thread heartbeat_thread;
 
 extern SOCKET g_sock_heartbeat;
@@ -254,7 +255,7 @@ DF_SDK_API int DfConnect(const char* camera_id)
 	brightness_buf_ = new unsigned char[brightness_bug_size_];
 
 
-	LOG(INFO) << "Connect Camera: " << camera_id;
+	LOG(INFO) << "Connect Camera: " << camera_ip_;
 
 	return 0;
 }
@@ -488,8 +489,8 @@ DF_SDK_API int DfGetCalibrationParam(struct CalibrationParam* calibration_param)
 
 int HeartBeat()
 {
-	LOG(TRACE) << "heart beat";
-	int ret = setup_socket(camera_id, DF_PORT, g_sock_heartbeat);
+	LOG(TRACE) << "heart beat: ";
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock_heartbeat);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock_heartbeat);
@@ -552,9 +553,9 @@ int HeartBeat_loop()
 
 DF_SDK_API int DfConnectNet(const char* ip)
 {
-	camera_id = ip;
-	LOG(INFO) << "start connection" ;
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	camera_id_ = ip;
+	LOG(INFO) << "start connection: " <<ip;
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -608,7 +609,7 @@ DF_SDK_API int DfDisconnectNet()
 {
 	LOG(INFO) <<"token "<<token<< " try to disconnection";
 
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -649,7 +650,7 @@ DF_SDK_API int GetBrightness(unsigned char* brightness, int brightness_buf_size)
 {
 	LOG(INFO) << "GetBrightness";
 	assert(brightness_buf_size >= image_size * sizeof(unsigned char));
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -734,7 +735,7 @@ DF_SDK_API int DfGetFrameHdr(float* depth, int depth_buf_size,
 	LOG(INFO) << "GetFrameHdr";
 	assert(depth_buf_size == image_size * sizeof(float) * 1);
 	assert(brightness_buf_size == image_size * sizeof(char) * 1);
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -787,7 +788,7 @@ DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 	LOG(INFO) << "GetFrame03";
 	assert(depth_buf_size == image_size * sizeof(float) * 1);
 	assert(brightness_buf_size == image_size * sizeof(char) * 1);
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -840,7 +841,7 @@ DF_SDK_API int DfGetFrame01(float* depth, int depth_buf_size,
 	LOG(INFO) << "GetFrame01";
 	assert(depth_buf_size == image_size * sizeof(float) * 1);
 	assert(brightness_buf_size == image_size * sizeof(char) * 1);
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -891,7 +892,7 @@ DF_SDK_API int DfGetPointCloud(float* point_cloud, int point_cloud_buf_size)
 {
 	LOG(INFO) << "GetPointCloud";
 	assert(point_cloud_buf_size == image_size * sizeof(float) * 3);
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -932,7 +933,7 @@ DF_SDK_API int DfGetCameraRawData03(unsigned char* raw, int raw_buf_size)
 	{
 		LOG(INFO) << "GetRaw03";
 		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 36);
-		int ret = setup_socket(camera_id, DF_PORT, g_sock);
+		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -974,7 +975,7 @@ DF_SDK_API int DfGetCameraRawData02(unsigned char* raw, int raw_buf_size)
 	{
 		LOG(INFO) << "GetRawTest";
 		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 37);
-		int ret = setup_socket(camera_id, DF_PORT, g_sock);
+		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -1016,7 +1017,7 @@ DF_SDK_API int DfGetCameraRawDataTest(unsigned char* raw, int raw_buf_size)
 	{
 		LOG(INFO) << "GetRawTest";
 		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 37);
-		int ret = setup_socket(camera_id, DF_PORT, g_sock);
+		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -1060,7 +1061,7 @@ DF_SDK_API int DfGetCameraRawData01(unsigned char* raw, int raw_buf_size)
 	{
 		LOG(INFO) << "Get Raw 01" ;
 		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 72);
-		int ret = setup_socket(camera_id, DF_PORT, g_sock);
+		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -1098,7 +1099,7 @@ DF_SDK_API int DfGetCameraRawData01(unsigned char* raw, int raw_buf_size)
 
 DF_SDK_API int DfGetDeviceTemperature(float& temperature)
 {
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -1129,7 +1130,7 @@ DF_SDK_API int DfGetDeviceTemperature(float& temperature)
 
 DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param)
 {
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
@@ -1160,7 +1161,7 @@ DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param)
 
 DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_param)
 {
-	int ret = setup_socket(camera_id, DF_PORT, g_sock);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);

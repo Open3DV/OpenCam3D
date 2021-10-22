@@ -4,4 +4,7 @@
     <LocalDebuggerWorkingDirectory>..\x64\Release</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <QtLastBackgroundBuild>2021-10-22T02:59:18.0484003Z</QtLastBackgroundBuild>
+  </PropertyGroup>
 </Project>

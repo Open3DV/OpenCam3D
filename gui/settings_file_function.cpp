@@ -18,6 +18,7 @@ bool ProcessingDataStruct::loadFromSettings(const QString& f)
  
 		instance_.low_z_value = settings.value("low_z_value", 400.0).toInt(); 
 		instance_.high_z_value = settings.value("high_z_value", 600.0).toInt();
+		instance_.ip = settings.value("ip", "").toString();
 		 
 		return true;
 	//}
@@ -33,9 +34,8 @@ bool ProcessingDataStruct::saveToSettings(const QString& f)
 	QSettings settings(f, QSettings::IniFormat);
 	settings.setValue("low_z_value", Instance().low_z_value);
 	settings.setValue("high_z_value", Instance().high_z_value);
- 
-
-
+	settings.setValue("ip", Instance().ip);
+   
 	return true;
 }
 

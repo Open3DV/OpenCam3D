@@ -244,6 +244,7 @@ void CameraCaptureGui::setUiData()
 {
 	ui.spinBox_min_z->setValue(processing_settings_data_.Instance().low_z_value);
 	ui.spinBox_max_z->setValue(processing_settings_data_.Instance().high_z_value);
+	ui.lineEdit_ip->setText(processing_settings_data_.Instance().ip);
 }
 
 
@@ -515,8 +516,19 @@ bool CameraCaptureGui::capture_one_frame_data()
 void  CameraCaptureGui::do_pushButton_connect()
 {
 	 
+
+	camera_ip_ = ui.lineEdit_ip->text();
+
+	//if (camera_ip_.isEmpty())
+	//{ 
+	//	addLogMessage(QString::fromLocal8Bit("请设置IP！"));
+	//	return;
+	//}
+	 
+
 	addLogMessage(QString::fromLocal8Bit("连接相机："));
-	int ret_code = DfConnect("192.168.88.193"); 
+	int ret_code = DfConnect(camera_ip_.toStdString().c_str());
+	//int ret_code = DfConnect("192.168.88.139");
 
 	if (0 == ret_code)
 	{
@@ -531,6 +543,8 @@ void  CameraCaptureGui::do_pushButton_connect()
 		}
 		 
 		addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
+		//保存ip配置
+		processing_settings_data_.Instance().ip = camera_ip_;
 	}
 	else
 	{
