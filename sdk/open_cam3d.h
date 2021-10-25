@@ -8,6 +8,7 @@
 #endif
  
 #include "../Firmware/protocol.h" 
+#include "../firmware/system_config_settings.h"
 
 /***************************************************************************************/
 
@@ -138,3 +139,7 @@ DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_
 DF_SDK_API int DfGetDeviceTemperature(float& temperature);
 
 DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*));
+
+DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param);
+
+DF_SDK_API int DfSetSystemConfigParam(const struct SystemConfigParam& config_param);

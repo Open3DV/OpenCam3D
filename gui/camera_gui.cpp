@@ -38,8 +38,8 @@ camera_gui::~camera_gui()
 void camera_gui::closeEvent(QCloseEvent* e)
 {
     if (QMessageBox::question(this,
-        tr("Quit"),
-        tr("Are you sure to quit this application?"),
+        QString::fromLocal8Bit("注意"),
+        QString::fromLocal8Bit("确定退出软件？"),
         QMessageBox::Yes, QMessageBox::No)
         == QMessageBox::Yes) {
         e->accept();//不会将事件传递给组件的父组件

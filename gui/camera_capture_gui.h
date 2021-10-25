@@ -50,6 +50,8 @@ private:
 
 	bool renderBrightnessImage(cv::Mat brightness);
 
+	void undateSystemConfigUiData();
+
 public slots:
 
 
@@ -88,6 +90,8 @@ private slots:
 
 	void do_pushButton_capture_continuous();
 
+	void do_spin_led_current_changed(int val);
+
 	/******************************************************************************************/
 
 	void do_pushButton_save_as();
@@ -112,6 +116,9 @@ private:
 	bool connected_flag_;
 	int camera_width_;
 	int camera_height_;
+
+	//相机系统配置参数
+	struct SystemConfigParam system_config_param_;
 
 	QString last_path_;
 	QString sys_path_;

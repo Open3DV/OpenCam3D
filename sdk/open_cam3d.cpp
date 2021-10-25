@@ -1128,6 +1128,68 @@ DF_SDK_API int DfGetDeviceTemperature(float& temperature)
 	return DF_SUCCESS;
 }
 
+DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer((char*)(&config_param), sizeof(config_param), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+DF_SDK_API int DfSetSystemConfigParam(const struct SystemConfigParam& config_param)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_SYSTEM_CONFIG_PARAMETERS, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = send_buffer((char*)(&config_param), sizeof(config_param), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
 DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);

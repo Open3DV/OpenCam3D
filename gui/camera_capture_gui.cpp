@@ -9,6 +9,7 @@
 #include <QtWidgets/qfiledialog.h>
 
 
+
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	: QWidget(parent)
 {
@@ -82,6 +83,8 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.spinBox_exposure_num, SIGNAL(valueChanged(int)), this, SLOT(do_spin_exposure_num_changed(int)));
 	connect(ui.spinBox_min_z, SIGNAL(valueChanged(int)), this, SLOT(do_spin_min_z_changed(int)));
 	connect(ui.spinBox_max_z, SIGNAL(valueChanged(int)), this, SLOT(do_spin_max_z_changed(int)));
+
+	connect(ui.spinBox_led, SIGNAL(valueChanged(int)), this, SLOT(do_spin_led_current_changed(int)));
 
 	connect(ui.radioButton_brightness, SIGNAL(toggled(bool)), this, SLOT(on_QRadioButton_toggled_brightness(bool)));
 	connect(ui.radioButton_depth_color, SIGNAL(toggled(bool)), this, SLOT(on_QRadioButton_toggled_color_depth(bool)));
@@ -240,6 +243,12 @@ void CameraCaptureGui::setSettingData(ProcessingDataStruct& settings_data_)
 }
 
 
+
+void CameraCaptureGui::undateSystemConfigUiData()
+{
+	ui.spinBox_led->setValue(system_config_param_.led_current);
+}
+
 void CameraCaptureGui::setUiData()
 {
 	ui.spinBox_min_z->setValue(processing_settings_data_.Instance().low_z_value);
@@ -303,6 +312,26 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 	//cv::Mat img_depth = cv::imread("G:/Code/GitCode/Df8/Df15_SDK/x64/Release/capture_data/frame03_data/0604/data_01.tiff", cv::IMREAD_UNCHANGED);
 	//setShowImages(img_b, img_depth);
  
+}
+
+
+void CameraCaptureGui::do_spin_led_current_changed(int val)
+{
+	if (connected_flag_)
+	{
+		system_config_param_.led_current = val;
+
+		int ret_code = DfSetSystemConfigParam(system_config_param_);
+		if (0 != ret_code)
+		{
+			qDebug() << "Get Param Error;";
+			return;
+		}
+
+		QString str = QString::fromLocal8Bit("设置投影亮度: ") + QString::number(val);
+
+		addLogMessage(str);
+	}
 }
 
 void CameraCaptureGui::do_spin_max_z_changed(int val)
@@ -545,6 +574,15 @@ void  CameraCaptureGui::do_pushButton_connect()
 		addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
 		//保存ip配置
 		processing_settings_data_.Instance().ip = camera_ip_;
+
+		ret_code = DfGetSystemConfigParam(system_config_param_);
+		if (0 != ret_code)
+		{
+			qDebug() << "Get Param Error;";
+			return;
+		}
+
+		undateSystemConfigUiData();
 	}
 	else
 	{
