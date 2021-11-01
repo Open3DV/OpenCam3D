@@ -33,6 +33,8 @@ public:
 
 	bool capture_one_frame_data();
 
+	bool capture_one_frame_and_render();
+
 	bool capture_brightness();
 
 	bool initializeFunction();
@@ -91,6 +93,7 @@ private slots:
 	void do_pushButton_capture_continuous();
 
 	void do_spin_led_current_changed(int val);
+	  
 
 	/******************************************************************************************/
 

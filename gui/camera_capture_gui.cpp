@@ -68,6 +68,8 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	ui.spinBox_confidence->hide();
 	ui.pushButton_capture_many_frame->hide();
 	ui.spinBox_multiframe->hide();
+
+	ui.radioButton_depth_grey->hide();
 	 
 }
 
@@ -90,9 +92,9 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.radioButton_depth_color, SIGNAL(toggled(bool)), this, SLOT(on_QRadioButton_toggled_color_depth(bool)));
 	connect(ui.radioButton_depth_grey, SIGNAL(toggled(bool)), this, SLOT(on_QRadioButton_toggled_gray_depth(bool)));
 
+	 
 
 	connect(ui.pushButton_connect, SIGNAL(clicked()), this, SLOT(do_pushButton_connect()));
-	connect(ui.pushButton_disconnect, SIGNAL(clicked()), this, SLOT(do_pushButton_disconnect()));
 	connect(ui.pushButton_capture_one_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_one_frame()));
 	connect(ui.pushButton_capture_continuous, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_continuous()));
 	connect(ui.pushButton_capture_many_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_many_frame()));
@@ -313,6 +315,9 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 	//setShowImages(img_b, img_depth);
  
 }
+
+
+
 
 
 void CameraCaptureGui::do_spin_led_current_changed(int val)
@@ -544,96 +549,109 @@ bool CameraCaptureGui::capture_one_frame_data()
 
 void  CameraCaptureGui::do_pushButton_connect()
 {
-	 
 
-	camera_ip_ = ui.lineEdit_ip->text();
 
-	//if (camera_ip_.isEmpty())
-	//{ 
-	//	addLogMessage(QString::fromLocal8Bit("请设置IP！"));
-	//	return;
-	//}
-	 
 
-	addLogMessage(QString::fromLocal8Bit("连接相机："));
-	int ret_code = DfConnect(camera_ip_.toStdString().c_str());
-	//int ret_code = DfConnect("192.168.88.139");
-
-	if (0 == ret_code)
+	if (!connected_flag_)
 	{
-		//必须连接相机成功后，才可获取相机分辨率
-		ret_code = DfGetCameraResolution(&camera_width_, &camera_height_);
-		std::cout << "Width: " << camera_width_ << "    Height: " << camera_height_ << std::endl;
 
-		if (0 != ret_code)
+		camera_ip_ = ui.lineEdit_ip->text();
+		if (camera_ip_.isEmpty())
 		{
-			qDebug() << "Connect Error!;";
-			return;
-		}
-		 
-		addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
-		//保存ip配置
-		processing_settings_data_.Instance().ip = camera_ip_;
-
-		ret_code = DfGetSystemConfigParam(system_config_param_);
-		if (0 != ret_code)
-		{
-			qDebug() << "Get Param Error;";
+			addLogMessage(QString::fromLocal8Bit("请设置IP！"));
 			return;
 		}
 
-		undateSystemConfigUiData();
+
+		addLogMessage(QString::fromLocal8Bit("连接相机："));
+		int ret_code = DfConnect(camera_ip_.toStdString().c_str());
+
+		if (0 == ret_code)
+		{
+			//必须连接相机成功后，才可获取相机分辨率
+			ret_code = DfGetCameraResolution(&camera_width_, &camera_height_);
+			std::cout << "Width: " << camera_width_ << "    Height: " << camera_height_ << std::endl;
+
+			if (0 != ret_code)
+			{
+				qDebug() << "Connect Error!;";
+				return;
+			}
+
+			addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
+			//保存ip配置
+			processing_settings_data_.Instance().ip = camera_ip_;
+
+			ret_code = DfGetSystemConfigParam(system_config_param_);
+			if (0 != ret_code)
+			{
+				qDebug() << "Get Param Error;";
+				return;
+			}
+
+			undateSystemConfigUiData();
+		}
+		else
+		{
+			std::cout << "Connect Camera Error!";
+			addLogMessage(QString::fromLocal8Bit("连接相机失败！"));
+			return;
+		}
+
+
+		connected_flag_ = true;
+
+		CalibrationParam calib_param;
+		ret_code = DfGetCalibrationParam(&calib_param);
+
+		if (0 == ret_code)
+		{
+			std::cout << "intrinsic: " << std::endl;
+			for (int r = 0; r < 3; r++)
+			{
+				for (int c = 0; c < 3; c++)
+				{
+					std::cout << calib_param.intrinsic[3 * r + c] << "\t";
+				}
+				std::cout << std::endl;
+			}
+
+			std::cout << "extrinsic: " << std::endl;
+			for (int r = 0; r < 4; r++)
+			{
+				for (int c = 0; c < 4; c++)
+				{
+					std::cout << calib_param.extrinsic[4 * r + c] << "\t";
+				}
+				std::cout << std::endl;
+			}
+
+			std::cout << "distortion: " << std::endl;
+			for (int r = 0; r < 1; r++)
+			{
+				for (int c = 0; c < 12; c++)
+				{
+					std::cout << calib_param.distortion[1 * r + c] << "\t";
+				}
+				std::cout << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "Get Calibration Data Error!";
+			return;
+		}
+
+		ui.pushButton_connect->setIcon(QIcon(":/dexforce_camera_gui/image/disconnect.png"));
 	}
 	else
 	{
-		std::cout << "Connect Camera Error!";
-		addLogMessage(QString::fromLocal8Bit("连接相机失败！"));
-		return;
+		//断开相机
+		do_pushButton_disconnect();
+
+		ui.pushButton_connect->setIcon(QIcon(":/dexforce_camera_gui/image/connect.png"));
 	}
 
-
-	connected_flag_ = true;
-
-	CalibrationParam calib_param;
-	ret_code = DfGetCalibrationParam(&calib_param);
-
-	if (0 == ret_code)
-	{
-		std::cout << "intrinsic: " << std::endl;
-		for (int r = 0; r < 3; r++)
-		{
-			for (int c = 0; c < 3; c++)
-			{
-				std::cout << calib_param.intrinsic[3 * r + c] << "\t";
-			}
-			std::cout << std::endl;
-		}
-
-		std::cout << "extrinsic: " << std::endl;
-		for (int r = 0; r < 4; r++)
-		{
-			for (int c = 0; c < 4; c++)
-			{
-				std::cout << calib_param.extrinsic[4 * r + c] << "\t";
-			}
-			std::cout << std::endl;
-		}
-
-		std::cout << "distortion: " << std::endl;
-		for (int r = 0; r < 1; r++)
-		{
-			for (int c = 0; c < 12; c++)
-			{
-				std::cout << calib_param.distortion[1 * r + c] << "\t";
-			}
-			std::cout << std::endl;
-		}
-	}
-	else
-	{
-		std::cout << "Get Calibration Data Error!";
-		return ;
-	}
 
 
 }
@@ -643,7 +661,7 @@ void  CameraCaptureGui::do_pushButton_disconnect()
 	
 	if (connected_flag_)
 	{
-		DfDisconnect("192.168.88.193");
+		DfDisconnect(camera_ip_.toStdString().c_str());
 		addLogMessage(QString::fromLocal8Bit("断开相机！")); 
 		connected_flag_ = false;
 	}
@@ -693,16 +711,10 @@ void CameraCaptureGui::do_pushButton_save_as()
 
 }
 
-void  CameraCaptureGui::do_pushButton_capture_one_frame()
+
+bool CameraCaptureGui::capture_one_frame_and_render()
 {
-	if (!connected_flag_)
-	{
-		return;
-	}
-
-	bool ret = capture_one_frame_data();
-
-	//bool ret = capture_brightness();
+	bool ret = capture_one_frame_data(); 
 
 
 	if (ret)
@@ -713,15 +725,40 @@ void  CameraCaptureGui::do_pushButton_capture_one_frame()
 		showImage();
 
 		if (ui.checkBox_auto_save->isChecked())
-		{ 
+		{
 			QString StrCurrentTime = "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
 			QString path_name = sys_path_ + StrCurrentTime;
 			saveOneFrameData(path_name);
 		}
 	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+
+void  CameraCaptureGui::do_pushButton_capture_one_frame()
+{
+	if (!connected_flag_)
+	{
+		return;
+	}
+
+ 
+
+	capture_one_frame_and_render();
+	 
+
+
+
 
 }
 
+ 
+ 
 
 void  CameraCaptureGui::do_timeout_slot()
 {
@@ -730,7 +767,10 @@ void  CameraCaptureGui::do_timeout_slot()
 
 	if (start_timer_flag_)
 	{
-		do_pushButton_capture_one_frame();
+		//do_pushButton_capture_one_frame();
+
+
+		capture_one_frame_and_render();
 
 		//bool ret =capture_brightness();
 
@@ -762,11 +802,15 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 	if (start_timer_flag_)
 	{
 		start_timer_flag_ = false;
+
+		ui.pushButton_capture_continuous->setIcon(QIcon(":/dexforce_camera_gui/image/video_start.png"));
 	}
 	else
 	{
 		start_timer_flag_ = true;
 		capture_timer_.start();
+
+		ui.pushButton_capture_continuous->setIcon(QIcon(":/dexforce_camera_gui/image/video_stop.png"));
 	}
 
 	//capture_thread_ = new QThread(this);

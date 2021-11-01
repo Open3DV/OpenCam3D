@@ -126,6 +126,9 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
     <ClInclude Include="file_io_function.h" />
     <QtMoc Include="settings_file_function.h" />
   </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="dexforce_camera_gui.qrc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
     <Import Project="$(QtMsBuild)\qt.targets" />
