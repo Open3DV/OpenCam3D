@@ -99,15 +99,26 @@ int recv_buffer(char* buffer, int buffer_size, SOCKET& sock)
 	int n_recv = 0;
 	ret = DF_SUCCESS;
 
+	int null_flag = 0;
+
 	while (ret != -1)
 	{
-		ret = recv(sock, buffer, buffer_size, 0);
-		//std::cout << "ret="<<ret << std::endl;
+		ret = recv(sock, buffer, buffer_size, 0); 
+		//LOG(INFO) << "recv£º " << "ret=" << ret << std::endl;
 		if (ret > 0)
 		{
 			buffer_size -= ret;
 			n_recv += ret;
 			buffer += ret;
+		}
+		else if (0 == ret)
+		{
+			null_flag++;
+		}
+
+		if (null_flag > 10)
+		{ 
+			return DF_FAILED;
 		}
 
 		if (buffer_size == 0)

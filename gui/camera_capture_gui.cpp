@@ -8,7 +8,7 @@
 #include <QMouseEvent>
 #include <QtWidgets/qfiledialog.h>
 
-
+  
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	: QWidget(parent)
@@ -113,6 +113,7 @@ bool CameraCaptureGui::initializeFunction()
 	return true;
 }
 
+ 
 
 void CameraCaptureGui::addLogMessage(QString str)
 {
@@ -546,11 +547,10 @@ bool CameraCaptureGui::capture_one_frame_data()
 		//}
 	 
 }
+ 
 
 void  CameraCaptureGui::do_pushButton_connect()
-{
-
-
+{ 
 
 	if (!connected_flag_)
 	{
@@ -561,7 +561,8 @@ void  CameraCaptureGui::do_pushButton_connect()
 			addLogMessage(QString::fromLocal8Bit("请设置IP！"));
 			return;
 		}
-
+		  
+		  
 
 		addLogMessage(QString::fromLocal8Bit("连接相机："));
 		int ret_code = DfConnect(camera_ip_.toStdString().c_str());
@@ -763,14 +764,25 @@ void  CameraCaptureGui::do_pushButton_capture_one_frame()
 void  CameraCaptureGui::do_timeout_slot()
 {
 
+	std::cout << "timeout"<<std::endl;
+
 	capture_timer_.stop();
 
 	if (start_timer_flag_)
-	{
-		//do_pushButton_capture_one_frame();
+	{ 
 
+		bool ret = capture_one_frame_and_render();
 
-		capture_one_frame_and_render();
+		if (!ret)
+		{
+			//停止连续采集
+			do_pushButton_capture_continuous();
+		}
+		else
+		{
+			capture_timer_.start(); 
+		}
+
 
 		//bool ret =capture_brightness();
 
@@ -783,7 +795,6 @@ void  CameraCaptureGui::do_timeout_slot()
 		//}
 
 		//qDebug() << "Timer";
-		capture_timer_.start();
 
 	}
 

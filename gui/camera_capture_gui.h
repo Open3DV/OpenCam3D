@@ -41,8 +41,7 @@ public:
 
 	bool saveOneFrameData(QString path_name);
 
-	void addLogMessage(QString str);
-
+	void addLogMessage(QString str); 
 private:
 	bool showImage();
 
@@ -98,6 +97,8 @@ private slots:
 	/******************************************************************************************/
 
 	void do_pushButton_save_as();
+
+	 
 
 private:
 	Ui::CameraCaptureGui ui;

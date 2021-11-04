@@ -202,12 +202,10 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfConnect(const char* camera_id)
 {
-
-
-
+	 
 	DfRegisterOnDropped(on_dropped);
 
-
+	
 	int ret = DfConnectNet(camera_id);
 	if (ret == DF_FAILED)
 	{
@@ -561,6 +559,8 @@ DF_SDK_API int DfConnectNet(const char* ip)
 		close_socket(g_sock);
 		return DF_FAILED;
 	}
+	 
+
 	LOG(INFO) << "sending connection cmd";
 	ret = send_command(DF_CMD_CONNECT, g_sock);
 	if (ret == DF_FAILED)
@@ -794,6 +794,8 @@ DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 		close_socket(g_sock);
 		return DF_FAILED;
 	}
+	 
+
 	ret = send_command(DF_CMD_GET_FRAME_03, g_sock);
 	ret = send_buffer((char*)&token, sizeof(token), g_sock);
 	int command;
