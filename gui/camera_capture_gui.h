@@ -68,13 +68,15 @@ private slots:
 
 	void on_QRadioButton_toggled_gray_depth(bool state);
 
-	void add_exposure_item(double val);
+	void add_exposure_item(int serial,double val);
 
 	bool remove_exposure_item(int row);  
 
 	double get_exposure_item_value(int row);
 
 private slots:
+	void do_checkBox_toggled(bool state);
+
 	void do_spin_exposure_num_changed(int val);
 
 	void do_spin_min_z_changed(int val);

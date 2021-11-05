@@ -20,7 +20,7 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 
 	exposure_time_list_.clear();
 
-	add_exposure_item(1.0); 
+	add_exposure_item(0,1.0); 
 	 
 
 	ui.tableWidget_more_exposure->setEditTriggers(QAbstractItemView::NoEditTriggers); //设置不可编辑
@@ -61,9 +61,9 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 		bool res = dir.mkpath(path); 
 	}
 
-	ui.tableWidget_more_exposure->hide();
-	ui.spinBox_exposure_num->hide();
-	ui.label_exposure_num->hide();
+	//ui.tableWidget_more_exposure->hide();
+	//ui.spinBox_exposure_num->hide();
+	//ui.label_exposure_num->hide();
 	ui.label_confidence->hide();
 	ui.spinBox_confidence->hide();
 	ui.pushButton_capture_many_frame->hide();
@@ -92,7 +92,8 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.radioButton_depth_color, SIGNAL(toggled(bool)), this, SLOT(on_QRadioButton_toggled_color_depth(bool)));
 	connect(ui.radioButton_depth_grey, SIGNAL(toggled(bool)), this, SLOT(on_QRadioButton_toggled_gray_depth(bool)));
 
-	 
+
+	connect(ui.checkBox_hdr, SIGNAL(toggled(bool)), this, SLOT(do_checkBox_toggled(bool)));
 
 	connect(ui.pushButton_connect, SIGNAL(clicked()), this, SLOT(do_pushButton_connect()));
 	connect(ui.pushButton_capture_one_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_one_frame()));
@@ -285,18 +286,35 @@ bool CameraCaptureGui::remove_exposure_item(int row)
 	return true;
 }
 
-void CameraCaptureGui::add_exposure_item(double val)
+void CameraCaptureGui::add_exposure_item(int serial, double val)
 {
+	//int group_num = serial / 2;
+	//int remainder_num = serial % 2;
+
+	//qDebug() << "group_num: " << group_num;
+	//qDebug() << "remainder_num: " << remainder_num;
+
+	 //remainder_num = 0;
 
 	int item_count = ui.tableWidget_more_exposure->rowCount(); 
+
+	//if (item_count < group_num)
+	//{
+
+	//}
 
 	ui.tableWidget_more_exposure->setRowCount(item_count+1); 
 
 	QDoubleSpinBox *upperSpinBoxItem = new QDoubleSpinBox();
-	upperSpinBoxItem->setRange(0, 99);//设置数值显示范围
+	upperSpinBoxItem->setRange(0, 1023);//设置数值显示范围
 	upperSpinBoxItem->setValue(val);
-	ui.tableWidget_more_exposure->setItem(item_count, 0, new QTableWidgetItem(QString::number(item_count+1)));
-	ui.tableWidget_more_exposure->setCellWidget(item_count, 1, upperSpinBoxItem);//i为所在行，j+2为所在列
+	upperSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	ui.tableWidget_more_exposure->setItem(item_count, 0 , new QTableWidgetItem(QString::number(item_count+1)));
+	ui.tableWidget_more_exposure->setCellWidget(item_count, 1  , upperSpinBoxItem);//i为所在行，j+2为所在列
+
+
+	//ui.tableWidget_more_exposure->setItem(group_num, 0 + 2* remainder_num, new QTableWidgetItem(QString::number(item_count + 1)));
+	//ui.tableWidget_more_exposure->setCellWidget(group_num, 1 + 2 * remainder_num, upperSpinBoxItem);//i为所在行，j+2为所在列
 
 	ui.tableWidget_more_exposure->item(item_count, 0)->setTextAlignment(Qt::AlignHCenter | Qt::AlignCenter);
 	ui.tableWidget_more_exposure->item(item_count, 0)->setSelected(false);
@@ -379,7 +397,7 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 		for(int row= item_num;row< val;row++)
 		{ 
 			double val = get_exposure_item_value(row-1);
-			add_exposure_item(val + 1.0);
+			add_exposure_item(row,val + 1.0);
 		}
 
 	}
@@ -840,6 +858,20 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 	//delete capture_timer_;
 }
 
+/*********************************************************************************************************************************/
+//HDR显示
+
+void CameraCaptureGui::do_checkBox_toggled(bool state)
+{
+	if (state)
+	{
+		ui.tableWidget_more_exposure->setHidden(false);
+	}
+	else
+	{
+		ui.tableWidget_more_exposure->setHidden(true);
+	}
+}
 
 
 /*****************************************************************************************************************************/
