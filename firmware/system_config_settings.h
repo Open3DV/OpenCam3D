@@ -11,7 +11,12 @@ std::vector<std::string> vStringSplit(const std::string &s, const std::string &d
 
 struct SystemConfigParam
 {
+	//投影亮度
 	int led_current;
+	//曝光次数
+	int exposure_num;
+	//曝光参数
+	int exposure_param[6];
 };
 
 struct SystemConfigDataStruct

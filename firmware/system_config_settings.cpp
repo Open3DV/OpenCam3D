@@ -9,6 +9,13 @@ SystemConfigDataStruct SystemConfigDataStruct::instance_;
 SystemConfigDataStruct::SystemConfigDataStruct()
 {
     instance_.config_param_.led_current = 255;
+    instance_.config_param_.exposure_num = 3;
+
+    for(int i= 0;i< 6;i++)
+    {
+        instance_.config_param_.exposure_param[i] = (i+1)*100;
+    }
+
 }
 
 bool SystemConfigDataStruct::loadFromSettings(const std::string& f)
@@ -48,6 +55,22 @@ bool SystemConfigDataStruct::loadFromSettings(const std::string& f)
             {
                     instance_.config_param_.led_current = atoi(param_list[1].c_str());
             }
+            else if( "exposure_num" == param_list[0])
+            {
+                instance_.config_param_.exposure_num = atoi(param_list[1].c_str());
+            }
+            else if( "exposure_param" == param_list[0])
+            {
+                std::vector<std::string> led_param_list = vStringSplit(param_list[1], ",");
+
+                if(6 == led_param_list.size())
+                {
+                    for(int i = 0;i< 6;i++)
+                    {
+                        instance_.config_param_.exposure_param[i] = atoi(led_param_list[i].c_str());
+                    }
+                }
+            }
        
 
              
@@ -71,6 +94,18 @@ bool SystemConfigDataStruct::saveToSettings(const std::string& f)
     }
   
     ofile << "led_current: " << instance_.config_param_.led_current << std::endl; 
+    ofile << "exposure_num: " << instance_.config_param_.exposure_num << std::endl; 
+
+
+    std::string exposure_param_str = "";
+
+    for(int i = 0;i< 5;i++)
+    {
+        exposure_param_str += std::to_string(instance_.config_param_.exposure_param[i]);
+        exposure_param_str +=",";
+    }
+    exposure_param_str += std::to_string(instance_.config_param_.exposure_param[5]); 
+    ofile << "exposure_param: " << exposure_param_str << std::endl; 
   
     ofile.close();
    
