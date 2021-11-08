@@ -52,6 +52,7 @@ private:
 	bool renderBrightnessImage(cv::Mat brightness);
 
 	void undateSystemConfigUiData();
+	 
 
 public slots:
 
@@ -62,13 +63,13 @@ public slots:
 
 
 private slots:
-	void on_QRadioButton_toggled_brightness(bool state);
+	void do_QRadioButton_toggled_brightness(bool state);
 
-	void on_QRadioButton_toggled_color_depth(bool state);
+	void do_QRadioButton_toggled_color_depth(bool state);
 
-	void on_QRadioButton_toggled_gray_depth(bool state);
+	void do_QRadioButton_toggled_gray_depth(bool state);
 
-	void add_exposure_item(int serial,double val);
+	void add_exposure_item(int row,int col,int val);
 
 	bool remove_exposure_item(int row);  
 
@@ -107,7 +108,8 @@ private:
 
 	ProcessingDataStruct processing_settings_data_;
 
-	std::vector<QDoubleSpinBox*> exposure_time_list_;
+	//6¸öexposureÊäÈë¿ò
+	std::vector<QSpinBox*> exposure_time_list_;
 
 	int radio_button_flag_;
 

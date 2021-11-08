@@ -821,8 +821,6 @@ DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 			return DF_FAILED;
 		}
 
-
-
 		//brightness = (unsigned char*)depth + depth_buf_size;
 	}
 	else if (command == DF_CMD_REJECT)

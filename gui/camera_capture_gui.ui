@@ -170,7 +170,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,3">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1,0,0">
+        <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0">
          <item>
           <widget class="QGroupBox" name="groupBox">
            <property name="title">
@@ -386,14 +386,29 @@
          </item>
          <item>
           <widget class="QTableWidget" name="tableWidget_more_exposure">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>132</height>
+            </size>
+           </property>
            <property name="font">
             <font>
              <family>微软雅黑</family>
              <pointsize>12</pointsize>
             </font>
            </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
            <property name="horizontalScrollBarPolicy">
-            <enum>Qt::ScrollBarAsNeeded</enum>
+            <enum>Qt::ScrollBarAlwaysOff</enum>
            </property>
            <property name="alternatingRowColors">
             <bool>false</bool>
@@ -419,6 +434,22 @@
            <attribute name="verticalHeaderCascadingSectionResizes">
             <bool>false</bool>
            </attribute>
+           <column>
+            <property name="text">
+             <string>组号</string>
+            </property>
+            <property name="textAlignment">
+             <set>AlignCenter</set>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>亮度</string>
+            </property>
+            <property name="textAlignment">
+             <set>AlignCenter</set>
+            </property>
+           </column>
            <column>
             <property name="text">
              <string>组号</string>
