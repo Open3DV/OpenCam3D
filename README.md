@@ -30,6 +30,9 @@
 | VFOV                     |  23°              |
 | Dimensions               |  159x111x64.5mm   |
 | Weight                   |  1000g            |
+| CPU                      |  Quad-core Arm A57 processor @ 1.43 GHz  |
+| GPU                      |  128-core Maxwell GPU                    |
+| Memory                   |  4GB 64-bit LPDDR4                       |
   
 <br/><br/><br/>
 
