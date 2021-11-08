@@ -54,6 +54,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <LibraryPath>$(ProjectDir)../3rdparty/opencv420/lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)../3rdparty/opencv420/include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <IncludePath>$(ProjectDir)../3rdparty/opencv420/include;$(IncludePath)</IncludePath>
@@ -80,6 +82,11 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_calib3d420.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_features2d420.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Command>
     </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalDependencies>$(TargetDir)open_cam3d_sdk.lib;opencv_calib3d420d.lib;opencv_core420d.lib;opencv_dnn420d.lib;opencv_features2d420d.lib;opencv_flann420d.lib;opencv_gapi420d.lib;opencv_highgui420d.lib;opencv_imgcodecs420d.lib;opencv_imgproc420d.lib;opencv_ml420d.lib;opencv_objdetect420d.lib;opencv_photo420d.lib;opencv_stitching420d.lib;opencv_ts420d.lib;opencv_video420d.lib;opencv_videoio420d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
