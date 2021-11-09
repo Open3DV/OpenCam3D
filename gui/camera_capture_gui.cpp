@@ -16,8 +16,8 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 {
 	ui.setupUi(this);
 
-  
-	add_exposure_item(0,0,1.0); 
+	connected_flag_ = false;
+	//add_exposure_item(0,0,1.0); 
 
 	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
 	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
@@ -100,7 +100,7 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.radioButton_depth_grey, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_gray_depth(bool)));
 
 
-	connect(ui.checkBox_hdr, SIGNAL(toggled(bool)), this, SLOT(do_checkBox_toggled(bool)));
+	connect(ui.checkBox_hdr, SIGNAL(toggled(bool)), this, SLOT(do_checkBox_toggled_hdr(bool)));
 
 	connect(ui.pushButton_connect, SIGNAL(clicked()), this, SLOT(do_pushButton_connect()));
 	connect(ui.pushButton_capture_one_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_one_frame()));
@@ -258,6 +258,9 @@ void CameraCaptureGui::setSettingData(ProcessingDataStruct& settings_data_)
 void CameraCaptureGui::undateSystemConfigUiData()
 {
 	ui.spinBox_led->setValue(system_config_param_.led_current);
+
+	ui.spinBox_exposure_num->setValue(system_config_param_.exposure_num);
+
 }
 
 void CameraCaptureGui::setUiData()
@@ -265,6 +268,9 @@ void CameraCaptureGui::setUiData()
 	ui.spinBox_min_z->setValue(processing_settings_data_.Instance().low_z_value);
 	ui.spinBox_max_z->setValue(processing_settings_data_.Instance().high_z_value);
 	ui.lineEdit_ip->setText(processing_settings_data_.Instance().ip);
+
+	//ui.spinBox_exposure_num->setDisabled(true);
+	//ui.spinBox_led->setDisabled(true);
 }
 
 
@@ -374,6 +380,48 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 	//setShowImages(img_b, img_depth);
 }
 
+
+bool CameraCaptureGui::many_exposure_param_has_changed()
+{
+	if (system_config_param_.exposure_num != ui.spinBox_exposure_num->value())
+	{
+		return true;
+	}
+
+	for (int i = 0; i < exposure_time_list_.size(); i++)
+	{
+		if (system_config_param_.exposure_param[i] != exposure_time_list_[i]->value())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+//更新多曝光参数
+void CameraCaptureGui::update_many_exposure_param()
+{
+	for (int i = 0; i < exposure_time_list_.size(); i++)
+	{
+		system_config_param_.exposure_param[i] = exposure_time_list_[i]->value();
+	}
+
+	system_config_param_.exposure_num = exposure_time_list_.size();
+
+
+	int ret_code = DfSetSystemConfigParam(system_config_param_);
+	if (0 != ret_code)
+	{
+		qDebug() << "Get Param Error;";
+		return;
+	}
+
+	QString str = QString::fromLocal8Bit("同步多曝光参数 ");
+	addLogMessage(str);
+
+}
+
 void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 {
   
@@ -409,13 +457,16 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 		int rows = i / 2;
 		int cols = i % 2;
 
-		int led_val = system_config_param_.led_current;
+		//int led_val = system_config_param_.led_current;
+		int led_val = system_config_param_.exposure_param[i];
 		 
-		if (i < old_exposure_time_list.size())
-		{
-			led_val = old_exposure_time_list.at(i)->value();
-			//qDebug()<<i<< " led_val: " << led_val;
-		}
+		//if (i < old_exposure_time_list.size())
+		//{
+		//	//led_val = old_exposure_time_list.at(i)->value();
+		//	//qDebug()<<i<< " led_val: " << led_val;
+
+		//	led_val = system_config_param_.exposure_param[i];
+		//}
 
 		add_exposure_item(rows, cols, led_val);
 	}
@@ -508,6 +559,16 @@ bool CameraCaptureGui::capture_one_frame_data()
 
 	if (ui.checkBox_hdr->isChecked())
 	{ 
+		if (connected_flag_)
+		{
+			bool changed = many_exposure_param_has_changed();
+
+			if (changed)
+			{
+				update_many_exposure_param();
+			}
+		}
+
 		ret_code = DfGetFrameHdr((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
 	}
 	else
@@ -878,16 +939,24 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 /*********************************************************************************************************************************/
 //HDR显示
 
-void CameraCaptureGui::do_checkBox_toggled(bool state)
+void CameraCaptureGui::do_checkBox_toggled_hdr(bool state)
 {
-	if (state)
+
+	if (connected_flag_)
 	{
-		ui.tableWidget_more_exposure->setHidden(false);
+		if (state)
+		{
+
+			bool changed = many_exposure_param_has_changed();
+
+			if (changed)
+			{
+				update_many_exposure_param();
+			}
+		}
+
 	}
-	else
-	{
-		ui.tableWidget_more_exposure->setHidden(true);
-	}
+	 
 }
 
 

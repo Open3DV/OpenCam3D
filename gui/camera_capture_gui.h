@@ -42,6 +42,11 @@ public:
 	bool saveOneFrameData(QString path_name);
 
 	void addLogMessage(QString str); 
+
+	//更新多曝光参数
+	void update_many_exposure_param();
+
+	bool many_exposure_param_has_changed();
 private:
 	bool showImage();
 
@@ -76,7 +81,7 @@ private slots:
 	double get_exposure_item_value(int row);
 
 private slots:
-	void do_checkBox_toggled(bool state);
+	void do_checkBox_toggled_hdr(bool state);
 
 	void do_spin_exposure_num_changed(int val);
 

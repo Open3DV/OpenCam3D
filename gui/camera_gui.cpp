@@ -38,13 +38,12 @@ camera_gui::~camera_gui()
 void camera_gui::closeEvent(QCloseEvent* e)
 {
     if (QMessageBox::question(this,
-        QString::fromLocal8Bit("注意"),
+        QString::fromLocal8Bit("提示"),
         QString::fromLocal8Bit("确定退出软件？"),
         QMessageBox::Yes, QMessageBox::No)
         == QMessageBox::Yes) {
         e->accept();//不会将事件传递给组件的父组件
 
-        qDebug() << "ok";
 
         ui.tab_capture->saveSettingData("../processing_settings.ini");
 
