@@ -34,8 +34,10 @@ float* d_confidence_list_hdr_2[8];
 float* d_wrap_map_list_hdr_2[8];
 float* d_unwrap_map_list_hdr_2[2];
 
-float* d_hdr_depth_map_list_[3];
-unsigned char* d_hdr_brightness_list_[3];
+#define D_HDR_MAX_NUM 6
+
+float* d_hdr_depth_map_list_[D_HDR_MAX_NUM];
+unsigned char* d_hdr_brightness_list_[D_HDR_MAX_NUM];
 float* d_hdr_depth_map_;
 unsigned char* d_hdr_brightness_;
 
@@ -318,6 +320,42 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 
 		}
 		break;
+		case 4:
+		{
+			parallel_cuda_merge_hdr_4 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1],d_hdr_depth_map_list_[2],d_hdr_depth_map_list_[3],
+				 d_hdr_brightness_list_[0], d_hdr_brightness_list_[1], d_hdr_brightness_list_[2], d_hdr_brightness_list_[3], 
+				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
+				
+			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+
+		}
+		break;
+		case 5:
+		{
+			parallel_cuda_merge_hdr_5 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1],d_hdr_depth_map_list_[2],
+				d_hdr_depth_map_list_[3],d_hdr_depth_map_list_[4],
+				 d_hdr_brightness_list_[0], d_hdr_brightness_list_[1], d_hdr_brightness_list_[2], d_hdr_brightness_list_[3], d_hdr_brightness_list_[4], 
+				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
+				
+			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+
+		}
+		break;
+		case 6:
+		{
+			parallel_cuda_merge_hdr_6 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1],d_hdr_depth_map_list_[2],
+				d_hdr_depth_map_list_[3],d_hdr_depth_map_list_[4],d_hdr_depth_map_list_[5],
+				 d_hdr_brightness_list_[0], d_hdr_brightness_list_[1], d_hdr_brightness_list_[2], d_hdr_brightness_list_[3], d_hdr_brightness_list_[4], 
+				 d_hdr_brightness_list_[5], 
+				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
+				
+			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+
+		}
+		break;
 
 		default:
 		 		return false;
@@ -329,6 +367,178 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 	return true;
 }
 
+__global__ void parallel_cuda_merge_hdr_6(const float*  depth_map_0,const float*  depth_map_1,const float*  depth_map_2,
+	const float*  depth_map_3,const float*  depth_map_4,const float*  depth_map_5,
+	const unsigned char* brightness_0,const unsigned char* brightness_1,const unsigned char* brightness_2,
+	const unsigned char* brightness_3,const unsigned char* brightness_4,const unsigned char* brightness_5,
+	uint32_t img_height, uint32_t img_width, float* const depth_map,unsigned char * const brightness)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+
+
+
+		float pixel= 0;
+		pixel +=  brightness_0[offset];
+		pixel +=  brightness_1[offset];
+		pixel +=  brightness_2[offset];
+		pixel +=  brightness_3[offset];
+		pixel +=  brightness_4[offset];
+		pixel +=  brightness_5[offset];
+
+		pixel/= 6.0;
+
+
+		brightness[offset] = pixel;
+
+		if(brightness_0[offset] < 255)
+		{
+			// brightness[offset] = brightness_0[offset];
+			depth_map[offset] = depth_map_0[offset];
+		}
+
+		else if(brightness_1[offset] < 255)
+		{
+			// brightness[offset] = brightness_1[offset];
+			depth_map[offset] = depth_map_1[offset];
+		}
+		else if(brightness_2[offset] < 255)
+		{
+			// brightness[offset] = brightness_1[offset];
+			depth_map[offset] = depth_map_2[offset];
+		}
+		else if(brightness_3[offset] < 255)
+		{
+			// brightness[offset] = brightness_1[offset];
+			depth_map[offset] = depth_map_3[offset];
+		}
+		else if(brightness_4[offset] < 255)
+		{
+			// brightness[offset] = brightness_1[offset];
+			depth_map[offset] = depth_map_4[offset];
+		}
+		else
+		{	
+			// brightness[offset] = brightness_2[offset];
+			depth_map[offset] = depth_map_5[offset];
+		}
+
+
+	}
+}
+
+__global__ void parallel_cuda_merge_hdr_5(const float*  depth_map_0,const float*  depth_map_1,const float*  depth_map_2,
+	const float*  depth_map_3,const float*  depth_map_4,
+	const unsigned char* brightness_0,const unsigned char* brightness_1,const unsigned char* brightness_2,
+	const unsigned char* brightness_3,const unsigned char* brightness_4,
+	uint32_t img_height, uint32_t img_width, float* const depth_map,unsigned char * const brightness)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+
+
+
+		float pixel= 0;
+		pixel +=  brightness_0[offset];
+		pixel +=  brightness_1[offset];
+		pixel +=  brightness_2[offset];
+		pixel +=  brightness_3[offset];
+		pixel +=  brightness_4[offset];
+
+		pixel/= 5.0;
+
+
+		brightness[offset] = pixel;
+
+		if(brightness_0[offset] < 255)
+		{
+			// brightness[offset] = brightness_0[offset];
+			depth_map[offset] = depth_map_0[offset];
+		}
+
+		else if(brightness_1[offset] < 255)
+		{
+			// brightness[offset] = brightness_1[offset];
+			depth_map[offset] = depth_map_1[offset];
+		}
+		else if(brightness_2[offset] < 255)
+		{
+			// brightness[offset] = brightness_1[offset];
+			depth_map[offset] = depth_map_2[offset];
+		}
+		else if(brightness_3[offset] < 255)
+		{
+			// brightness[offset] = brightness_1[offset];
+			depth_map[offset] = depth_map_3[offset];
+		}
+		else
+		{	
+			// brightness[offset] = brightness_2[offset];
+			depth_map[offset] = depth_map_4[offset];
+		}
+
+
+	}
+}
+
+
+__global__ void parallel_cuda_merge_hdr_4(const float*  depth_map_0,const float*  depth_map_1,const float*  depth_map_2,const float*  depth_map_3,
+	const unsigned char* brightness_0,const unsigned char* brightness_1,const unsigned char* brightness_2,const unsigned char* brightness_3,
+	uint32_t img_height, uint32_t img_width, float* const depth_map,unsigned char * const brightness)
+	{
+		const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+		const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+		const unsigned int offset = idy * img_width + idx;
+	
+		if (idx < img_width && idy < img_height)
+		{
+	
+	
+	
+			float pixel= 0;
+			pixel +=  brightness_0[offset];
+			pixel +=  brightness_1[offset];
+			pixel +=  brightness_2[offset];
+			pixel +=  brightness_3[offset];
+	
+			pixel/= 4.0;
+	
+	
+			brightness[offset] = pixel;
+	
+			if(brightness_0[offset] < 255)
+			{
+				// brightness[offset] = brightness_0[offset];
+				depth_map[offset] = depth_map_0[offset];
+			}
+	
+			else if(brightness_1[offset] < 255)
+			{
+				// brightness[offset] = brightness_1[offset];
+				depth_map[offset] = depth_map_1[offset];
+			}
+			else if(brightness_2[offset] < 255)
+			{
+				// brightness[offset] = brightness_1[offset];
+				depth_map[offset] = depth_map_2[offset];
+			}
+			else
+			{	
+				// brightness[offset] = brightness_2[offset];
+				depth_map[offset] = depth_map_3[offset];
+			}
+	
+	
+		}
+	}
 
 __global__ void parallel_cuda_merge_hdr_3(const float*  depth_map_0,const float*  depth_map_1,const float*  depth_map_2,const unsigned char* brightness_0,const unsigned char* brightness_1,
 	const unsigned char* brightness_2,uint32_t img_height, uint32_t img_width, float* const depth_map,unsigned char * const brightness)
@@ -658,7 +868,7 @@ bool cuda_malloc_memory()
 		cudaMalloc((void**)&d_unwrap_map_list_hdr_2[i], image_height_*image_width_ * sizeof(float));
 	}
 
-	for (int i = 0; i< 3; i++)
+	for (int i = 0; i< D_HDR_MAX_NUM; i++)
 	{
 		cudaMalloc((void**)&d_hdr_depth_map_list_[i], image_height_*image_width_ * sizeof(float));
 		cudaMalloc((void**)&d_hdr_brightness_list_[i], image_height_*image_width_ * sizeof(unsigned char));
@@ -728,7 +938,7 @@ bool cuda_free_memory()
 		cudaFree(d_unwrap_map_list_hdr_2[i]);
 	}
 
-	for (int i = 0; i< 3; i++)
+	for (int i = 0; i< D_HDR_MAX_NUM; i++)
 	{ 
 		cudaFree(d_hdr_depth_map_list_[i]);
 		cudaFree(d_hdr_brightness_list_[i]);

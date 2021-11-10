@@ -736,21 +736,13 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
         return DF_FAILED;	
     }
 
-    LOG(INFO)<<"HDR Exposure:";
-
-    int led_current_h = brightness_current*2;
-    int led_current_m = brightness_current;
-    int led_current_l = brightness_current*0.3;
-
-    if(led_current_h > 1023)
+    LOG(INFO)<<"HDR Exposure:"; 
+  
+    std::vector<int> led_current_list; 
+    for(int i= 0;i< system_config_settings_machine_.Instance().config_param_.exposure_num;i++)
     {
-        led_current_h = 1023;
+        led_current_list.push_back(system_config_settings_machine_.Instance().config_param_.exposure_param[i]);
     }
-
-    std::vector<int> led_current_list;
-    led_current_list.push_back(led_current_h);
-    led_current_list.push_back(led_current_m);
-    led_current_list.push_back(led_current_l);
 
     int depth_buf_size = 1920*1200*4;  
     int brightness_buf_size = 1920*1200*1;
@@ -770,11 +762,12 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
 
         lc3010.pattern_mode03();
     
-        camera.captureFrame03ToGpu(); 
-
-
+        camera.captureFrame03ToGpu();   
         parallel_cuda_copy_result_to_hdr(i); 
     }
+
+    
+    lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
  
 	cudaDeviceSynchronize();
     parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
@@ -789,11 +782,10 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
     if(ret == DF_FAILED)
     {
         printf("send error, close this connection!\n");
-	// delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
-	
-	return DF_FAILED;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
     }
     
     printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
@@ -1151,6 +1143,12 @@ bool set_system_config(SystemConfigParam &rect_config_param)
  
     }
 
+    //set many exposure param
+    system_config_settings_machine_.Instance().config_param_.exposure_num = rect_config_param.exposure_num;
+
+    std::memcpy(system_config_settings_machine_.Instance().config_param_.exposure_param , rect_config_param.exposure_param,sizeof(rect_config_param.exposure_param));
+ 
+ 
 
     return true;
 }
@@ -1223,14 +1221,13 @@ int handle_set_camera_parameters(int client_sock)
 int handle_commands(int client_sock)
 {
     int command;
-    int ret = recv_command(client_sock, &command);
-    //std::cout<<"command:"<<command<<std::endl;
+    int ret = recv_command(client_sock, &command); 
     LOG(INFO)<<"command:"<<command;
     
     if(ret == DF_FAILED)
     {
         LOG(INFO)<<"connection command not received";
-	close(client_sock);
+	    close(client_sock);
         return DF_FAILED;
     }
 
@@ -1329,8 +1326,6 @@ int init()
 
     camera.openCamera();
     camera.warmupCamera();
-    //int brightness = 255;
-    //  int brightness = 800;
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
     cuda_malloc_memory();
     read_calib_param();
