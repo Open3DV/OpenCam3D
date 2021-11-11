@@ -24,7 +24,7 @@
 | Image Resolusion         |  1920x1200        |
 | Frame Rate               |  1fps             |
 | Baseline                 |  80mm             |
-| Working Distance         |  600 ~ 800mm      |
+| Working Distance         |  450 ~ 650mm      |
 | Data Interface           |  Ethernet         |
 | HFOV                     |  40°              |
 | VFOV                     |  23°              |
