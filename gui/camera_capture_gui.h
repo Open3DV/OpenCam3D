@@ -138,6 +138,7 @@ private:
 	 
 	QThread* capture_thread_;
 
+ 
 
 	bool start_timer_flag_;
 	QTimer capture_timer_;

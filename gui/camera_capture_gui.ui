@@ -178,7 +178,10 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,6">
+              <property name="spacing">
+               <number>60</number>
+              </property>
               <item>
                <widget class="QLabel" name="label_ip">
                 <property name="text">
@@ -189,7 +192,7 @@
               <item>
                <widget class="QPushButton" name="pushButton_connect">
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                   <horstretch>3</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
@@ -205,9 +208,7 @@
                 </property>
                 <property name="icon">
                  <iconset resource="dexforce_camera_gui.qrc">
-                  <normaloff>:/dexforce_camera_gui/image/connect.png</normaloff>
-                  <selectedoff>:/dexforce_camera_gui/image/disconnect.png</selectedoff>
-                  <selectedon>:/dexforce_camera_gui/image/connect.png</selectedon>:/dexforce_camera_gui/image/connect.png</iconset>
+                  <normaloff>:/dexforce_camera_gui/image/connect.png</normaloff>:/dexforce_camera_gui/image/connect.png</iconset>
                 </property>
                 <property name="iconSize">
                  <size>
