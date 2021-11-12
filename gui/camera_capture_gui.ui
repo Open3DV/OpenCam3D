@@ -47,7 +47,8 @@
           </property>
           <property name="icon">
            <iconset resource="dexforce_camera_gui.qrc">
-            <normaloff>:/dexforce_camera_gui/image/video_start.png</normaloff>:/dexforce_camera_gui/image/video_start.png</iconset>
+            <normaloff>:/dexforce_camera_gui/image/video_start.png</normaloff>
+            <normalon>:/dexforce_camera_gui/image/video_stop.png</normalon>:/dexforce_camera_gui/image/video_start.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -222,6 +223,11 @@
             </item>
             <item>
              <widget class="QLineEdit" name="lineEdit_ip">
+              <property name="font">
+               <font>
+                <pointsize>16</pointsize>
+               </font>
+              </property>
               <property name="frame">
                <bool>true</bool>
               </property>
@@ -270,6 +276,11 @@
            </item>
            <item row="6" column="0">
             <widget class="QSpinBox" name="spinBox_led">
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
              <property name="frame">
               <bool>true</bool>
              </property>
@@ -298,6 +309,11 @@
            </item>
            <item row="6" column="1">
             <widget class="QSpinBox" name="spinBox_exposure_num">
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
              <property name="buttonSymbols">
               <enum>QAbstractSpinBox::UpDownArrows</enum>
              </property>
@@ -326,6 +342,11 @@
            </item>
            <item row="4" column="0">
             <widget class="QSpinBox" name="spinBox_min_z">
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
              <property name="frame">
               <bool>true</bool>
              </property>
@@ -342,6 +363,11 @@
            </item>
            <item row="7" column="1">
             <widget class="QSpinBox" name="spinBox_confidence">
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
              <property name="maximum">
               <number>255</number>
              </property>
@@ -349,6 +375,11 @@
            </item>
            <item row="4" column="1">
             <widget class="QSpinBox" name="spinBox_max_z">
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
              <property name="frame">
               <bool>true</bool>
              </property>
@@ -363,15 +394,13 @@
              </property>
             </widget>
            </item>
-           <item row="8" column="0">
-            <widget class="QPushButton" name="pushButton_capture_many_frame">
-             <property name="text">
-              <string>多帧</string>
-             </property>
-            </widget>
-           </item>
            <item row="8" column="1">
             <widget class="QSpinBox" name="spinBox_multiframe">
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+              </font>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
@@ -380,6 +409,13 @@
              </property>
              <property name="singleStep">
               <number>3</number>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QPushButton" name="pushButton_capture_many_frame">
+             <property name="text">
+              <string>多帧</string>
              </property>
             </widget>
            </item>
