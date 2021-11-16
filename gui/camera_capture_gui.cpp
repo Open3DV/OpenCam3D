@@ -145,14 +145,15 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 
 
 	addLogMessage(QString::fromLocal8Bit("±£¥Êµ„‘∆£∫"));
-	QString points_str = path_name + ".xyz"; 
+	QString points_str = path_name + ".ply"; 
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 
 	depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
 
 
 	FileIoFunction file_io_machine;
-	file_io_machine.SavePointToTxt(points_map, points_str, brightness_map_);
+	//file_io_machine.SavePointToTxt(points_map, points_str, brightness_map_);
+	file_io_machine.SaveAsciiPointsToPly(points_map, points_str, brightness_map_);
 	addLogMessage(points_str);
 
 	return true;
