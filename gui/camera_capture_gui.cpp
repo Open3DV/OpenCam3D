@@ -9,7 +9,7 @@
 #include <QtWidgets/qfiledialog.h>
 #include <qheaderview.h>
 
-  
+   
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	: QWidget(parent)
@@ -60,7 +60,11 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	ui.spinBox_multiframe->hide();
 
 	ui.radioButton_depth_grey->hide();
-	 
+
+	/***************************************************************************************/
+	
+ 
+	/***************************************************************************************/
 }
 
 CameraCaptureGui::~CameraCaptureGui()
@@ -153,7 +157,7 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 
 	FileIoFunction file_io_machine;
 	//file_io_machine.SavePointToTxt(points_map, points_str, brightness_map_);
-	file_io_machine.SaveAsciiPointsToPly(points_map, points_str, brightness_map_);
+	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_);
 	addLogMessage(points_str);
 
 	return true;
