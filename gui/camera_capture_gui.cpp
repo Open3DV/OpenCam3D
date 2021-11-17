@@ -126,6 +126,12 @@ void CameraCaptureGui::addLogMessage(QString str)
 	ui.textBrowser_log->repaint();
 }
 
+
+void CameraCaptureGui::testThread(QString path_name)
+{
+	qDebug() << path_name;
+}
+
 bool CameraCaptureGui::saveOneFrameData(QString path_name)
 {
 	if (path_name.isEmpty())
@@ -136,29 +142,22 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 	QDir dir(path_name);
 	path_name = dir.absolutePath();
 
-
-	addLogMessage(QString::fromLocal8Bit("保存亮度图："));
+	 
 	QString brightness_str = path_name + ".bmp";
-	cv::imwrite(brightness_str.toStdString(), brightness_map_);
-	addLogMessage(brightness_str);
-
-	addLogMessage(QString::fromLocal8Bit("保存深度图："));
+	cv::imwrite(brightness_str.toStdString(), brightness_map_); 
+	 
 	QString depth_str = path_name + ".tiff";
-	cv::imwrite(depth_str.toStdString(), depth_map_);
-	addLogMessage(depth_str);
+	cv::imwrite(depth_str.toStdString(), depth_map_); 
 
-
-	addLogMessage(QString::fromLocal8Bit("保存点云："));
+	 
 	QString points_str = path_name + ".ply"; 
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 
 	depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
 
 
-	FileIoFunction file_io_machine;
-	//file_io_machine.SavePointToTxt(points_map, points_str, brightness_map_);
-	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_);
-	addLogMessage(points_str);
+	FileIoFunction file_io_machine; 
+	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_); 
 
 	return true;
 }
@@ -700,26 +699,12 @@ void CameraCaptureGui::do_pushButton_save_as()
 	QStringList str_list = path.split(".");
 
 	QString name = str_list[0];
+	 
 
-	saveOneFrameData(name);
-
-	//QString brightness_str = name + ".bmp";
-	//cv::imwrite(brightness_str.toStdString(), brightness_map_);
-
-	//QString depth_str = name + ".tiff";
-	//cv::imwrite(depth_str.toStdString(), depth_map_);
-
-
-	//QString points_str = name + ".txt";
-
-	//cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
-
-	//DfDepthTransformPointcloud(depth_map_, points_map);
-	// 
-
-	//FileIoFunction file_io_machine;
-	//file_io_machine.SavePointToTxt(points_map, points_str, brightness_map_);
-	qDebug() << name;
+	std::thread t_s(&CameraCaptureGui::saveOneFrameData,this,name);
+	t_s.detach(); 
+	addLogMessage(QString::fromLocal8Bit("保存路径：")+ name); 
+	 
 
 }
 
@@ -740,7 +725,11 @@ bool CameraCaptureGui::capture_one_frame_and_render()
 		{
 			QString StrCurrentTime = "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
 			QString path_name = sys_path_ + StrCurrentTime;
-			saveOneFrameData(path_name);
+			//saveOneFrameData(path_name);
+			  
+			std::thread t_s(&CameraCaptureGui::saveOneFrameData, this, path_name);
+			t_s.detach();
+			addLogMessage(QString::fromLocal8Bit("保存路径：") + path_name);
 		}
 	}
 	else

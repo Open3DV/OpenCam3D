@@ -41,6 +41,8 @@ public:
 
 	bool saveOneFrameData(QString path_name);
 
+	void testThread(QString path_name);
+
 	void addLogMessage(QString str); 
 
 	//更新多曝光参数
