@@ -60,6 +60,8 @@ private:
 
 	void undateSystemConfigUiData();
 	 
+signals:
+	void send_temperature_update(float val);
 
 public slots:
 

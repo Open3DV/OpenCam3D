@@ -17,6 +17,9 @@ public:
 
     bool setShowImages(cv::Mat brightness, cv::Mat depth);
 
+public slots:
+    void do_update_temperature(float val);
+
 protected:
     void closeEvent(QCloseEvent * e);
 
@@ -26,4 +29,6 @@ private:
     bool setUiData();
 
     ProcessingDataStruct processing_settings_data_;
+
+    QLabel* label_temperature_;
 };

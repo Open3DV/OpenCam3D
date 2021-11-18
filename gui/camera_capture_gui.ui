@@ -529,7 +529,7 @@
            <property name="font">
             <font>
              <family>微软雅黑</family>
-             <pointsize>12</pointsize>
+             <pointsize>10</pointsize>
             </font>
            </property>
           </widget>

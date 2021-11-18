@@ -8,6 +8,7 @@
 #include <iostream>
 #include <QMouseEvent>
 #include <QMessageBox>
+#include <QLabel>
 
 camera_gui::camera_gui(QWidget *parent)
 	: QMainWindow(parent)
@@ -26,14 +27,24 @@ camera_gui::camera_gui(QWidget *parent)
     //cv::Mat img_depth = cv::imread("G:/Code/GitCode/DF8/DF15_SDK/x64/Release/capture_data/frame03_data/0604/data_01.tiff", cv::IMREAD_UNCHANGED);
     //setShowImages(img_b, img_depth);
 
-
+    label_temperature_ = new QLabel(this); 
+    ui.statusBar->addPermanentWidget(label_temperature_);
      
+
+    connect(ui.tab_capture, SIGNAL(send_temperature_update(float)), this, SLOT(do_update_temperature(float)));
 }
 
 camera_gui::~camera_gui()
 {
 }
 
+
+void camera_gui::do_update_temperature(float val)
+{
+    QString str = QString::number(val) + QString::fromLocal8Bit(" ¡æ");
+
+    label_temperature_->setText(str);
+}
 
 void camera_gui::closeEvent(QCloseEvent* e)
 {

@@ -550,6 +550,12 @@ bool CameraCaptureGui::capture_one_frame_data()
 
 		addLogMessage(QString::fromLocal8Bit("采集完成！"));
   
+		float temperature = 0;
+		ret_code = DfGetDeviceTemperature(temperature);
+
+
+		emit send_temperature_update(temperature); 
+
 		return true;
 	}
 
