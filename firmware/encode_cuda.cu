@@ -1,6 +1,6 @@
 #include "encode_cuda.cuh"
-#include <opencv2/core.hpp> 
-#include <opencv2/imgcodecs.hpp>
+//#include <opencv2/core.hpp> 
+//#include <opencv2/imgcodecs.hpp>
 #include <device_launch_parameters.h>
 //#include <device_functions.h>
 #include <cuda_runtime.h>
