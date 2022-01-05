@@ -1133,7 +1133,7 @@ bool set_system_config(SystemConfigParam &rect_config_param)
     //set led current
     if(rect_config_param.led_current != system_config_settings_machine_.Instance().config_param_.led_current)
     { 
-        if(0<= rect_config_param.led_current && rect_config_param.led_current< 1024)
+        if(0<= rect_config_param.led_current && rect_config_param.led_current< 1023)
         {
             brightness_current = rect_config_param.led_current;
             lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
@@ -1298,7 +1298,13 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SET_CAMERA_PARAMETERS";
 	    handle_set_camera_parameters(client_sock);
         read_calib_param();
-	    break;
+        cuda_copy_calib_data(param.camera_intrinsic,
+                             param.projector_intrinsic,
+                             param.camera_distortion,
+                             param.projector_distortion,
+                             param.rotation_matrix,
+                             param.translation_matrix);
+        break;
 	case DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS:
 	    LOG(INFO)<<"DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS";
 	    handle_get_system_config_parameters(client_sock);
@@ -1338,6 +1344,7 @@ int init()
 			 param.translation_matrix);
 
     float temperature_val = read_temperature(0); 
+    LOG(INFO)<<"brightness_current: "<<brightness_current<<" deg";
     LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
 
     return DF_SUCCESS;
