@@ -43,10 +43,17 @@ public:
 
 	cv::Mat inv_image(cv::Mat img);
 
-	cv::Vec3f rotationMatrixToEulerAngles(cv::Mat& R);
-
+	cv::Vec3f rotationMatrixToEulerAngles(cv::Mat& R); 
 
 	bool findCircleBoardFeature(cv::Mat img, std::vector<cv::Point2f>& points);
+
+	cv::Size getBoardSize() {
+		return board_size_;
+	}
+
+	std::vector<cv::Point3f> generateAsymmetricWorldFeature(float width, float height);
+
+	std::vector<cv::Point3f> generateSymmetricWorldFeature(float width, float height);
 
 private:
 
