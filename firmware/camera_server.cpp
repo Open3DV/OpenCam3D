@@ -1298,6 +1298,12 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SET_CAMERA_PARAMETERS";
 	    handle_set_camera_parameters(client_sock);
         read_calib_param();
+            cuda_copy_calib_data(param.camera_intrinsic, 
+		         param.projector_intrinsic, 
+			 param.camera_distortion,
+	                 param.projector_distortion, 
+			 param.rotation_matrix, 
+			 param.translation_matrix);
 	    break;
 	case DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS:
 	    LOG(INFO)<<"DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS";

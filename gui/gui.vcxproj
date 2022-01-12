@@ -97,7 +97,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -115,6 +115,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\calibration\calibrate_function.cpp" />
     <ClCompile Include="camera_capture_gui.cpp" />
     <ClCompile Include="camera_gui.cpp" />
     <ClCompile Include="file_io_function.cpp" />
