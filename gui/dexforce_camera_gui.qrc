@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="dexforce_camera_gui">
+    <file>image/accuracy.png</file>
     <file>image/icon_logo64.svg</file>
     <file>image/video_start.png</file>
     <file>image/video_stop.png</file>

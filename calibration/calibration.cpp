@@ -146,7 +146,7 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 		if (found)
 		{
 			cv::Mat color_img;
-			cv::Size board_size(11, 9);
+			cv::Size board_size = calib_function.getBoardSize();
 			cv::cvtColor(img, color_img, cv::COLOR_GRAY2BGR);
 			cv::drawChessboardCorners(color_img, board_size, circle_points, found);
 

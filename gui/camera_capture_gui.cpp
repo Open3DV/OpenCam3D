@@ -8,7 +8,7 @@
 #include <QMouseEvent>
 #include <QtWidgets/qfiledialog.h>
 #include <qheaderview.h>
-
+#include "../calibration/calibrate_function.h"
    
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
@@ -62,8 +62,16 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	ui.radioButton_depth_grey->hide();
 
 	/***************************************************************************************/
-	
- 
+    //test
+	//float r[9] = { -0.99978244,  0.0029611 , -0.02064691 ,0.02065578,  0.00299494, -0.99978216,-0.00289862, -0.99999113, -0.00305545 };
+
+	//cv::Mat r_mat(3, 3, CV_32FC1, r);
+	//cv::Mat angle;
+
+	//cv::Mat t_r_mat = r_mat.t();
+
+	//cv::Rodrigues(r_mat, angle);
+  
 	/***************************************************************************************/
 }
 
@@ -99,6 +107,7 @@ bool CameraCaptureGui::initializeFunction()
 
 
 	connect(ui.pushButton_save_as, SIGNAL(clicked()), this, SLOT(do_pushButton_save_as()));
+	connect(ui.pushButton_test_accuracy, SIGNAL(clicked()), this, SLOT(do_pushButton_test_accuracy()));
 
 	connect(&capture_timer_, SIGNAL(timeout()), this, SLOT(do_timeout_slot()));
 	capture_timer_.setInterval(50);
@@ -565,6 +574,8 @@ bool CameraCaptureGui::capture_one_frame_data()
 }
  
 
+
+
 void  CameraCaptureGui::do_pushButton_connect()
 { 
 
@@ -594,6 +605,8 @@ void  CameraCaptureGui::do_pushButton_connect()
 				qDebug() << "Connect Error!;";
 				return;
 			}
+			DfGetCalibrationParam(camera_calibration_param_);
+	 
 
 			addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
 			//保存ip配置
@@ -687,6 +700,169 @@ void  CameraCaptureGui::do_pushButton_disconnect()
 }
 
 
+double CameraCaptureGui::computePointsDistance(cv::Point2f p_0, cv::Point2f p_1, cv::Mat point_cloud)
+{
+  
+	std::vector<cv::Mat> point_cloud_channels;
+	cv::split(point_cloud, point_cloud_channels); 
+
+	//插值
+	cv::Point3f f_p_0_inter, f_p_1_inter;
+
+	Calibrate_Function calib_function;
+	f_p_0_inter.x = calib_function.Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[0]);
+	f_p_0_inter.y = calib_function.Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[1]);
+	f_p_0_inter.z = calib_function.Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[2]);
+
+	f_p_1_inter.x = calib_function.Bilinear_interpolation(p_1.x, p_1.y, point_cloud_channels[0]);
+	f_p_1_inter.y = calib_function.Bilinear_interpolation(p_1.x, p_1.y, point_cloud_channels[1]);
+	f_p_1_inter.z = calib_function.Bilinear_interpolation(p_1.x, p_1.y, point_cloud_channels[2]);
+
+	cv::Point3f differ_p = f_p_1_inter - f_p_0_inter;
+	double differ_val = std::sqrtf(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
+
+	return differ_val;
+}
+
+void CameraCaptureGui::do_pushButton_test_accuracy()
+{
+	Calibrate_Function calib_function;
+
+	if (brightness_map_.empty() || brightness_map_.type() != CV_8UC1)
+	{
+		return;
+	}
+
+	cv::Mat cameraMatrix(3, 3, CV_32FC1, camera_calibration_param_.camera_intrinsic);
+	cv::Mat distCoeffs = cv::Mat(5, 1, CV_32F, camera_calibration_param_.camera_distortion);
+
+
+	cv::Mat img = brightness_map_.clone();
+	cv::Mat undist_img;
+	cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
+		 
+
+
+	/*******************************************************************************/
+	//PNP
+	if (true)
+	{
+		/*************************************************************************************/
+		//PNP精度
+
+		std::vector<cv::Point2f> circle_points;
+		bool found = calib_function.findCircleBoardFeature(img, circle_points);
+
+		if (found)
+		{
+			Calibrate_Function calib_machine;
+			std::vector<cv::Point3f> objects = calib_machine.generateAsymmetricWorldFeature(20.0, 10.0);
+
+			cv::Mat raux, taux;
+			std::vector<cv::Point2f> image_points_pro;
+
+			cv::solvePnP(objects, circle_points, cameraMatrix, distCoeffs, raux, taux, false, cv::SOLVEPNP_EPNP);
+			cv::projectPoints(objects, raux, taux, cameraMatrix, distCoeffs, image_points_pro);   //通过得到的摄像机内外参数，对角点的空间三维坐标进行重新投影计算
+			double err = cv::norm(cv::Mat(circle_points), cv::Mat(image_points_pro), cv::NORM_L2); 
+			//addLogMessage(QString::fromLocal8Bit("NORM_L2: ") + QString::number(err));
+
+			/*********************************************************************************/
+			//平均像素距离
+			double sumvalue = 0.0;
+			for (size_t i = 0; i < image_points_pro.size(); i++)
+			{ 
+				double x = image_points_pro[i].x - circle_points[i].x;
+				double y = image_points_pro[i].y - circle_points[i].y;
+				sumvalue += sqrt(x*x + y*y);
+			}
+			sumvalue /= image_points_pro.size(); 
+			addLogMessage(QString::fromLocal8Bit("偏差: ") + QString::number(sumvalue,'f',5) + QString::fromLocal8Bit(" 像素"));
+			/*********************************************************************************/
+
+			cv::Mat color_img;
+			cv::Size board_size = calib_function.getBoardSize();
+			cv::cvtColor(brightness_map_, color_img, cv::COLOR_GRAY2BGR);
+			cv::drawChessboardCorners(color_img, board_size, circle_points, found); 
+			//cv::circle(color_img, circle_points[0], 15, cv::Scalar(0, 255, 0), 2);
+			//cv::circle(color_img, circle_points[6], 20, cv::Scalar(0, 255, 0), 2);
+
+			render_image_brightness_ = color_img.clone();
+			showImage();
+		}
+		 
+
+		/*************************************************************************************/
+	}
+
+
+
+	/**********************************************************************************************/
+	//点距离
+	if (false)
+	{
+		 
+		std::vector<cv::Point2f> circle_points;
+		bool found = calib_function.findCircleBoardFeature(undist_img, circle_points);
+
+		if (!found)
+		{
+			return;
+		} 
+		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.)); 
+		depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
+
+
+		cv::Point2f f_p_0_0 = circle_points[0];
+		cv::Point2f f_p_0_1 = circle_points[6];
+
+		double dist_0 = computePointsDistance(f_p_0_0, f_p_0_1, points_map) - 120.0;
+
+		double max_err = std::abs(dist_0);
+
+		QString dist_str = QString::number(dist_0);
+
+		cv::Point2f f_p_1_0 = circle_points[6];
+		cv::Point2f f_p_1_1 = circle_points[76];
+
+		double dist_1 = computePointsDistance(f_p_1_0, f_p_1_1, points_map) - 100.0;
+		dist_str += " , ";
+		dist_str += QString::number(dist_1);
+
+		if (std::abs(dist_1) > max_err)
+		{
+			max_err = std::abs(dist_1);
+		}
+
+		cv::Point2f f_p_2_0 = circle_points[76];
+		cv::Point2f f_p_2_1 = circle_points[70];
+
+		double dist_2 = computePointsDistance(f_p_2_0, f_p_2_1, points_map) - 120.0;
+		dist_str += " , ";
+		dist_str += QString::number(dist_2);
+
+		if (std::abs(dist_2) > max_err)
+		{
+			max_err = std::abs(dist_2);
+		}
+
+		cv::Point2f f_p_3_0 = circle_points[70];
+		cv::Point2f f_p_3_1 = circle_points[0];
+
+		double dist_3 = computePointsDistance(f_p_3_0, f_p_3_1, points_map) - 100.0;
+		dist_str += " , ";
+		dist_str += QString::number(dist_3);
+
+		if (std::abs(dist_3) > max_err)
+		{
+			max_err = std::abs(dist_3);
+		}
+		 
+		//addLogMessage(QString::fromLocal8Bit("标定板距离：") + dist_str);
+		addLogMessage(QString::fromLocal8Bit("偏差：") + QString::number(max_err) + "mm");
+		 
+	}
+}
+
 void CameraCaptureGui::do_pushButton_save_as()
 {
 
@@ -779,6 +955,7 @@ void  CameraCaptureGui::do_timeout_slot()
  
 
 			bool ret = capture_one_frame_and_render();
+			//do_pushButton_test_accuracy();
 
 			if (!ret)
 			{

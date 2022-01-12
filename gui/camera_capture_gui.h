@@ -59,6 +59,8 @@ private:
 	bool renderBrightnessImage(cv::Mat brightness);
 
 	void undateSystemConfigUiData();
+
+	double computePointsDistance(cv::Point2f p_0, cv::Point2f p_1, cv::Mat point_cloud);
 	 
 signals:
 	void send_temperature_update(float val);
@@ -101,6 +103,8 @@ private slots:
 
 	void do_pushButton_capture_many_frame();
 
+	void do_pushButton_test_accuracy();
+
 	void do_pushButton_capture_continuous();
 
 	void do_spin_led_current_changed(int val);
@@ -136,6 +140,8 @@ private:
 
 	//相机系统配置参数
 	struct SystemConfigParam system_config_param_;
+	//相机标定参数
+	struct CameraCalibParam camera_calibration_param_;
 
 	QString last_path_;
 	QString sys_path_;
