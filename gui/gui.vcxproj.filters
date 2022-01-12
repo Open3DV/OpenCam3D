@@ -38,6 +38,9 @@
     <ClCompile Include="camera_capture_gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\calibration\calibrate_function.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="camera_gui.h">

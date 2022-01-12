@@ -471,6 +471,43 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 	int x2 = x1 + 1;
 	int y2 = y1 + 1;
 
+	if (CV_64FC1 == mapping.type())
+	{
+		double fq11 = mapping.at<double>(y1, x1);
+		double fq21 = mapping.at<double>(y1, x2);
+		double fq12 = mapping.at<double>(y2, x1);
+		double fq22 = mapping.at<double>(y2, x2);
+
+
+
+		double out = 0;
+
+		//if (fq11 > 0.5 && fq21 > 0.5 || fq12 > 0.5 || fq22 > 0.5)
+		//{
+			out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
+		//}
+
+		return out;
+	}
+	else if (CV_32FC1 == mapping.type())
+	{
+		double fq11 = mapping.at<float>(y1, x1);
+		double fq21 = mapping.at<float>(y1, x2);
+		double fq12 = mapping.at<float>(y2, x1);
+		double fq22 = mapping.at<float>(y2, x2);
+
+
+
+		double out = 0;
+
+		//if (fq11 > 0.5 && fq21 > 0.5 || fq12 > 0.5 || fq22 > 0.5)
+		//{
+			out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
+		//}
+
+		return out;
+	}
+
 	//row-y,col-x
 
 	//if (x1 == 1919) {
@@ -478,22 +515,9 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 	//	return out;
 	//}
 	//else {
-	double fq11 = mapping.at<double>(y1, x1);
-	double fq21 = mapping.at<double>(y1, x2);
-	double fq12 = mapping.at<double>(y2, x1);
-	double fq22 = mapping.at<double>(y2, x2);
 
 
-
-	double out = 0;
-
-	if (fq11 > 0.5 && fq21 > 0.5 || fq12 > 0.5 || fq22 > 0.5)
-	{
-		out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
-	}
-
-
-	return out;
+	 
 	//}
 
 
