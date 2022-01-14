@@ -8,6 +8,7 @@ find_package(CUDA REQUIRED)
 set(HOME /home/dexforce)
 
 message(${PROJECT_SOURCE_DIR})
+
 include_directories(${HOME}/opencv-4.4.0/include)
 include_directories(${HOME}/opencv-4.4.0/modules/core/include)
 include_directories(${HOME}/opencv-4.4.0/modules/highgui/include)
@@ -17,8 +18,7 @@ link_directories(${HOME}/opencv-4.4.0/build/lib)
 link_libraries(${HOME}/opencv-4.4.0/build/lib/libopencv_core.so.4.4)
 link_libraries(${HOME}/opencv-4.4.0/build/lib/libopencv_highgui.so.4.4)
 link_libraries(${HOME}/opencv-4.4.0/build/lib/libopencv_imgcodecs.so.4.4)
-
-
+  
 
 include_directories(/usr/local/cuda-10.2/targets/aarch64-linux/include/)
 link_libraries(/usr/lib/libgxiapi.so)

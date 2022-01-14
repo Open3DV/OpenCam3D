@@ -106,15 +106,19 @@ void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len
     buffer[10] = 0;
     buffer[11] = 0;
 
-    // Illumination Time = 11000us
-    buffer[12] = 0xf8;
-    buffer[13] = 0x2a;
+    // Illumination Time = 19000us
+    buffer[12] = 0x38;
+    buffer[13] = 0x4a;
     buffer[14] = 0x00;
     buffer[15] = 0x00;
 
-    // Pre-illumination Dark Time = 500us
-    buffer[16] = 0xf4;
-    buffer[17] = 0x01;
+    // Pre-illumination Dark Time = 1000us
+    // buffer[16] = 0xf4;
+    // buffer[17] = 0x01;
+    // buffer[18] = 0x00;
+    // buffer[19] = 0x00; 
+    buffer[16] = 0xb8;
+    buffer[17] = 0x0b;
     buffer[18] = 0x00;
     buffer[19] = 0x00;
 

@@ -61,13 +61,16 @@ float* d_projector_distortion_;
 float* d_rotation_matrix_;
 float* d_translation_matrix_;
 
-__device__ int d_dlp_width_ = 1280;
-__device__ int d_dlp_height_ = 720;
+__device__ int d_dlp_width_ = 1920;
+__device__ int d_dlp_height_ = 1200;
 __device__ float d_max_phase_ = 2* 3.1415926535;
 
 bool load_calib_data_flag_ = false;
 
 #define DF_PI 3.1415926535
+
+#define DLP_WIDTH_ 1920 
+#define DLP_HEIGHT_ 1200
 /*********************************************************************************/
 
 dim3 threadsPerBlock(8, 8);
@@ -240,30 +243,34 @@ bool parallel_cuda_reconstruct()
 
     // LOG(INFO)<<"unwrap_0";
 
-	// cv::Mat unwrap_0(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	// cudaMemcpy(unwrap_0.data, d_unwrap_map_list[0], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	cv::Mat unwrap_0(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	cudaMemcpy(unwrap_0.data, d_unwrap_map_list[0], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	// cv::Mat unwrap_1(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	// cudaMemcpy(unwrap_1.data, d_unwrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	cv::Mat unwrap_1(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	cudaMemcpy(unwrap_1.data, d_unwrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	// cv::Mat deep_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	// cudaMemcpy(deep_map.data, d_depth_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	cv::Mat deep_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	cudaMemcpy(deep_map.data, d_depth_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	// cv::Mat err_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	// cudaMemcpy(err_map.data, d_triangulation_error_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	cv::Mat err_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	cudaMemcpy(err_map.data, d_triangulation_error_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	// cv::Mat points_map(image_height_, image_width_, CV_32FC3, cv::Scalar(0));
-	// cudaMemcpy(points_map.data, d_point_cloud_map_, 3*image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	cv::Mat confidence_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	cudaMemcpy(confidence_map.data, d_confidence_list[2], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+
+	cv::Mat points_map(image_height_, image_width_, CV_32FC3, cv::Scalar(0));
+	cudaMemcpy(points_map.data, d_point_cloud_map_, 3*image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
  
 	
     // LOG(INFO)<<"copy data!";
 
-	// cv::imwrite("unwrap_map_0.tiff",unwrap_0);
-	// cv::imwrite("unwrap_map_1.tiff",unwrap_1);
-	// cv::imwrite("deep_map.tiff",deep_map);
-	// cv::imwrite("err_map.tiff",err_map);
-	// cv::imwrite("points_map.tiff",points_map);
+	cv::imwrite("unwrap_map_0.tiff",unwrap_0);
+	cv::imwrite("unwrap_map_1.tiff",unwrap_1);
+	cv::imwrite("deep_map.tiff",deep_map);
+	cv::imwrite("err_map.tiff",err_map);
+	cv::imwrite("points_map.tiff",points_map);
+	cv::imwrite("confidence_map.tiff",confidence_map);
 	
     // LOG(INFO)<<"rebuild data!";
 
@@ -1118,7 +1125,7 @@ bool cuda_unwrap_phase()
 			image_height_, image_width_, d_unwrap_map_list[i]);
 	}
 	
-	cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],32.0, d_unwrap_map_list[1],32.0*720/1280,
+	cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],32.0, d_unwrap_map_list[1],18,
 			image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
 	
 
@@ -1603,17 +1610,29 @@ __global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * 
 	{
 
 		/*****************************************************************************/
-
+ 
 		float temp = 0.5 + (rate * d_in_wrap_abs[idy * img_width + idx] - d_in_wrap_high[idy * img_width + idx]) / (DF_PI);
 		int k = temp;
-		d_out[idy * img_width + idx] = DF_PI*k + d_in_wrap_high[idy * img_width + idx];
+
+		// d_out[idy * img_width + idx] = DF_PI*k + d_in_wrap_high[idy * img_width + idx];
 
 
-		//float err = d_out[offset] - rate *d_in_wrap_abs[offset];
-		//if(abs(err)> 1)
-		//{
-		//	d_out[offset] = -10;
-		//}
+		float unwrap_value =  DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
+		float err = unwrap_value - (rate * d_in_wrap_abs[idy * img_width + idx]);
+		if(abs(err)> 0.8)
+		{
+			d_out[idy * img_width + idx] = -10.0; 
+		}
+		else
+		{ 
+			d_out[idy * img_width + idx] = unwrap_value;
+		}
+
+
+		 
+		
+
+
 
 		/******************************************************************/
 	}
@@ -1792,8 +1811,8 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 		triangulation(x_norm_L, y_norm_L, x_norm_R, y_norm_R, rotation_matrix, translation_matrix,
 			X_L, Y_L, Z_L, X_R, Y_R, Z_R, error);
-		if(confidence_map[serial_id] > 10 && error< 2.0)	
-		//if(confidence_map[serial_id] > 10 && error< 0.5 && dlp_x> 0.0 && dlp_y > 0.0)
+		// if(confidence_map[serial_id] > 10 && error< 2.0)	
+		if(confidence_map[serial_id] > 10 && error< 2 && dlp_x> 0.0 && dlp_y > 0.0)
 		{
 		    d_out_point_cloud_map[3 * serial_id + 0] = X_L;
 		    d_out_point_cloud_map[3 * serial_id + 1] = Y_L;
