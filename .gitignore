@@ -4,3 +4,4 @@ firmware/build
 *.ini
 *.log
 .vscode
+tools/patterns

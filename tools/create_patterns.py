@@ -12,11 +12,11 @@ with open(filename) as f:
     header_row = next(reader)
 
     n = 0
-    gray_offset = 0.5
+    gray_offset = 0.0
 
     for row in reader:
-        img_x = np.zeros([720, 1280, 3], dtype=np.uint8)
-        img_y = np.zeros([720, 1280, 3], dtype=np.uint8)
+        img_x = np.zeros([1080, 1920, 1], dtype=np.uint8)
+        img_y = np.zeros([1080, 1920, 1], dtype=np.uint8)
 
 
         direct = row[2]
@@ -28,15 +28,15 @@ with open(filename) as f:
         print('step:%d'% step)
 
         if "vertical" == direct:
-            for y_ in range(720):
-                for x_ in range(1280):
+            for y_ in range(1080):
+                for x_ in range(1920):
                     x = x_ + 0.5
                     y = y_ + 0.5
                     # p0 = -math.cos(x / period * PI * 2 + phase * 2*PI / step)
                     # p1 = -math.cos((x + 1) / period * PI * 2 + phase * 2*PI / step)
                     # img_x[y, x, :] = (p1 - p0) / (1 / period * PI * 2) * 120 + 127.0 + gray_offset
 
-                    img_x[y_, x_, :] = math.sin(x / period * PI * 2 + phase * 2*PI / step) * 120 + 127.0 + gray_offset
+                    img_x[y_, x_, :] = math.sin(x / period * PI * 2 + phase * 2*PI / step) * 128 + 127.0 + gray_offset
 
                     # if 4 == step:
                     #     img_x[y_, x_, :] = math.sin(x / period * PI * 2 + phase * PI / 2) * 120 + 127.0 + gray_offset
@@ -49,15 +49,15 @@ with open(filename) as f:
             n += 1
             print(n)
         elif "horizontal" == direct:
-            for y_ in range(720):
-                for x_ in range(1280):
+            for y_ in range(1080):
+                for x_ in range(1920):
                     x = x_ + 0.5
                     y = y_ + 0.5
                     # p0 = -math.cos(y / period * PI * 2 + phase * 2*PI / step)
                     # p1 = -math.cos((y + 1) / period * PI * 2 + phase * 2*PI / step)
                     # img_y[y, x, :] = (p1 - p0) / (1 / period * PI * 2) * 120 + 127.0 + gray_offset
 
-                    img_y[y_, x_, :] = math.sin(y / period * PI * 2 + phase * 2*PI / step) * 120 + 127.0 + gray_offset
+                    img_y[y_, x_, :] = math.sin(y / period * PI * 2 + phase * 2*PI / step) * 128 + 127.0 + gray_offset
                     # if 4 == step:
                     #     img_y[y_, x_, :] = math.sin(y / period * PI * 2 + phase * PI / 2) * 120 + 127.0 + gray_offset
                     # elif 6 == step:
@@ -70,9 +70,9 @@ with open(filename) as f:
             print(n)
 
     for pixel in [255, 200, 150, 100, 50, 0]:
-            img_p = np.zeros([720, 1280, 3], dtype=np.uint8)
-            for y_ in range(720):
-                for x_ in range(1280):
+            img_p = np.zeros([1080, 1920, 1], dtype=np.uint8)
+            for y_ in range(1080):
+                for x_ in range(1920):
                     img_p[y_, x_, :] = pixel
             cv2.imwrite('patterns/%02d_p.bmp' % n, img_p)
             n += 1

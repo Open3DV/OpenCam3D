@@ -323,7 +323,7 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 		/*******************************************************************************************************************************************/
 
 		float ver_period = ver_period_num;
-		float hor_period = hor_period_num * 720.0 / 1280.0;
+		float hor_period = hor_period_num * 0.5625;
 
 
 		unwrap_ver /= ver_period;
@@ -334,7 +334,13 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 
 		std::vector<cv::Point2f> dlp_points;
 
-		ret = calib_function.cameraPointsToDlp(select_board_points_list[g_i], unwrap_hor, unwrap_ver, 1, 1280, 720, dlp_points);
+		int dlp_width = 1920;
+		int dlp_height = 1200;
+
+		calib_function.fillThePhaseHole(unwrap_hor,true);
+		calib_function.fillThePhaseHole(unwrap_ver,false);
+
+		ret = calib_function.cameraPointsToDlp(select_board_points_list[g_i], unwrap_hor, unwrap_ver, 1, dlp_width, dlp_height, dlp_points);
 
 		if (!ret)
 		{

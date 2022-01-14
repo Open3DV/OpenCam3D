@@ -9,8 +9,12 @@ Calibrate_Function::Calibrate_Function()
 	board_size_.width = 7;
 	board_size_.height = 11;
 
-	dlp_width_ = 1280;
-	dlp_height_ = 720;
+	dlp_width_ = 1920;
+	dlp_height_ = 1200;
+
+
+	board_width_ = 40;
+	board_height_ = 20;
 }
 Calibrate_Function::~Calibrate_Function()
 {
@@ -247,7 +251,7 @@ double Calibrate_Function::calibrateStereo(std::vector<std::vector<cv::Point2f>>
 
 	for (int g_i = 0; g_i < camera_points_list.size(); g_i++)
 	{
-		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(20.0, 10.0);
+		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(board_width_, board_height_);
 		world_feature_points.push_back(objectCorners);
 	}
 
@@ -341,7 +345,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 	{
 		select_group.insert(std::pair<int, bool>(g_i, true));
 
-		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(20.0, 10.0);
+		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(board_width_, board_height_);
 		world_feature_points.push_back(objectCorners);
 	}
 
@@ -380,7 +384,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 	int max_series = -1;
 	double max_err = 0;
 
-	while (select_err > 0.2 && dlp_points_list.size() > 6)
+	while (select_err > 0.1 && dlp_points_list.size() > 6)
 	{
 		total_err = 0;
 
@@ -499,6 +503,105 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 
 }
 
+
+bool Calibrate_Function::fillThePhaseHole(cv::Mat& phase, bool is_hor)
+{
+	if (phase.empty())
+	{
+		return false;
+	}
+
+	if (is_hor)
+	{
+		for (int r = 1; r < phase.rows - 1; r++)
+		{
+			double* ptr = phase.ptr<double>(r);
+			for (int c = 1; c < phase.cols - 1; c++)
+			{
+				if (ptr[c] <= 0)
+				{
+
+					int c0 = c - 1;
+					int c2 = c + 1;
+
+					if (ptr[c0] > 0 && ptr[c2] > 0)
+					{
+						ptr[c] = (ptr[c0] + ptr[c2]) / 2.0;
+					}
+			 
+				}
+
+			}
+
+		}
+	}
+	else
+	{
+		for (int r = 1; r < phase.rows - 1; r++)
+		{
+			double* ptr = phase.ptr<double>(r);
+			for (int c = 1; c < phase.cols - 1; c++)
+			{
+				if (ptr[c] <= 0)
+				{
+ 
+					int r0 = r - 1;
+					int r2 = r + 1;
+
+					if ( r0 > 0 &&   r2 < phase.rows)
+					{
+
+						double* ptr_r0 = phase.ptr<double>(r0);
+						double* ptr_r2 = phase.ptr<double>(r2);
+
+						if (ptr_r0[c] > 0 && ptr_r2[c] > 0)
+						{
+							ptr[c] = (ptr_r0[c] + ptr_r2[c]) / 2.0;
+						}
+					}
+
+				}
+
+			}
+
+		}
+	}
+
+	//for (int r = 1; r < phase.rows-1; r++)
+	//{
+	//	double* ptr = phase.ptr<double>(r);
+	//	for (int c = 1; c < phase.cols -1; c++)
+	//	{
+	//		if (ptr[c] <= 0)
+	//		{
+
+	//			int c0 = c - 1;
+	//			int c2 = c + 1;
+	//			int r0 = r - 1;
+	//			int r2 = r + 1;
+
+	//			if (c0 > 0 && r0 > 0 && c2< phase.cols && r2 < phase.rows)
+	//			{
+
+	//				double* ptr_r0 = phase.ptr<double>(r0);
+	//				double* ptr_r2 = phase.ptr<double>(r2);
+
+	//				if (ptr[c0] > 0 && ptr[c2] > 0 && ptr_r0[c] > 0 && ptr_r2[c] > 0)
+	//				{
+	//					ptr[c] = (ptr[c0] + ptr[c2] + ptr_r0[c] + ptr_r2[c]) / 4.0;
+	//				}
+	//			}
+
+	//		}
+
+	//	}
+
+	//}
+
+	return true;
+}
+
+
 bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_points, cv::Mat unwrap_map_hor, cv::Mat unwrap_map_ver, int group_num, int dlp_width, int dlp_height, std::vector<cv::Point2f>& dlp_points)
 {
 	if (camera_points.empty() || !unwrap_map_hor.data || !unwrap_map_ver.data)
@@ -509,6 +612,11 @@ bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_point
 	dlp_points.clear();
 
 	double phase_max = 2 * CV_PI * std::pow(2.0, group_num - 1);
+
+	//cv::GaussianBlur(unwrap_map_hor, unwrap_map_hor, cv::Size(1, 3), 0, 0);
+	//cv::GaussianBlur(unwrap_map_ver, unwrap_map_ver, cv::Size(3, 1), 0, 0);
+
+
 
 	for (int p_i = 0; p_i < camera_points.size(); p_i++)
 	{
@@ -523,7 +631,7 @@ bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_point
 		double  hor_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_hor);
 		double  ver_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_ver);
 
-		if(hor_val< 0.5 || ver_val< 0.5)
+		if(hor_val< 0.0 || ver_val< 0.0)
 		{
 			ret = false;
 		}
@@ -614,7 +722,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 	{
 		select_group.insert(std::pair<int, bool>(g_i, true));
 
-		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(20.0, 10.0);
+		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(board_width_, board_height_);
 
 		world_feature_points.push_back(objectCorners);
 	}
@@ -646,7 +754,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 	int max_series = -1;
 	double max_err = 0;
 
-	while (select_err > 0.1 && camera_points_list.size() > 5)
+	while (select_err > 0.5 && camera_points_list.size() > 5)
 	{
 		total_err = 0;
 

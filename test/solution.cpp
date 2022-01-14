@@ -425,6 +425,19 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	reconstruct_machine_.setCalibData(calib_param);
 	 
 
+	//Read Unwrap Map
+
+	//cv::Mat read_unwrap_ver = cv::imread("../unwrap_map_0.tiff", cv::IMREAD_UNCHANGED);
+	//cv::Mat read_unwrap_hor = cv::imread("../unwrap_map_1.tiff", cv::IMREAD_UNCHANGED);
+
+	//read_unwrap_ver.convertTo(read_unwrap_ver, CV_64F);
+	//read_unwrap_hor.convertTo(read_unwrap_hor, CV_64F);
+
+	//encode_machine_.maskMap(unwrap_mask, read_unwrap_ver);
+	//encode_machine_.maskMap(unwrap_mask, read_unwrap_hor);
+
+	//ret = reconstruct_machine_.rebuildData(read_unwrap_ver, read_unwrap_hor, 1, deep_map);
+
 	ret = reconstruct_machine_.rebuildData(unwrap_ver, unwrap_hor, 1, deep_map);
 	if (!ret)
 	{

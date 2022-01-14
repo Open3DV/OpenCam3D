@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--patterns ./1202/calib --calib ./1202/param.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--patterns ./capture/calib --calib ./capture/calib/param.txt</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>--patterns ../Release/1202/calib/ --calib ../Release/1202/param.txt</LocalDebuggerCommandArguments>
