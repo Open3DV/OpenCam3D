@@ -1,6 +1,6 @@
 #include "encode_cuda.cuh"
-#include <opencv2/core.hpp> 
-#include <opencv2/imgcodecs.hpp>
+//#include <opencv2/core.hpp> 
+//#include <opencv2/imgcodecs.hpp>
 #include <device_launch_parameters.h>
 //#include <device_functions.h>
 #include <cuda_runtime.h>
@@ -243,34 +243,34 @@ bool parallel_cuda_reconstruct()
 
     // LOG(INFO)<<"unwrap_0";
 
-	cv::Mat unwrap_0(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	cudaMemcpy(unwrap_0.data, d_unwrap_map_list[0], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	//cv::Mat unwrap_0(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	//cudaMemcpy(unwrap_0.data, d_unwrap_map_list[0], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	cv::Mat unwrap_1(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	cudaMemcpy(unwrap_1.data, d_unwrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	//cv::Mat unwrap_1(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	//cudaMemcpy(unwrap_1.data, d_unwrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	cv::Mat deep_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	cudaMemcpy(deep_map.data, d_depth_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	//cv::Mat deep_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	//cudaMemcpy(deep_map.data, d_depth_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	cv::Mat err_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	cudaMemcpy(err_map.data, d_triangulation_error_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	//cv::Mat err_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	//cudaMemcpy(err_map.data, d_triangulation_error_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	cv::Mat confidence_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	cudaMemcpy(confidence_map.data, d_confidence_list[2], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	//cv::Mat confidence_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	//cudaMemcpy(confidence_map.data, d_confidence_list[2], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
-	cv::Mat points_map(image_height_, image_width_, CV_32FC3, cv::Scalar(0));
-	cudaMemcpy(points_map.data, d_point_cloud_map_, 3*image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	//cv::Mat points_map(image_height_, image_width_, CV_32FC3, cv::Scalar(0));
+	//cudaMemcpy(points_map.data, d_point_cloud_map_, 3*image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
  
 	
     // LOG(INFO)<<"copy data!";
 
-	cv::imwrite("unwrap_map_0.tiff",unwrap_0);
-	cv::imwrite("unwrap_map_1.tiff",unwrap_1);
-	cv::imwrite("deep_map.tiff",deep_map);
-	cv::imwrite("err_map.tiff",err_map);
-	cv::imwrite("points_map.tiff",points_map);
-	cv::imwrite("confidence_map.tiff",confidence_map);
+	//cv::imwrite("unwrap_map_0.tiff",unwrap_0);
+	//cv::imwrite("unwrap_map_1.tiff",unwrap_1);
+	//cv::imwrite("deep_map.tiff",deep_map);
+	//cv::imwrite("err_map.tiff",err_map);
+	//cv::imwrite("points_map.tiff",points_map);
+	//cv::imwrite("confidence_map.tiff",confidence_map);
 	
     // LOG(INFO)<<"rebuild data!";
 
