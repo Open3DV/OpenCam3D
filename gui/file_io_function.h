@@ -33,6 +33,10 @@ public:
 	bool saveDepthMapToTxt(cv::Mat points_cloud_mat, QString path);
 	//保存点云到txt文件
 	bool SavePointToTxt(cv::Mat deep_mat, QString path,cv::Mat texture_map = cv::Mat());
+	//保存Ascii点云到ply文件
+	bool SaveAsciiPointsToPly(cv::Mat deep_mat, QString path, cv::Mat texture_map = cv::Mat());
+	//保存Bin点云到ply文件
+	bool SaveBinPointsToPly(cv::Mat deep_mat, QString path, cv::Mat texture_map = cv::Mat());
 	//读标定文件 
 	bool readCalibXml(cv::Mat& camera_intrinsic, cv::Mat& project_intrinsic, cv::Mat& camera_distortion,
 		cv::Mat& projector_distortion, cv::Mat& rotation_matrix, cv::Mat& translation_matrix, cv::Mat &M_1, cv::Mat &M_2);

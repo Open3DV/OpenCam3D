@@ -10,17 +10,17 @@ DF_Reconstruct::DF_Reconstruct()
 	dlp_height_ = 720;
 
 
-	calib_path_ = "./param.txt";
+	//calib_path_ = "./param.txt";
 
 
-	bool ret = readCalibData(camera_intrinsic_, project_intrinsic_, camera_distortion_, projector_distortion_,
-		rotation_matrix_, translation_matrix_, M_1_, M_2_);
+	//bool ret = readCalibData(camera_intrinsic_, project_intrinsic_, camera_distortion_, projector_distortion_,
+	//	rotation_matrix_, translation_matrix_, M_1_, M_2_);
 
-	if (!ret)
-	{
-		std::cout << "C++ Read Calib Data Error" << std::endl;
-	}
- 
+	//if (!ret)
+	//{
+	//	std::cout << "C++ Read Calib Data Error" << std::endl;
+	//}
+ //
 
 	//FileIoFunction io_machine; 
 	// ret = io_machine.readCalibXml(camera_intrinsic_, project_intrinsic_, camera_distortion_,projector_distortion_,

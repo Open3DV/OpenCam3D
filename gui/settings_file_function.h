@@ -9,6 +9,8 @@ struct  ProcessingDataStruct
 
 	int low_z_value;
 	int high_z_value;
+
+	QString ip;
 	
   
 	bool loadFromSettings(const QString& f);

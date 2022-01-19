@@ -6,8 +6,8 @@
 
 Calibrate_Function::Calibrate_Function()
 {
-	board_size_.width = 11;
-	board_size_.height = 9;
+	board_size_.width = 7;
+	board_size_.height = 11;
 
 	dlp_width_ = 1280;
 	dlp_height_ = 720;
@@ -247,12 +247,7 @@ double Calibrate_Function::calibrateStereo(std::vector<std::vector<cv::Point2f>>
 
 	for (int g_i = 0; g_i < camera_points_list.size(); g_i++)
 	{
-		std::vector<cv::Point3f> objectCorners;
-		for (int i = 0; i < board_size_.height; i++) {
-			for (int j = 0; j < board_size_.width; j++) {
-				objectCorners.push_back(cv::Point3f(10 * i, 10 * j, 0.0f));
-			}
-		}
+		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(20.0, 10.0);
 		world_feature_points.push_back(objectCorners);
 	}
 
@@ -346,14 +341,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 	{
 		select_group.insert(std::pair<int, bool>(g_i, true));
 
-		std::vector<cv::Point3f> objectCorners;
-		for (int i = 0; i < board_size_.height; i++) {
-			for (int j = 0; j < board_size_.width; j++) {
-				objectCorners.push_back(cv::Point3f(25 * i, 25 * j, 0.0f));
-			}
-		}
-
-
+		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(20.0, 10.0);
 		world_feature_points.push_back(objectCorners);
 	}
 
@@ -483,6 +471,43 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 	int x2 = x1 + 1;
 	int y2 = y1 + 1;
 
+	if (CV_64FC1 == mapping.type())
+	{
+		double fq11 = mapping.at<double>(y1, x1);
+		double fq21 = mapping.at<double>(y1, x2);
+		double fq12 = mapping.at<double>(y2, x1);
+		double fq22 = mapping.at<double>(y2, x2);
+
+
+
+		double out = 0;
+
+		//if (fq11 > 0.5 && fq21 > 0.5 || fq12 > 0.5 || fq22 > 0.5)
+		//{
+			out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
+		//}
+
+		return out;
+	}
+	else if (CV_32FC1 == mapping.type())
+	{
+		double fq11 = mapping.at<float>(y1, x1);
+		double fq21 = mapping.at<float>(y1, x2);
+		double fq12 = mapping.at<float>(y2, x1);
+		double fq22 = mapping.at<float>(y2, x2);
+
+
+
+		double out = 0;
+
+		//if (fq11 > 0.5 && fq21 > 0.5 || fq12 > 0.5 || fq22 > 0.5)
+		//{
+			out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
+		//}
+
+		return out;
+	}
+
 	//row-y,col-x
 
 	//if (x1 == 1919) {
@@ -490,22 +515,9 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 	//	return out;
 	//}
 	//else {
-	double fq11 = mapping.at<double>(y1, x1);
-	double fq21 = mapping.at<double>(y1, x2);
-	double fq12 = mapping.at<double>(y2, x1);
-	double fq22 = mapping.at<double>(y2, x2);
 
 
-
-	double out = 0;
-
-	if (fq11 > 0.5 && fq21 > 0.5 || fq12 > 0.5 || fq22 > 0.5)
-	{
-		out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
-	}
-
-
-	return out;
+	 
 	//}
 
 
@@ -574,6 +586,45 @@ bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_point
 }
 
 
+std::vector<cv::Point3f> Calibrate_Function::generateSymmetricWorldFeature(float width, float height)
+{
+	std::vector<cv::Point3f> objectCorners;
+	for (int r = 0; r < board_size_.height; r++)
+	{
+		for (int c = 0; c < board_size_.width; c++)
+		{ 
+			objectCorners.push_back(cv::Point3f(width * c, height * r, 0.0f));
+		}
+	}
+
+	return objectCorners;
+}
+
+std::vector<cv::Point3f> Calibrate_Function::generateAsymmetricWorldFeature(float width, float height)
+{
+	std::vector<cv::Point3f> objectCorners;
+	for (int r = 0; r < board_size_.height; r++)
+	{
+		for (int c = 0; c < board_size_.width; c++)
+		{
+
+			if (0 == r% 2)
+			{
+
+				objectCorners.push_back(cv::Point3f(width * c , height * r, 0.0f));
+			}
+			else if (1 == r % 2)
+			{
+
+				objectCorners.push_back(cv::Point3f(width * c + 0.5 * width, height * r, 0.0f));
+			}
+			  
+		}
+	}
+
+	return objectCorners;
+}
+
 double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>> camera_points_list, std::map<int, bool>& select_group)
 {
 	select_group.clear();
@@ -587,13 +638,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 	{
 		select_group.insert(std::pair<int, bool>(g_i, true));
 
-		std::vector<cv::Point3f> objectCorners;
-		for (int i = 0; i < board_size_.height; i++) {
-			for (int j = 0; j < board_size_.width; j++) {
-				objectCorners.push_back(cv::Point3f(25 * i, 25 * j, 0.0f));
-			}
-		}
-
+		std::vector<cv::Point3f> objectCorners = generateAsymmetricWorldFeature(20.0, 10.0);
 
 		world_feature_points.push_back(objectCorners);
 	}
@@ -714,11 +759,13 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 }
 
 
+
+
 bool Calibrate_Function::findCircleBoardFeature(cv::Mat img, std::vector<cv::Point2f>& points)
 {
 	std::vector<cv::Point2f> circle_points;
-	cv::Mat img_inv = inv_image(img);
-	bool found = cv::findCirclesGrid(img_inv, board_size_, circle_points, cv::CALIB_CB_SYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING);
+	cv::Mat img_inv = inv_image(img); 
+	bool found = cv::findCirclesGrid(img_inv, board_size_, circle_points, cv::CALIB_CB_ASYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING);
 
 	if (!found)
 		return false;

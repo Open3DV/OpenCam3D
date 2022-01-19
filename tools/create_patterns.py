@@ -7,6 +7,8 @@ import os
 PI = 3.1415926
 filename = "pattern.csv"
 
+if not os.path.exists('patterns'):os.makedirs('patterns')
+
 with open(filename) as f:
     reader = csv.reader(f)
     header_row = next(reader)

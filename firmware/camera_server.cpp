@@ -18,6 +18,7 @@
 #include "lightcrafter3010.h"
 #include "easylogging++.h"
 #include "encode_cuda.cuh"
+#include "system_config_settings.h"
 
 
 INITIALIZE_EASYLOGGINGPP 
@@ -33,7 +34,19 @@ CameraDh camera;
 LightCrafter3010 lc3010;
 struct CameraCalibParam param;
 
-int brightness_current = 200;
+int brightness_current = 100;
+ 
+SystemConfigDataStruct system_config_settings_machine_;
+
+bool readSystemConfig()
+{
+    return system_config_settings_machine_.loadFromSettings("../system_config.ini");
+}
+
+bool saveSystemConfig()
+{
+    return system_config_settings_machine_.saveToSettings("../system_config.ini");
+}
 
 int heartbeat_check()
 {
@@ -714,7 +727,158 @@ int handle_cmd_get_frame_03_more_exposure(int client_sock)
     return DF_SUCCESS;
 }
 
+/*********************************************************************************************/
 
+int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    LOG(INFO)<<"HDR Exposure:"; 
+  
+    std::vector<int> led_current_list; 
+    for(int i= 0;i< system_config_settings_machine_.Instance().config_param_.exposure_num;i++)
+    {
+        led_current_list.push_back(system_config_settings_machine_.Instance().config_param_.exposure_param[i]);
+    }
+
+    int depth_buf_size = 1920*1200*4;  
+    int brightness_buf_size = 1920*1200*1;
+
+    float* depth_map = new float[depth_buf_size]; 
+    unsigned char* brightness = new unsigned char[brightness_buf_size];
+
+
+   std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
+
+    for(int i= 0;i< led_current_list.size();i++)
+    {
+        int led_current = led_current_list[i];
+        lc3010.SetLedCurrent(led_current,led_current,led_current);	
+        
+        std::cout << "set led: " << led_current << std::endl;
+
+        lc3010.pattern_mode03();
+    
+        camera.captureFrame03ToGpu();   
+        parallel_cuda_copy_result_to_hdr(i); 
+    }
+
+    
+    lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
+ 
+	cudaDeviceSynchronize();
+    parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
+
+    
+    /******************************************************************************/
+    //send data
+    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+    
+    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+    printf("brightness ret=%d\n", ret);
+
+    LOG(INFO)<<"Send Frame03";
+
+    float temperature = read_temperature(0);
+    
+    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+        
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    printf("frame sent!\n");
+    
+    delete [] depth_map;
+    delete [] brightness;
+    
+
+
+    return DF_SUCCESS;
+
+}
+
+int handle_cmd_get_frame_03_parallel(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int depth_buf_size = 1920*1200*4;
+    float* depth_map = new float[depth_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+
+
+    lc3010.pattern_mode03(); 
+    camera.captureFrame03ToGpu();
+  
+    int ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
+
+    
+    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    
+    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+    printf("brightness ret=%d\n", ret);
+
+    LOG(INFO)<<"Send Frame03";
+
+    float temperature = read_temperature(0);
+    
+    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    printf("frame sent!\n");
+    // delete [] buffer;
+    delete [] depth_map;
+    delete [] brightness;
+    return DF_SUCCESS;
+    
+
+}
    
 int handle_cmd_get_frame_03(int client_sock)
 {
@@ -942,6 +1106,86 @@ int handle_get_camera_parameters(int client_sock)
 
 }
 
+/*****************************************************************************************/
+//system config param 
+int handle_get_system_config_parameters(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	return DF_FAILED;
+    }
+
+    read_calib_param();
+	
+    int ret = send_buffer(client_sock, (char*)(&system_config_settings_machine_.Instance().config_param_), sizeof(system_config_settings_machine_.Instance().config_param_));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	return DF_FAILED;
+    }
+    return DF_SUCCESS;
+
+}
+
+bool set_system_config(SystemConfigParam &rect_config_param)
+{
+
+    //set led current
+    if(rect_config_param.led_current != system_config_settings_machine_.Instance().config_param_.led_current)
+    { 
+        if(0<= rect_config_param.led_current && rect_config_param.led_current< 1024)
+        {
+            brightness_current = rect_config_param.led_current;
+            lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
+
+            system_config_settings_machine_.Instance().config_param_.led_current = brightness_current;
+        }
+ 
+    }
+
+    //set many exposure param
+    system_config_settings_machine_.Instance().config_param_.exposure_num = rect_config_param.exposure_num;
+
+    std::memcpy(system_config_settings_machine_.Instance().config_param_.exposure_param , rect_config_param.exposure_param,sizeof(rect_config_param.exposure_param));
+ 
+ 
+
+    return true;
+}
+
+int handle_set_system_config_parameters(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	
+     
+
+    SystemConfigParam rect_config_param;
+
+
+    int ret = recv_buffer(client_sock, (char*)(&rect_config_param), sizeof(rect_config_param));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    bool ok = set_system_config(rect_config_param);    
+
+    if(!ok)
+    {
+        return DF_FAILED;
+    }
+
+    return DF_SUCCESS;
+
+}
+
+
+/*****************************************************************************************/
+
 int write_calib_param()
 {
     std::ofstream ofile;
@@ -949,7 +1193,7 @@ int write_calib_param()
     int n_params = sizeof(param)/sizeof(float);
     for(int i=0; i<n_params; i++)
     {
-	ofile<<(((float*)(&param))[i])<<std::endl;
+	    ofile<<(((float*)(&param))[i])<<std::endl;
     }
     ofile.close();
     return DF_SUCCESS;
@@ -977,14 +1221,13 @@ int handle_set_camera_parameters(int client_sock)
 int handle_commands(int client_sock)
 {
     int command;
-    int ret = recv_command(client_sock, &command);
-    //std::cout<<"command:"<<command<<std::endl;
+    int ret = recv_command(client_sock, &command); 
     LOG(INFO)<<"command:"<<command;
     
     if(ret == DF_FAILED)
     {
         LOG(INFO)<<"connection command not received";
-	close(client_sock);
+	    close(client_sock);
         return DF_FAILED;
     }
 
@@ -1025,15 +1268,14 @@ int handle_commands(int client_sock)
 	    break;
     case DF_CMD_GET_FRAME_HDR:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_HDR"; 
-    	handle_cmd_get_frame_03_more_exposure(client_sock);
+    	// handle_cmd_get_frame_03_more_exposure(client_sock);
+    	handle_cmd_get_frame_03_hdr_parallel(client_sock);
 	    break;
  
 	case DF_CMD_GET_FRAME_03:
-	    LOG(INFO)<<"DF_CMD_GET_FRAME_03"; 
-//	    camera.warmupCamera();
-//	    LOG(INFO)<<"Warmup Camera!";
-    	   // handle_cmd_get_frame_03_more_exposure(client_sock);
-    	     handle_cmd_get_frame_03(client_sock);
+	    LOG(INFO)<<"DF_CMD_GET_FRAME_03";  
+    	// handle_cmd_get_frame_03(client_sock);
+    	handle_cmd_get_frame_03_parallel(client_sock);
 	    break;
 	case DF_CMD_GET_POINTCLOUD:
 	    LOG(INFO)<<"DF_CMD_GET_POINTCLOUD";
@@ -1055,6 +1297,22 @@ int handle_commands(int client_sock)
 	case DF_CMD_SET_CAMERA_PARAMETERS:
 	    LOG(INFO)<<"DF_CMD_SET_CAMERA_PARAMETERS";
 	    handle_set_camera_parameters(client_sock);
+        read_calib_param();
+            cuda_copy_calib_data(param.camera_intrinsic, 
+		         param.projector_intrinsic, 
+			 param.camera_distortion,
+	                 param.projector_distortion, 
+			 param.rotation_matrix, 
+			 param.translation_matrix);
+	    break;
+	case DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS:
+	    LOG(INFO)<<"DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS";
+	    handle_get_system_config_parameters(client_sock);
+	    break;
+	case DF_CMD_SET_SYSTEM_CONFIG_PARAMETERS:
+	    LOG(INFO)<<"DF_CMD_SET_SYSTEM_CONFIG_PARAMETERS";
+	    handle_set_system_config_parameters(client_sock);
+        saveSystemConfig();
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
@@ -1067,13 +1325,17 @@ int handle_commands(int client_sock)
 
 int init()
 {
+
+    readSystemConfig();
+
+    brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
+
     camera.openCamera();
     camera.warmupCamera();
-    //int brightness = 255;
-    //  int brightness = 800;
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
     cuda_malloc_memory();
     read_calib_param();
+       
     cuda_copy_calib_data(param.camera_intrinsic, 
 		         param.projector_intrinsic, 
 			 param.camera_distortion,

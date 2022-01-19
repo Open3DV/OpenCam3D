@@ -1,6 +1,8 @@
 ﻿#include "file_io_function.h"
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+#include <iostream>
+#include <fstream>
 
 
 FileIoFunction::FileIoFunction()
@@ -1019,6 +1021,614 @@ bool FileIoFunction::saveDepthMapToTxt(cv::Mat points_cloud_mat, QString path)
 		
 
 		qDebug() << "Save depth map: " << path;
+	}
+
+	return true;
+}
+
+/*******************************************************************************************************/
+
+inline void write_fbin(std::ofstream& out, float val) {
+	out.write(reinterpret_cast<char*>(&val), sizeof(float));
+}
+ 
+inline void write_fbin(std::ofstream& out, unsigned char val) {
+	out.write(reinterpret_cast<char*>(&val), sizeof(unsigned char));
+}
+
+//保存Bin点云到ply文件
+bool FileIoFunction::SaveBinPointsToPly(cv::Mat deep_mat, QString path, cv::Mat texture_map)
+{
+
+	if (deep_mat.empty())
+	{
+		return false;
+	}
+
+	if (path.isEmpty())
+	{
+		return false;
+	}
+
+
+	QDir dir(path);
+	path = dir.absolutePath();
+
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		qDebug() << "Save points Error";
+		return false;
+	}
+	else
+	{
+
+		if (texture_map.data)
+		{
+
+			std::vector<cv::Vec3f> points_list;
+			std::vector<cv::Vec3b> color_list;
+
+
+
+			if (1 == texture_map.channels())
+			{
+
+				/****************************************************************************************************/
+
+				QString str = "";
+
+				if (CV_32FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+						uchar* ptr_color = texture_map.ptr<uchar>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c];
+								color[1] = ptr_color[c];
+								color[2] = ptr_color[c];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+							}
+
+						}
+					}
+				}
+				else if (CV_64FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+						uchar* ptr_color = texture_map.ptr<uchar>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c];
+								color[1] = ptr_color[c];
+								color[2] = ptr_color[c];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+
+				/*****************************************************************************************************/
+			}
+			else if (3 == texture_map.channels())
+			{
+				/****************************************************************************************************/
+
+				QString str = "";
+
+				if (CV_32FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+						cv::Vec3b* ptr_color = texture_map.ptr<cv::Vec3b>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c][2];
+								color[1] = ptr_color[c][1];
+								color[2] = ptr_color[c][0];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+				else if (CV_64FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+						cv::Vec3b* ptr_color = texture_map.ptr<cv::Vec3b>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c][2];
+								color[1] = ptr_color[c][1];
+								color[2] = ptr_color[c][0];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+
+				/*****************************************************************************************************/
+			}
+
+			QTextStream textStream(&file);
+			//Header 
+			textStream << "ply" << "\n";
+			textStream << "format binary_little_endian 1.0" << "\n";
+			textStream << "element vertex " << points_list.size() << "\n";
+			textStream << "property float x" << "\n";
+			textStream << "property float y" << "\n";
+			textStream << "property float z" << "\n";
+			textStream << "property uchar red" << "\n";
+			textStream << "property uchar green" << "\n";
+			textStream << "property uchar blue" << "\n";
+			textStream << "end_header" << "\n"; 
+
+			file.close();
+
+
+			/*********************************************************************************************************/
+			//以二进行制保存
+			std::ofstream outFile(path.toStdString(), std::ios::app | std::ios::binary);
+			 
+
+			for (int i = 0; i < points_list.size(); i++)
+			{
+				write_fbin(outFile, static_cast<float>(points_list[i][0]));
+				write_fbin(outFile, static_cast<float>(points_list[i][1]));
+				write_fbin(outFile, static_cast<float>(points_list[i][2]));
+				write_fbin(outFile, static_cast<unsigned char>(color_list[i][0]));
+				write_fbin(outFile, static_cast<unsigned char>(color_list[i][1]));
+				write_fbin(outFile, static_cast<unsigned char>(color_list[i][2]));
+			}
+			 
+
+			outFile.close();
+
+
+			/**********************************************************************************************************/
+
+		}
+		else
+		{
+
+			std::vector<cv::Vec3f> points_list;
+
+			if (CV_32FC3 == deep_mat.type())
+			{
+				for (int r = 0; r < deep_mat.rows; r++)
+				{
+					cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+					for (int c = 0; c < deep_mat.cols; c++)
+					{
+						if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+						{
+
+							cv::Vec3f point;
+
+							point[0] = ptr_dr[c][0];
+							point[1] = ptr_dr[c][1];
+							point[2] = ptr_dr[c][2];
+							points_list.push_back(point);
+
+						}
+
+					}
+				}
+			}
+			else if (CV_64FC3 == deep_mat.type())
+			{
+				for (int r = 0; r < deep_mat.rows; r++)
+				{
+					cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+					for (int c = 0; c < deep_mat.cols; c++)
+					{
+						if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+						{
+
+
+							cv::Vec3f point;
+
+							point[0] = ptr_dr[c][0];
+							point[1] = ptr_dr[c][1];
+							point[2] = ptr_dr[c][2];
+							points_list.push_back(point);
+
+						}
+
+					}
+				}
+			}
+
+			QTextStream textStream(&file);
+			//Header 
+			textStream << "ply" << "\n";
+			textStream << "format binary_little_endian 1.0" << "\n";
+			textStream << "element vertex " << points_list.size() << "\n";
+			textStream << "property float x" << "\n";
+			textStream << "property float y" << "\n";
+			textStream << "property float z" << "\n";
+			textStream << "end_header" << "\n";
+			file.close();
+
+			/*********************************************************************************************************/
+			//以二进行制保存
+			std::ofstream outFile(path.toStdString(), std::ios::app | std::ios::binary);
+
+			for (int i = 0; i < points_list.size(); i++)
+			{
+				write_fbin(outFile, static_cast<float>(points_list[i][0]));
+				write_fbin(outFile, static_cast<float>(points_list[i][1]));
+				write_fbin(outFile, static_cast<float>(points_list[i][2])); 
+			}
+
+
+			outFile.close();
+
+
+			/**********************************************************************************************************/
+		}
+
+		qDebug() << "Save points" << path;
+	}
+
+	return true;
+}
+
+//保存Ascii点云到ply文件
+bool FileIoFunction::SaveAsciiPointsToPly(cv::Mat deep_mat, QString path, cv::Mat texture_map)
+{
+	if (deep_mat.empty())
+	{
+		return false;
+	}
+
+	if (path.isEmpty())
+	{
+		return false;
+	}
+
+
+	QDir dir(path);
+	path = dir.absolutePath();
+
+	QFile file(path);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		qDebug() << "Save points Error";
+		return false;
+	}
+	else
+	{
+
+		if (texture_map.data)
+		{
+
+			std::vector<cv::Vec3f> points_list;
+			std::vector<cv::Vec3b> color_list;
+			 
+
+
+			if (1 == texture_map.channels())
+			{
+
+				/****************************************************************************************************/
+
+				QString str = ""; 
+
+				if (CV_32FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+						uchar* ptr_color = texture_map.ptr<uchar>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c];
+								color[1] = ptr_color[c];
+								color[2] = ptr_color[c];
+
+								points_list.push_back(point);
+								color_list.push_back(color); 
+							}
+
+						}
+					}
+				}
+				else if (CV_64FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+						uchar* ptr_color = texture_map.ptr<uchar>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c];
+								color[1] = ptr_color[c];
+								color[2] = ptr_color[c];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+				 
+				/*****************************************************************************************************/
+			}
+			else if (3 == texture_map.channels())
+			{
+				/****************************************************************************************************/
+				 
+				QString str = "";
+
+				if (CV_32FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+						cv::Vec3b* ptr_color = texture_map.ptr<cv::Vec3b>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c][2];
+								color[1] = ptr_color[c][1];
+								color[2] = ptr_color[c][0];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+				else if (CV_64FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+						cv::Vec3b* ptr_color = texture_map.ptr<cv::Vec3b>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{  
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c][2];
+								color[1] = ptr_color[c][1];
+								color[2] = ptr_color[c][0]; 
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+				  
+				/*****************************************************************************************************/
+			}
+
+			QTextStream textStream(&file); 
+			//Header 
+			textStream << "ply" << "\n";
+			textStream << "format ascii 1.0" << "\n";
+			textStream << "element vertex " << points_list.size() << "\n";
+			textStream << "property float x" << "\n";
+			textStream << "property float y" << "\n";
+			textStream << "property float z" << "\n";
+			textStream << "property uchar red" << "\n";
+			textStream << "property uchar green" << "\n";
+			textStream << "property uchar blue" << "\n";
+			textStream << "end_header" << "\n";
+
+			for (int i = 0; i < points_list.size(); i++)
+			{
+				QString str = "";
+				str += QString::number(points_list[i][0]);
+				str += " ";						   
+				str += QString::number(points_list[i][1]);
+				str += " ";						   
+				str += QString::number(points_list[i][2]);
+				str += " ";
+				str += QString::number(color_list[i][0]);
+				str += " ";
+				str += QString::number(color_list[i][1]);
+				str += " ";
+				str += QString::number(color_list[i][2]);
+				str += "\n";
+				textStream << str;
+			}
+
+			file.close();
+
+
+		}
+		else
+		{
+ 
+			std::vector<cv::Vec3f> points_list; 
+
+			if (CV_32FC3 == deep_mat.type())
+			{
+				for (int r = 0; r < deep_mat.rows; r++)
+				{
+					cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+					for (int c = 0; c < deep_mat.cols; c++)
+					{
+						if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+						{
+
+							cv::Vec3f point; 
+
+							point[0] = ptr_dr[c][0];
+							point[1] = ptr_dr[c][1];
+							point[2] = ptr_dr[c][2]; 
+							points_list.push_back(point); 
+
+						}
+
+					}
+				}
+			}
+			else if (CV_64FC3 == deep_mat.type())
+			{
+				for (int r = 0; r < deep_mat.rows; r++)
+				{
+					cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+					for (int c = 0; c < deep_mat.cols; c++)
+					{
+						if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+						{
+
+
+							cv::Vec3f point;
+
+							point[0] = ptr_dr[c][0];
+							point[1] = ptr_dr[c][1];
+							point[2] = ptr_dr[c][2];
+							points_list.push_back(point);
+
+						}
+
+					}
+				}
+			}
+
+			QTextStream textStream(&file);
+			//Header 
+			textStream << "ply" << "\n";
+			textStream << "format ascii 1.0" << "\n";
+			textStream << "element vertex " << points_list.size() << "\n";
+			textStream << "property float x" << "\n";
+			textStream << "property float y" << "\n";
+			textStream << "property float z" << "\n"; 
+			textStream << "end_header" << "\n";
+
+			for (int i = 0; i < points_list.size(); i++)
+			{
+				QString str = "";
+				str += QString::number(points_list[i][0]);
+				str += " ";
+				str += QString::number(points_list[i][1]);
+				str += " ";
+				str += QString::number(points_list[i][2]); 
+				str += "\n";
+				textStream << str;
+			}
+
+			file.close(); 
+		}
+		 
+		qDebug() << "Save points" << path;
 	}
 
 	return true;

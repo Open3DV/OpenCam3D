@@ -1,6 +1,7 @@
 #include "camera_dh.h"
 #include "lightcrafter3010.h"
 #include "easylogging++.h"
+#include "encode_cuda.cuh"
 
 extern LightCrafter3010 lc3010;
 
@@ -14,6 +15,111 @@ CameraDh::CameraDh()
 CameraDh::~CameraDh()
 {
 }
+
+/******************************************************************************************************/
+
+//gpu parallel
+bool CameraDh::captureFrame03ToGpu()
+{
+    switchToScanMode();
+  
+    PGX_FRAME_BUFFER pFrameBuffer; 
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
+    status = GXStreamOn(hDevice_);
+
+ 
+
+    int n = 0;
+    if (status == GX_STATUS_SUCCESS)
+    {
+        lc3010.start_pattern_sequence();
+        for (int i = 0; i < 31; i++)
+        {
+            LOG(INFO) << "receiving " << i << "th image";
+            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+            LOG(INFO) << "status=" << status;
+            if (status == GX_STATUS_SUCCESS)
+            {
+                if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
+                {
+                    int img_rows = pFrameBuffer->nHeight;
+                    int img_cols = pFrameBuffer->nWidth;
+                    int img_size = img_rows * img_cols;
+                    // memcpy(buffer + img_size * i, pFrameBuffer->pImgBuf, img_size);
+                    parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,i);
+                }
+
+                
+                status = GXQBuf(hDevice_, pFrameBuffer);
+
+                //copy to gpu
+                switch (i)
+                {
+                case 4:
+                {  
+                    parallel_cuda_compute_phase(0);
+                }
+                break;
+                case 8:
+                {  
+                    parallel_cuda_compute_phase(1);
+                    parallel_cuda_unwrap_phase(1);
+                }
+                break;
+                case 12:
+                {  
+                    parallel_cuda_compute_phase(2);
+                    parallel_cuda_unwrap_phase(2);
+                }
+                break;
+                case 18:
+                {  
+                    parallel_cuda_compute_phase(3);
+                    parallel_cuda_unwrap_phase(3);
+                    
+                }
+                break;
+                case 21:
+                {  
+                    parallel_cuda_compute_phase(4);
+                }
+                break;
+                case 25:
+                {  
+                    parallel_cuda_compute_phase(5);
+                    parallel_cuda_unwrap_phase(5);
+                     
+                }
+                break;
+                case 30:
+                {  
+                    parallel_cuda_compute_phase(6);
+                    parallel_cuda_unwrap_phase(6);
+                    
+	                // cudaDeviceSynchronize();
+                	parallel_cuda_reconstruct();
+                }
+                break;
+
+                default:
+                    break;
+                }
+ 
+            }
+        }
+    }
+    else
+    {
+        false;
+    }
+
+ 
+    status = GXStreamOff(hDevice_); 
+    return true;
+}
+
+/******************************************************************************************************/
 
 bool CameraDh::closeCamera()
 {

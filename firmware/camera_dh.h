@@ -15,16 +15,22 @@ public:
 	bool warmupCamera();
 
 	bool captureSingleImage(char* buffer);
+
 	bool captureRawPhaseImages(char* buffer);
 
 	bool captureRawTest(int num,char* buffer);
 
 	bool switchToSingleShotMode();
+
 	bool switchToScanMode();
 
 	bool getExpose(double &value);
 
 	bool setExpose(double value);
+
+	/********************************************************************/
+	//gpu parallel
+	bool captureFrame03ToGpu();
 
 private:
 

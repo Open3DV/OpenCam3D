@@ -1,3 +1,7 @@
 x64
 .vs
 firmware/build
+*.ini
+*.log
+.vscode
+tools/patterns

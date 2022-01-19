@@ -33,14 +33,22 @@ public:
 
 	bool capture_one_frame_data();
 
+	bool capture_one_frame_and_render();
+
 	bool capture_brightness();
 
 	bool initializeFunction();
 
 	bool saveOneFrameData(QString path_name);
 
-	void addLogMessage(QString str);
+	void testThread(QString path_name);
 
+	void addLogMessage(QString str); 
+
+	//更新多曝光参数
+	void update_many_exposure_param();
+
+	bool many_exposure_param_has_changed();
 private:
 	bool showImage();
 
@@ -49,6 +57,13 @@ private:
 	bool renderDepthImage(cv::Mat depth);
 
 	bool renderBrightnessImage(cv::Mat brightness);
+
+	void undateSystemConfigUiData();
+
+	double computePointsDistance(cv::Point2f p_0, cv::Point2f p_1, cv::Mat point_cloud);
+	 
+signals:
+	void send_temperature_update(float val);
 
 public slots:
 
@@ -59,19 +74,21 @@ public slots:
 
 
 private slots:
-	void on_QRadioButton_toggled_brightness(bool state);
+	void do_QRadioButton_toggled_brightness(bool state);
 
-	void on_QRadioButton_toggled_color_depth(bool state);
+	void do_QRadioButton_toggled_color_depth(bool state);
 
-	void on_QRadioButton_toggled_gray_depth(bool state);
+	void do_QRadioButton_toggled_gray_depth(bool state);
 
-	void add_exposure_item(double val);
+	void add_exposure_item(int row,int col,int val);
 
 	bool remove_exposure_item(int row);  
 
 	double get_exposure_item_value(int row);
 
 private slots:
+	void do_checkBox_toggled_hdr(bool state);
+
 	void do_spin_exposure_num_changed(int val);
 
 	void do_spin_min_z_changed(int val);
@@ -86,18 +103,26 @@ private slots:
 
 	void do_pushButton_capture_many_frame();
 
+	void do_pushButton_test_accuracy();
+
 	void do_pushButton_capture_continuous();
+
+	void do_spin_led_current_changed(int val);
+	  
 
 	/******************************************************************************************/
 
 	void do_pushButton_save_as();
+
+	 
 
 private:
 	Ui::CameraCaptureGui ui;
 
 	ProcessingDataStruct processing_settings_data_;
 
-	std::vector<QDoubleSpinBox*> exposure_time_list_;
+	//6个exposure输入框
+	std::vector<QSpinBox*> exposure_time_list_;
 
 	int radio_button_flag_;
 
@@ -113,14 +138,22 @@ private:
 	int camera_width_;
 	int camera_height_;
 
+	//相机系统配置参数
+	struct SystemConfigParam system_config_param_;
+	//相机标定参数
+	struct CameraCalibParam camera_calibration_param_;
+
 	QString last_path_;
 	QString sys_path_;
 	 
 	QThread* capture_thread_;
 
+ 
 
 	bool start_timer_flag_;
 	QTimer capture_timer_;
+
+	QString camera_ip_;
  
 
 };
