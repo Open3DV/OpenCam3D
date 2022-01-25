@@ -107,7 +107,10 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 	std::vector<std::vector<std::string>> files_list;
 	getFilesList(path, files_list);
 
+	std::vector<std::string> current_folder_list;
+	getJustCurrentDir(path, current_folder_list);
 
+  
 	if (files_list.empty())
 	{
 		std::cout << "Read Images error!" << std::endl;
@@ -115,6 +118,9 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 	}
 
 	std::cout << "Start Read Board Images...... " << std::endl;
+
+	//文件夹路径
+	std::vector<std::string> folder_list;
 
 	//读取标定板图像
 	std::vector<cv::Mat> board_images_list;
@@ -124,7 +130,7 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 
 		cv::Mat board_img = cv::imread(g_image_list.back(), 0);
 		board_images_list.push_back(board_img);
-
+		folder_list.push_back(current_folder_list[b_i]);
 	}
 
 	std::cout << "Board Images Number: "<< board_images_list.size() << std::endl;
@@ -150,9 +156,15 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 			cv::cvtColor(img, color_img, cv::COLOR_GRAY2BGR);
 			cv::drawChessboardCorners(color_img, board_size, circle_points, found);
 
-			std::string board_path = path + "/" + std::to_string(g_i) + "_draw.bmp"; 
+			std::vector<std::string> str_list = vStringSplit(folder_list[g_i], "/"); 
+
+			std::string board_path = path + "/" + str_list.back() + "_draw.bmp";
 			cv::imwrite(board_path, color_img);
 
+			if (0 == calib_function.testOverExposure(img, circle_points))
+			{ 
+				std::cout << "over exposure: " << folder_list[g_i] << std::endl;
+			}
 
 			select_images_path_list_base_board.push_back(g_image_list);
 			board_points_list.push_back(circle_points);
@@ -183,6 +195,7 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 	std::vector<std::vector<cv::Point2f>> select_board_points_list;
 	std::vector<std::vector<cv::Point2f>> dlp_points_list;
 	std::vector<std::vector<cv::Point3f>> world_points_list;
+	std::vector<std::string> select_folder_list;
 
 	for (int g_i = 0; g_i < select_group.size(); g_i++)
 	{
@@ -190,6 +203,7 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 		{
 			select_images_path_list_base_camera.push_back(select_images_path_list_base_board[g_i]);
 			select_board_points_list.push_back(board_points_list[g_i]);
+			select_folder_list.push_back(folder_list[g_i]);
 		}
 	}
 
@@ -338,7 +352,7 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 
 		if (!ret)
 		{
-			//std::cout << "phase compute error group: " << g_i << std::endl;
+			std::cout << "Bad Patterns: " << select_folder_list[g_i] << std::endl; 
 			select_group_flag_base_phase.push_back(false);
 		}
 		else
@@ -400,9 +414,9 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 	//对筛选出来的图像进行立体标定
 	double stereo_err = calib_function.calibrateStereo(select_camera_points_list, select_dlp_points_list,calib_path);
 
-
-	std::cout << "Calibrate Stereo Error: " << stereo_err << std::endl;
-	std::cout << "Calibrate Finished." << std::endl;
+	  
+	std::cout << "Reprojection Error: " << stereo_err << std::endl;
+	std::cout << "Reprojection Error should be less than 0.1......" << std::endl;
 
 	//cv::destroyAllWindows();
 

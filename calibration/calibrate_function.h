@@ -47,6 +47,8 @@ public:
 
 	bool findCircleBoardFeature(cv::Mat img, std::vector<cv::Point2f>& points);
 
+	int testOverExposure(cv::Mat img, std::vector<cv::Point2f> points);
+
 	cv::Size getBoardSize() {
 		return board_size_;
 	}

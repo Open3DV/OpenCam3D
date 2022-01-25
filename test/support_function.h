@@ -22,6 +22,7 @@ using namespace std::chrono;
 //	_fsize_t size;
 //	char name[_MAX_FNAME];
 //};
+std::vector<std::string> vStringSplit(const std::string& s, const std::string& delim);
 
 bool getFilesList(std::string dirs, std::vector<std::vector<std::string>>& files_list);
 
