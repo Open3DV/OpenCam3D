@@ -120,6 +120,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
     <ClCompile Include="camera_gui.cpp" />
     <ClCompile Include="file_io_function.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PrecisionTest.cpp" />
     <ClCompile Include="settings_file_function.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +131,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
     <QtMoc Include="camera_gui.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PrecisionTest.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="camera_capture_gui.h" />
     <ClInclude Include="file_io_function.h" />

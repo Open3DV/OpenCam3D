@@ -157,8 +157,11 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 
 			std::vector<std::string> str_list = vStringSplit(folder_list[g_i], "/"); 
 
-			std::string board_path = path + "/" + str_list.back() + "_draw.bmp";
+			std::string board_path = path + "/" + std::to_string(g_i) + "_draw.bmp";
+			//std::string img_path = path + "/" + std::to_string(g_i) + "_board.bmp";
 			cv::imwrite(board_path, color_img);
+			//cv::imwrite(img_path, img);
+			 
 
 			if (0 == calib_function.testOverExposure(img, circle_points))
 			{ 

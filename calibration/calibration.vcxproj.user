@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--patterns ./capture/calib --calib ./capture/calib/param.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments> --patterns .\2022-01-26\capture\ --calib .\2022-01-26\capture\param.txt</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>--patterns ../Release/capture/calib/ --calib ../Release/capture/param.txt</LocalDebuggerCommandArguments>

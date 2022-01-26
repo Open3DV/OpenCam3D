@@ -9,7 +9,7 @@
 #include <QtWidgets/qfiledialog.h>
 #include <qheaderview.h>
 #include "../calibration/calibrate_function.h"
-   
+#include "PrecisionTest.h"
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	: QWidget(parent)
@@ -740,12 +740,12 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	cv::Mat img = brightness_map_.clone();
 	cv::Mat undist_img;
 	cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
-		 
+
 
 
 	/*******************************************************************************/
 	//PNP
-	if (true)
+	if (false)
 	{
 		/*************************************************************************************/
 		//PNP精度
@@ -763,35 +763,108 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 
 			cv::solvePnP(objects, circle_points, cameraMatrix, distCoeffs, raux, taux, false, cv::SOLVEPNP_EPNP);
 			cv::projectPoints(objects, raux, taux, cameraMatrix, distCoeffs, image_points_pro);   //通过得到的摄像机内外参数，对角点的空间三维坐标进行重新投影计算
-			double err = cv::norm(cv::Mat(circle_points), cv::Mat(image_points_pro), cv::NORM_L2); 
+			double err = cv::norm(cv::Mat(circle_points), cv::Mat(image_points_pro), cv::NORM_L2);
 			//addLogMessage(QString::fromLocal8Bit("NORM_L2: ") + QString::number(err));
 
 			/*********************************************************************************/
 			//平均像素距离
 			double sumvalue = 0.0;
 			for (size_t i = 0; i < image_points_pro.size(); i++)
-			{ 
+			{
 				double x = image_points_pro[i].x - circle_points[i].x;
 				double y = image_points_pro[i].y - circle_points[i].y;
-				sumvalue += sqrt(x*x + y*y);
+				sumvalue += sqrt(x * x + y * y);
 			}
-			sumvalue /= image_points_pro.size(); 
-			addLogMessage(QString::fromLocal8Bit("偏差: ") + QString::number(sumvalue,'f',5) + QString::fromLocal8Bit(" 像素"));
+			sumvalue /= image_points_pro.size();
+			addLogMessage(QString::fromLocal8Bit("偏差: ") + QString::number(sumvalue, 'f', 5) + QString::fromLocal8Bit(" 像素"));
 			/*********************************************************************************/
 
 			cv::Mat color_img;
 			cv::Size board_size = calib_function.getBoardSize();
 			cv::cvtColor(brightness_map_, color_img, cv::COLOR_GRAY2BGR);
-			cv::drawChessboardCorners(color_img, board_size, circle_points, found); 
+			cv::drawChessboardCorners(color_img, board_size, circle_points, found);
 			//cv::circle(color_img, circle_points[0], 15, cv::Scalar(0, 255, 0), 2);
 			//cv::circle(color_img, circle_points[6], 20, cv::Scalar(0, 255, 0), 2);
 
 			render_image_brightness_ = color_img.clone();
 			showImage();
 		}
-		 
+
 
 		/*************************************************************************************/
+	}
+
+
+	/*****************************************************************************************************/
+	//平台测试精度
+	if (true)
+	{
+
+		PrecisionTest p_test_machine;
+
+		std::vector<cv::Point2f> circle_points;
+		bool found = calib_function.findCircleBoardFeature(undist_img, circle_points);
+
+		if (!found)
+		{
+			return;
+		}
+		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
+		depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
+
+
+		cv::Mat color_img;
+		cv::Size board_size = calib_function.getBoardSize();
+		cv::cvtColor(brightness_map_, color_img, cv::COLOR_GRAY2BGR);
+		cv::drawChessboardCorners(color_img, board_size, circle_points, found);
+		render_image_brightness_ = color_img.clone();
+		showImage();
+
+		/*******************************************************************************************/
+		std::vector<cv::Point3f> point_3d;
+		bilinearInterpolationFeaturePoints(circle_points, point_3d, points_map);
+
+
+
+		//QString StrCurrentTime = last_path_ + "/feature_points_" + QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"); 
+		//StrCurrentTime += ".ply"; 
+		//FileIoFunction file_io_machine;
+		//file_io_machine.SaveAsciiPointsToPly(point_3d, StrCurrentTime); 
+		//addLogMessage(QString::fromLocal8Bit("保存圆点: ") + StrCurrentTime);
+
+
+
+		std::vector<float> plane;
+		cv::Point3f center_point;
+
+		float rms = p_test_machine.fitPlaneBaseLeastSquares(point_3d, plane, center_point);
+
+		//addLogMessage(QString::fromLocal8Bit("平面拟合RMS: ") + QString::number(rms));
+
+
+		center_points_list_.push_back(center_point);
+		rms_list_.push_back(rms);
+		plane_list_.push_back(plane);
+		feature_points_list_.push_back(point_3d);
+
+
+		if (center_points_list_.size() > 1)
+		{
+			float dist = p_test_machine.computePointToPlaneDistance(center_points_list_[center_points_list_.size() - 1],
+				plane_list_[center_points_list_.size() - 2]);
+
+			//float value = std::floorf(dist);
+
+
+			addLogMessage(QString::fromLocal8Bit("平面拟合RMS: ") + QString::number(rms) +
+				QString::fromLocal8Bit("距离: ") + QString::number(dist));
+		}
+		else
+		{
+			addLogMessage(QString::fromLocal8Bit("平面拟合RMS: ") + QString::number(rms) +
+				QString::fromLocal8Bit("距离: ") + QString::number(0));
+		}
+
 	}
 
 
@@ -800,15 +873,15 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	//点距离
 	if (false)
 	{
-		 
+
 		std::vector<cv::Point2f> circle_points;
 		bool found = calib_function.findCircleBoardFeature(undist_img, circle_points);
 
 		if (!found)
 		{
 			return;
-		} 
-		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.)); 
+		}
+		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 		depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
 
 
@@ -856,10 +929,10 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 		{
 			max_err = std::abs(dist_3);
 		}
-		 
+
 		//addLogMessage(QString::fromLocal8Bit("标定板距离：") + dist_str);
 		addLogMessage(QString::fromLocal8Bit("偏差：") + QString::number(max_err) + "mm");
-		 
+
 	}
 }
 
@@ -1148,3 +1221,33 @@ bool CameraCaptureGui::setImage(cv::Mat img)
 
 
 /************************************************************************************************************************************/
+
+bool CameraCaptureGui::bilinearInterpolationFeaturePoints(std::vector<cv::Point2f> feature_points, std::vector<cv::Point3f>& point_3d, cv::Mat point_cloud)
+{
+	if (point_cloud.empty())
+		return false;
+
+
+	Calibrate_Function calib_function;
+	std::vector<cv::Mat> point_cloud_channels;
+	cv::split(point_cloud, point_cloud_channels);
+
+	point_3d.clear();
+
+	for (int i = 0; i < feature_points.size(); i++)
+	{
+		cv::Point2f p_0 = feature_points[i];
+		cv::Point3f f_p_inter;
+
+		f_p_inter.x = calib_function.Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[0]);
+		f_p_inter.y = calib_function.Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[1]);
+		f_p_inter.z = calib_function.Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[2]);
+
+		point_3d.push_back(f_p_inter);
+	}
+
+
+	return true;
+}
+
+/*********************************************************************************************************************/

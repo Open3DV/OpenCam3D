@@ -61,6 +61,9 @@ private:
 	void undateSystemConfigUiData();
 
 	double computePointsDistance(cv::Point2f p_0, cv::Point2f p_1, cv::Mat point_cloud);
+
+	bool bilinearInterpolationFeaturePoints(std::vector<cv::Point2f> feature_points, std::vector<cv::Point3f>& point_3d, cv::Mat point_cloud);
+
 	 
 signals:
 	void send_temperature_update(float val);
@@ -146,14 +149,14 @@ private:
 	QString last_path_;
 	QString sys_path_;
 	 
-	QThread* capture_thread_;
-
- 
+	QThread* capture_thread_; 
 
 	bool start_timer_flag_;
-	QTimer capture_timer_;
-
+	QTimer capture_timer_; 
 	QString camera_ip_;
  
-
+	std::vector<cv::Point3f> center_points_list_;
+	std::vector<float> rms_list_;
+	std::vector<std::vector<float>> plane_list_;
+	std::vector<std::vector<cv::Point3f>> feature_points_list_;
 };

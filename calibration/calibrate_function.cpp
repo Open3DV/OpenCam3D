@@ -505,6 +505,7 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 		return out;
 	}
 
+	return -1;
 
 }
 
@@ -532,7 +533,7 @@ bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_point
 		double  hor_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_hor);
 		double  ver_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_ver);
 
-		if(hor_val< 0.5 || ver_val< 0.5)
+		if(hor_val< 0 || ver_val< 0)
 		{
 			ret = false;
 		}
