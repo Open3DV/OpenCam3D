@@ -110,7 +110,6 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 	std::vector<std::string> current_folder_list;
 	getJustCurrentDir(path, current_folder_list);
 
-  
 	if (files_list.empty())
 	{
 		std::cout << "Read Images error!" << std::endl;
