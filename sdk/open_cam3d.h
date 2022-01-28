@@ -143,3 +143,7 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*));
 DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param);
 
 DF_SDK_API int DfSetSystemConfigParam(const struct SystemConfigParam& config_param);
+
+DF_SDK_API int DfEnableCheckerboard(float& temperature);
+
+DF_SDK_API int DfDisableCheckerboard(float& temperature);

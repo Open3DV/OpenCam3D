@@ -2,6 +2,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#define Write_Image_Freeze				0x1A
+#define Write_Operating_Mode_Select		0x05
+#define Write_Input_Image_Size			0x2E
+#define Write_Image_Crop				0x10
+#define Write_Checkerboard				0x0B
+#define Write_Display_Size				0x12
+#define Write_Rgb_Led_Enable			0x52
+
 class LightCrafter3010
 {
 private:
@@ -31,6 +39,9 @@ public:
 	void read_pattern_status();
 	
 	float get_temperature();
-        void SetLedCurrent(unsigned short R, unsigned short G, unsigned short B);
+    void SetLedCurrent(unsigned short R, unsigned short G, unsigned short B);
+
+	void enable_checkerboard();
+	void disable_checkerboard();
 };
 

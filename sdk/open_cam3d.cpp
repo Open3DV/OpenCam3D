@@ -1128,6 +1128,71 @@ DF_SDK_API int DfGetDeviceTemperature(float& temperature)
 	return DF_SUCCESS;
 }
 
+// --------------------------------------------------------------
+// -- Enable and disable checkerboard, by wantong, 2022-01-27
+DF_SDK_API int DfEnableCheckerboard(float& temperature)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_ENABLE_CHECKER_BOARD, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer((char*)(&temperature), sizeof(temperature), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+DF_SDK_API int DfDisableCheckerboard(float& temperature)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_DISABLE_CHECKER_BOARD, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer((char*)(&temperature), sizeof(temperature), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+// --------------------------------------------------------------
+
 DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);

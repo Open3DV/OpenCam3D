@@ -84,7 +84,69 @@ void LightCrafter3010::SetLedCurrent(unsigned short R, unsigned short G, unsigne
 
     write(0x54, buffer, 6);
 } 
+
+void LightCrafter3010::enable_checkerboard()
+{
+    unsigned char TxBuffer[8];
     
+    TxBuffer[0] = 0x01;
+    write(Write_Image_Freeze, TxBuffer, 1);
+
+    TxBuffer[0] = 0x01;
+    write(Write_Operating_Mode_Select, TxBuffer, 1);
+
+    TxBuffer[0] = 0x00; 
+    TxBuffer[1] = 0x05; 
+    TxBuffer[2] = 0xD0; 
+    TxBuffer[3] = 0x02;
+    write(Write_Input_Image_Size, TxBuffer, 4);
+
+    memset(TxBuffer, 0x00, 8);
+    TxBuffer[5] = 0x05;
+    TxBuffer[6] = 0xD0;
+    TxBuffer[7] = 0x02;
+    write(Write_Image_Crop, TxBuffer, 8);
+
+    TxBuffer[0] = 0x87;
+    TxBuffer[1] = 0x30;
+    TxBuffer[2] = 0x0F;
+    TxBuffer[3] = 0x00;
+    TxBuffer[4] = 0x0F;
+    TxBuffer[5] = 0x00;
+    write(Write_Checkerboard, TxBuffer, 6);
+
+    memset(TxBuffer, 0x00, 8);
+    TxBuffer[5] = 0x05;
+    TxBuffer[6] = 0xD0;
+    TxBuffer[7] = 0x02;
+    write(Write_Display_Size, TxBuffer, 8);
+
+    TxBuffer[0] = 0x07;
+    write(Write_Rgb_Led_Enable, TxBuffer, 1);
+
+    TxBuffer[0] = 0x00;
+    write(Write_Image_Freeze, TxBuffer, 1);
+} 
+
+void LightCrafter3010::disable_checkerboard()
+{
+    unsigned char TxBuffer[8];
+    
+    TxBuffer[0] = 0x01;
+    write(Write_Image_Freeze, TxBuffer, 1);
+
+    TxBuffer[0] = 0x00;
+    TxBuffer[1] = 0x00;
+    TxBuffer[2] = 0x0F;
+    TxBuffer[3] = 0x00;
+    TxBuffer[4] = 0x0F;
+    TxBuffer[5] = 0x00;
+    write(Write_Checkerboard, TxBuffer, 6);
+
+    TxBuffer[0] = 0x00;
+    write(Write_Image_Freeze, TxBuffer, 1);
+} 
+
 void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len)
 {
     unsigned char buffer[24];

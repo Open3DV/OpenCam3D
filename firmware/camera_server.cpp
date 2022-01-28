@@ -1217,7 +1217,65 @@ int handle_set_camera_parameters(int client_sock)
     return DF_SUCCESS;
 
 }
+
+/*****************************************************************************************/
+bool config_checkerboard(bool enable)
+{
+    if (enable) {
+        lc3010.enable_checkerboard();
+    } else {
+        lc3010.disable_checkerboard();
+        lc3010.init();
+    }
+
+    return true;
+}
+//*****************************************************************************************/
+// Enable and disable checkerboard, by wangtong, 2022-01-27
+//*****************************************************************************************/
+int handle_enable_checkerboard(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"enable checkerboard!";
+    config_checkerboard(true);
+
+    float temperature = read_temperature(1);
+    int ret = send_buffer(client_sock, (char*)(&temperature), sizeof(temperature));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
     
+    return DF_SUCCESS;
+}
+
+int handle_disable_checkerboard(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"disable checkerboard!";
+    config_checkerboard(false);
+
+    float temperature = read_temperature(2);
+    int ret = send_buffer(client_sock, (char*)(&temperature), sizeof(temperature));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
+
+/*****************************************************************************************/
 int handle_commands(int client_sock)
 {
     int command;
@@ -1305,6 +1363,20 @@ int handle_commands(int client_sock)
 			 param.rotation_matrix, 
 			 param.translation_matrix);
 	    break;
+
+    // -----------------------------------------------------------
+    // -- Enable and disable checkerboard, by wangtong, 2022-01-27 
+	case DF_CMD_ENABLE_CHECKER_BOARD:
+	    LOG(INFO)<<"DF_CMD_ENABLE_CHECKER_BOARD";
+	    handle_enable_checkerboard(client_sock);
+	    break;
+
+	case DF_CMD_DISABLE_CHECKER_BOARD:
+	    LOG(INFO)<<"DF_CMD_DISABLE_CHECKER_BOARD";
+	    handle_disable_checkerboard(client_sock);
+	    break;
+    // -----------------------------------------------------------
+
 	case DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS:
 	    LOG(INFO)<<"DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS";
 	    handle_get_system_config_parameters(client_sock);

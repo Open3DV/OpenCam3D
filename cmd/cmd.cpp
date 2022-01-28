@@ -41,6 +41,12 @@ open_cam3d.exe --get-raw-02 --ip 192.168.x.x --path ./raw02_image_dir\n\
 \n\
 11.Get raw images (Mode 03): \n\
 open_cam3d.exe --get-raw-03 --ip 192.168.x.x --path ./raw03_image_dir\n\
+\n\
+12.Enable checkerboard: \n\
+open_cam3d.exe --enable-checkerboard --ip 192.168.x.x\n\
+\n\
+13.Disable checkerboard: \n\
+open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
 ";
 
 
@@ -61,6 +67,8 @@ int get_raw_03(const char* ip, const char* raw_image_dir);
 int get_calib_param(const char* ip, const char* calib_param_path);
 int set_calib_param(const char* ip, const char* calib_param_path);
 int get_temperature(const char* ip);
+int enable_checkerboard(const char* ip);
+int disable_checkerboard(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -80,7 +88,9 @@ enum opt_set
 	GET_FRAME_03,
 	GET_FRAME_HDR,
 	GET_BRIGHTNESS,
-	HELP
+	HELP,
+	ENABLE_CHECKER_BOARD,
+	DISABLE_CHECKER_BOARD
 };
 
 static struct option long_options[] =
@@ -99,6 +109,8 @@ static struct option long_options[] =
 	{"get-frame-hdr",no_argument,NULL,GET_FRAME_HDR},
 	{"get-brightness",no_argument,NULL,GET_BRIGHTNESS},
 	{"help",no_argument,NULL,HELP},
+	{"enable-checkerboard",no_argument,NULL,ENABLE_CHECKER_BOARD},
+	{"disable-checkerboard",no_argument,NULL,DISABLE_CHECKER_BOARD},
 };
 
 
@@ -169,6 +181,13 @@ int main(int argc, char* argv[])
 		break;
 	case GET_BRIGHTNESS:
 		get_brightness(camera_id, path);
+		break;
+	// -- enable and disable checkerboard, by wangtong, 2022-01-27
+	case ENABLE_CHECKER_BOARD:
+		enable_checkerboard(camera_id);
+		break;
+	case DISABLE_CHECKER_BOARD:
+		disable_checkerboard(camera_id);
 		break;
 	default:
 		break;
@@ -642,6 +661,44 @@ int get_temperature(const char* ip)
 	float temperature = 0;
 	DfGetDeviceTemperature(temperature);
 	std::cout << "Device temperature: " << temperature << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+// -------------------------------------------------------------------
+// -- enable and disable checkerboard, by wangtong, 2022-01-27
+int enable_checkerboard(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	float temperature = 0;
+	DfEnableCheckerboard(temperature);
+	std::cout << "Enable checkerboard: " << temperature << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int disable_checkerboard(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	float temperature = 0;
+	DfDisableCheckerboard(temperature);
+	std::cout << "Disable checkerboard: " << temperature << std::endl;
 
 	DfDisconnectNet();
 	return 1;
