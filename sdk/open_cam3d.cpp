@@ -782,6 +782,66 @@ DF_SDK_API int DfGetFrameHdr(float* depth, int depth_buf_size,
 	return DF_SUCCESS;
 }
 
+DF_SDK_API int DfGetRepetitionFrame03(int count, float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size)
+{
+	LOG(INFO) << "GetRepetitionFrame03";
+	assert(depth_buf_size == image_size * sizeof(float) * 1);
+	assert(brightness_buf_size == image_size * sizeof(char) * 1);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+
+	ret = send_command(DF_CMD_GET_REPETITION_FRAME_03, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = send_buffer((char*)(&count), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "token checked ok";
+		LOG(INFO) << "receiving buffer, depth_buf_size=" << depth_buf_size;
+		ret = recv_buffer((char*)depth, depth_buf_size, g_sock);
+		LOG(INFO) << "depth received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer, brightness_buf_size=" << brightness_buf_size;
+		ret = recv_buffer((char*)brightness, brightness_buf_size, g_sock);
+		LOG(INFO) << "brightness received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		//brightness = (unsigned char*)depth + depth_buf_size;
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get frame rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	LOG(INFO) << "Get frame success";
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
 DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size)
 {

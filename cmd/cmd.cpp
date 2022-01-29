@@ -47,6 +47,7 @@ open_cam3d.exe --get-raw-03 --ip 192.168.x.x --path ./raw03_image_dir\n\
 bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map);
 int get_frame_01(const char* ip, const char* frame_path);
 int get_frame_03(const char* ip, const char* frame_path);
+int get_repetition_frame_03(const char* ip,int count, const char* frame_path);
 int get_frame_hdr(const char* ip, const char* frame_path);
 void save_frame(float* depth_buffer, unsigned char* bright_buffer, const char* frame_path);
 void save_images(const char* raw_image_dir, unsigned char* buffer, int image_size, int image_num);
@@ -69,6 +70,7 @@ enum opt_set
 {
 	IP,
 	PATH,
+	COUNT,
 	GET_TEMPERATURE,
 	GET_CALIB_PARAM,
 	SET_CALIB_PARAM,
@@ -78,6 +80,7 @@ enum opt_set
 	GET_POINTCLOUD,
 	GET_FRAME_01,
 	GET_FRAME_03,
+	GET_REPETITION_FRAME_03,
 	GET_FRAME_HDR,
 	GET_BRIGHTNESS,
 	HELP
@@ -87,6 +90,7 @@ static struct option long_options[] =
 {
 	{"ip",required_argument,NULL,IP},
 	{"path", required_argument, NULL, PATH},
+	{"count", required_argument, NULL, COUNT},
 	{"get-temperature",no_argument,NULL,GET_TEMPERATURE},
 	{"get-calib-param",no_argument,NULL,GET_CALIB_PARAM},
 	{"set-calib-param",no_argument,NULL,SET_CALIB_PARAM},
@@ -96,6 +100,7 @@ static struct option long_options[] =
 	{"get-pointcloud",no_argument,NULL,GET_POINTCLOUD},
 	{"get-frame-01",no_argument,NULL,GET_FRAME_01},
 	{"get-frame-03",no_argument,NULL,GET_FRAME_03},
+	{"get-repetition-frame-03",no_argument,NULL,GET_REPETITION_FRAME_03},
 	{"get-frame-hdr",no_argument,NULL,GET_FRAME_HDR},
 	{"get-brightness",no_argument,NULL,GET_BRIGHTNESS},
 	{"help",no_argument,NULL,HELP},
@@ -104,6 +109,7 @@ static struct option long_options[] =
 
 const char* camera_id;
 const char* path;
+const char* repetition_count;
 int command = HELP;
 
 struct CameraCalibParam calibration_param_;
@@ -122,6 +128,9 @@ int main(int argc, char* argv[])
 			break;
 		case PATH:
 			path = optarg;
+			break;
+		case COUNT:
+			repetition_count = optarg;
 			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
@@ -160,6 +169,13 @@ int main(int argc, char* argv[])
 		break;
 	case GET_FRAME_03:
 		get_frame_03(camera_id, path);
+		break;
+	case GET_REPETITION_FRAME_03:
+	{ 
+		int num = std::atoi(repetition_count);
+		get_repetition_frame_03(camera_id, num, path);
+	}
+
 		break;
 	case GET_FRAME_HDR:
 		get_frame_hdr(camera_id, path);
@@ -383,6 +399,44 @@ int get_frame_hdr(const char* ip, const char* frame_path)
 
 
 	return 1;
+}
+
+
+int get_repetition_frame_03(const char* ip, int count, const char* frame_path)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int width, height;
+	DfGetCameraResolution(&width, &height);
+
+
+	ret = DfGetCalibrationParam(calibration_param_);
+
+	int image_size = width * height;
+
+	int depth_buf_size = image_size * 1 * 4;
+	float* depth_buf = (float*)(new char[depth_buf_size]);
+
+	int brightness_bug_size = image_size;
+	unsigned char* brightness_buf = new unsigned char[brightness_bug_size];
+
+	ret = DfGetRepetitionFrame03(count,depth_buf, depth_buf_size, brightness_buf, brightness_bug_size);
+
+	DfDisconnectNet();
+
+	save_frame(depth_buf, brightness_buf, frame_path);
+
+
+
+	delete[] depth_buf;
+	delete[] brightness_buf;
+
 }
 
 int get_frame_03(const char* ip, const char* frame_path)
