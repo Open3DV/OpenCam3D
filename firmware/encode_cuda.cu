@@ -159,14 +159,12 @@ __global__ void cuda_merge_six_step_phase_shift(unsigned short * const d_in_0, u
 	if (idx < img_width && idy < img_height)
 	{
 
-		int a = c_0 *d_in_3[offset]/repetition_count + c_1 *d_in_4[offset]/repetition_count + c_2 *d_in_5[offset]/repetition_count 
-		+ c_3* d_in_0[offset]/repetition_count +c_4*d_in_1[offset]/repetition_count + c_5*d_in_2[offset]/repetition_count;
-		int b = s_0 *d_in_3[offset]/repetition_count + s_1 *d_in_4[offset] /repetition_count+ s_2 *d_in_5[offset]/repetition_count 
-		+ s_3* d_in_0[offset]/repetition_count +s_4*d_in_1[offset]/repetition_count + s_5*d_in_2[offset]/repetition_count;
+		float a = (c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset])/repetition_count;
+		float b = (s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset])/repetition_count;
 
   
-		confidence[offset] = std::sqrt((double)(a*a + b*b));
-		d_out[offset] = DF_PI + std::atan2((double)a, (double)b);
+		confidence[offset] = std::sqrt(a*a + b*b);
+		d_out[offset] = DF_PI + std::atan2(a, b);
 	}
 
 	
@@ -1657,12 +1655,12 @@ __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned
 	if (idx < img_width && idy < img_height)
 	{
 
-		int a = c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset];
-		int b = s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset];
+		float a = c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset];
+		float b = s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset];
 
   
-		confidence[offset] = std::sqrt((double)(a*a + b*b));
-		d_out[offset] = DF_PI + std::atan2((double)a, (double)b);
+		confidence[offset] = std::sqrt(a*a + b*b);
+		d_out[offset] = DF_PI + std::atan2(a, b);
 	}
 }
 
@@ -1677,12 +1675,12 @@ __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigne
 	if (idx < img_width && idy < img_height)
 	{
 
-		int a = d_in_3[offset] - d_in_1[offset];
-		int b = d_in_0[offset] - d_in_2[offset];
+		float a = d_in_3[offset] - d_in_1[offset];
+		float b = d_in_0[offset] - d_in_2[offset];
 
   
-		confidence[offset] = std::sqrt((double)(a*a + b*b));
-		d_out[offset] = DF_PI + std::atan2((double)a, (double)b);
+		confidence[offset] = std::sqrt(a*a + b*b);
+		d_out[offset] = DF_PI + std::atan2(a, b);
 
 
 
