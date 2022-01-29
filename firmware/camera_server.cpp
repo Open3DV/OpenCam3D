@@ -847,11 +847,20 @@ int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
     int brightness_buf_size = 1920*1200*1;
     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
+    if(repetition_count< 1)
+    {
+      repetition_count = 1;
+    }
+    
+    if(repetition_count> 10)
+    {
+      repetition_count = 10;
+    }
 
     lc3010.pattern_mode03_repetition(repetition_count); 
     camera.captureFrame03RepetitionToGpu(repetition_count);
   
-    int ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
+    ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
 
     
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
