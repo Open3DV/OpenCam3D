@@ -821,10 +821,25 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
 
 int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
 {
+    /**************************************************************************************/
+
     if(check_token(client_sock) == DF_FAILED)
     {
-        return DF_FAILED;	
+	return DF_FAILED;
     }
+	
+    
+    int repetition_count = 1;
+
+    int ret = recv_buffer(client_sock, (char*)(&repetition_count), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+    LOG(INFO)<<"repetition_count: "<<repetition_count<<"\n";
+    /***************************************************************************************/
+
 
     int depth_buf_size = 1920*1200*4;
     float* depth_map = new float[depth_buf_size];
@@ -832,7 +847,6 @@ int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
     int brightness_buf_size = 1920*1200*1;
     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
-    int repetition_count = 10;
 
     lc3010.pattern_mode03_repetition(repetition_count); 
     camera.captureFrame03RepetitionToGpu(repetition_count);
@@ -1339,9 +1353,12 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_FRAME_03:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_03";  
     	// handle_cmd_get_frame_03(client_sock);
-    	// handle_cmd_get_frame_03_parallel(client_sock);
-        handle_cmd_get_frame_03_repetition_parallel(client_sock);
+    	handle_cmd_get_frame_03_parallel(client_sock); 
 	    break;
+	case DF_CMD_GET_REPETITION_FRAME_03:
+	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_03";   
+        handle_cmd_get_frame_03_repetition_parallel(client_sock);
+	    break; 
 	case DF_CMD_GET_POINTCLOUD:
 	    LOG(INFO)<<"DF_CMD_GET_POINTCLOUD";
   //  	    camera.warmupCamera();
