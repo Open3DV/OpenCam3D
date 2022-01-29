@@ -157,6 +157,33 @@ void LightCrafter3010::pattern_mode03()
     write_pattern_table(pattern_index, 6);
 }
 
+
+void LightCrafter3010::pattern_mode03_repetition(int repetition_count)
+{
+    if(repetition_count< 1)
+    {
+        repetition_count = 1;
+    }
+
+    int group_count = 5+repetition_count;
+
+    unsigned char pattern_index[group_count];
+
+    pattern_index[0] = 0;
+    pattern_index[1] = 1;
+
+    for(int i= 0;i< repetition_count;i++)
+    {
+        pattern_index[2+i] = 2;
+    }
+ 
+    pattern_index[2+repetition_count] = 3;
+    pattern_index[3+repetition_count] = 4;
+    pattern_index[4+repetition_count] = 6;
+    write_pattern_table(pattern_index, group_count);
+
+}	
+
 void LightCrafter3010::pattern_mode04()
 {
     // unsigned char pattern_index[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};

@@ -24,6 +24,8 @@ public:
 	void pattern_mode02();
 	void pattern_mode03();
 	void pattern_mode04();
+	
+	void pattern_mode03_repetition(int repetition_count);
 
 	void pattern_mode_brightness();
 
