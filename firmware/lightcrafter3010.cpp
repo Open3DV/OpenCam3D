@@ -94,7 +94,7 @@ void LightCrafter3010::enable_checkerboard()
 
     TxBuffer[0] = 0x01;
     write(Write_Operating_Mode_Select, TxBuffer, 1);
-
+/*
     TxBuffer[0] = 0x00; 
     TxBuffer[1] = 0x05; 
     TxBuffer[2] = 0xD0; 
@@ -106,7 +106,7 @@ void LightCrafter3010::enable_checkerboard()
     TxBuffer[6] = 0xD0;
     TxBuffer[7] = 0x02;
     write(Write_Image_Crop, TxBuffer, 8);
-
+*/
     TxBuffer[0] = 0x87;
     TxBuffer[1] = 0x30;
     TxBuffer[2] = 0x0F;
@@ -114,13 +114,13 @@ void LightCrafter3010::enable_checkerboard()
     TxBuffer[4] = 0x0F;
     TxBuffer[5] = 0x00;
     write(Write_Checkerboard, TxBuffer, 6);
-
+/*
     memset(TxBuffer, 0x00, 8);
     TxBuffer[5] = 0x05;
     TxBuffer[6] = 0xD0;
     TxBuffer[7] = 0x02;
     write(Write_Display_Size, TxBuffer, 8);
-
+*/
     TxBuffer[0] = 0x07;
     write(Write_Rgb_Led_Enable, TxBuffer, 1);
 
