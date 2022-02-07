@@ -1,6 +1,6 @@
 #include "encode_cuda.cuh"
-//#include <opencv2/core.hpp> 
-//#include <opencv2/imgcodecs.hpp>
+// #include <opencv2/core.hpp> 
+// #include <opencv2/imgcodecs.hpp>
 #include <device_launch_parameters.h>
 //#include <device_functions.h>
 #include <cuda_runtime.h>
@@ -41,6 +41,9 @@ unsigned char* d_hdr_brightness_list_[D_HDR_MAX_NUM];
 float* d_hdr_depth_map_;
 unsigned char* d_hdr_brightness_;
 
+#define D_REPETITIONB_MAX_NUM 10
+unsigned char* d_repetition_patterns_list_[6*D_REPETITIONB_MAX_NUM]; 
+unsigned short* d_repetition_merge_patterns_list_[6];  
 /*****************************************************************************/
 
 unsigned char* d_patterns_list[36];
@@ -93,6 +96,81 @@ bool parallel_cuda_copy_signal_patterns(unsigned char* patterns_ptr,int serial_f
 	CHECK(cudaMemcpyAsync(d_patterns_list[serial_flag], patterns_ptr, image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyHostToDevice));
 }
 
+bool parallel_cuda_copy_repetition_signal_patterns(unsigned char* patterns_ptr,int serial_flag)
+{
+	CHECK(cudaMemcpyAsync(d_repetition_patterns_list_[serial_flag], patterns_ptr, image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyHostToDevice));
+}
+
+
+bool parallel_cuda_merge_repetition_patterns(int repetition_serial)
+{
+
+	int merge_serial = repetition_serial%6; 
+	cuda_merge_pattern<< <blocksPerGrid, threadsPerBlock >> >(d_repetition_patterns_list_[repetition_serial],image_height_, image_width_,d_repetition_merge_patterns_list_[merge_serial]);
+
+	return true;
+}
+
+__global__ void cuda_merge_pattern(unsigned char * const d_in_pattern,uint32_t img_height, uint32_t img_width,unsigned short * const d_out_merge_pattern)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+  
+		d_out_merge_pattern[offset] += d_in_pattern[offset];  
+
+	}
+}
+
+
+bool parallel_cuda_compute_merge_phase(int repetition_count)
+{
+
+	cuda_merge_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_merge_patterns_list_[0], d_repetition_merge_patterns_list_[1],
+		d_repetition_merge_patterns_list_[2],d_repetition_merge_patterns_list_[3],d_repetition_merge_patterns_list_[4],d_repetition_merge_patterns_list_[5] ,
+		repetition_count,image_height_, image_width_, d_wrap_map_list[3], d_confidence_list[3]);
+
+	return true;
+}
+
+__global__ void cuda_merge_six_step_phase_shift(unsigned short * const d_in_0, unsigned short * const d_in_1, unsigned short * const d_in_2, 
+	unsigned short * const d_in_3,unsigned short* const d_in_4,unsigned short* const d_in_5,int repetition_count,
+	uint32_t img_height, uint32_t img_width,float * const d_out, float * const confidence)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * img_width + idx;
+	float s_0 =  0;
+	float s_1 =  0.866025;
+	float s_2 =  0.866025;
+	float s_3 =  0;
+	float s_4 =  -0.866025;
+	float s_5 =  -0.866025;
+	float c_0 =  1;
+	float c_1 =  0.5;
+	float c_2 =  -0.5;
+	float c_3 =  -1;
+	float c_4 =  -0.5;
+	float c_5 =  0.5;
+	
+	if (idx < img_width && idy < img_height)
+	{
+
+		float a = (c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset])/repetition_count;
+		float b = (s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset])/repetition_count;
+
+  
+		confidence[offset] = std::sqrt(a*a + b*b);
+		d_out[offset] = DF_PI + std::atan2(a, b);
+	}
+
+	
+}
+
+/***********************************************************************************************************************************************************/
 
 bool parallel_cuda_compute_phase(int serial_flag)
 {
@@ -228,23 +306,38 @@ bool parallel_cuda_reconstruct()
 {
 	cuda_rebuild << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_unwrap_map_list[1],d_camera_intrinsic_,d_camera_distortion_,
 		d_project_intrinsic_,d_projector_distortion_,d_rotation_matrix_,d_translation_matrix_, 
-		d_point_cloud_map_,d_depth_map_, d_triangulation_error_map_, d_confidence_list[2]);
+		d_point_cloud_map_,d_depth_map_, d_triangulation_error_map_, d_confidence_list[3]);
 
   
 	cudaDeviceSynchronize();
 
 	
     LOG(INFO)<<"rebuild data!";
-	
- 
+	 
 
     // LOG(INFO)<<"unwrap_0";
+
+	// cv::Mat confidence_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	// cudaMemcpy(confidence_map.data, d_confidence_list[3], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+
+	// cv::Mat wrap_1(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	// cudaMemcpy(wrap_1.data, d_wrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	// cv::Mat wrap_2(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	// cudaMemcpy(wrap_2.data, d_wrap_map_list[2], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+
+	// cv::Mat wrap_3(image_height_, image_width_, CV_32F, cv::Scalar(0));
+	// cudaMemcpy(wrap_3.data, d_wrap_map_list[3], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+
+	// cv::imwrite("confidence_map.tiff",confidence_map);
+	// cv::imwrite("wrap_3.tiff",wrap_3);
+	// cv::imwrite("wrap_1.tiff",wrap_1);
+	// cv::imwrite("wrap_2.tiff",wrap_2);
 
 	// cv::Mat unwrap_0(image_height_, image_width_, CV_32F, cv::Scalar(0));
 	// cudaMemcpy(unwrap_0.data, d_unwrap_map_list[0], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
 	// cv::Mat unwrap_1(image_height_, image_width_, CV_32F, cv::Scalar(0));
-	// cudaMemcpy(unwrap_1.data, d_unwrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
+	// cudaMemcpy(unwrap_1.data,d_unwrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
 
 	// cv::Mat deep_map(image_height_, image_width_, CV_32F, cv::Scalar(0));
 	// cudaMemcpy(deep_map.data, d_depth_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost);
@@ -894,6 +987,18 @@ bool cuda_malloc_memory()
 	cudaMalloc((void**)&d_depth_map_, image_height_*image_width_ * sizeof(float));
 	cudaMalloc((void**)&d_triangulation_error_map_, image_height_*image_width_ * sizeof(float));
  
+	//分配重复patterns数据
+	for(int i= 0;i< D_REPETITIONB_MAX_NUM*6;i++)
+	{
+		cudaMalloc((void**)&d_repetition_patterns_list_[i], image_height_*image_width_ * sizeof(unsigned char)); 
+	}
+
+	for(int i= 0;i< 6;i++)
+	{
+		cudaMalloc((void**)&d_repetition_merge_patterns_list_[i], image_height_*image_width_ * sizeof(unsigned short)); 
+	}
+ 
+	
 
 	cudaDeviceSynchronize();
 
@@ -963,6 +1068,17 @@ bool cuda_free_memory()
 	cudaFree(d_point_cloud_map_);
 	cudaFree(d_depth_map_);
 	cudaFree(d_triangulation_error_map_);
+
+		//分配重复patterns数据
+	for(int i= 0;i< D_REPETITIONB_MAX_NUM*6;i++)
+	{
+		cudaFree(d_repetition_patterns_list_[i]); 
+	}
+	for(int i= 0;i< 6;i++)
+	{
+		cudaFree(d_repetition_merge_patterns_list_[i]);  
+	}
+ 
 
 	return true;
 }
@@ -1539,12 +1655,12 @@ __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned
 	if (idx < img_width && idy < img_height)
 	{
 
-		int a = c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset];
-		int b = s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset];
+		float a = c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset];
+		float b = s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset];
 
   
-		confidence[offset] = std::sqrt((double)(a*a + b*b));
-		d_out[offset] = DF_PI + std::atan2((double)a, (double)b);
+		confidence[offset] = std::sqrt(a*a + b*b);
+		d_out[offset] = DF_PI + std::atan2(a, b);
 	}
 }
 
@@ -1559,12 +1675,12 @@ __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigne
 	if (idx < img_width && idy < img_height)
 	{
 
-		int a = d_in_3[offset] - d_in_1[offset];
-		int b = d_in_0[offset] - d_in_2[offset];
+		float a = d_in_3[offset] - d_in_1[offset];
+		float b = d_in_0[offset] - d_in_2[offset];
 
   
-		confidence[offset] = std::sqrt((double)(a*a + b*b));
-		d_out[offset] = DF_PI + std::atan2((double)a, (double)b);
+		confidence[offset] = std::sqrt(a*a + b*b);
+		d_out[offset] = DF_PI + std::atan2(a, b);
 
 
 
@@ -1797,7 +1913,7 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 		triangulation(x_norm_L, y_norm_L, x_norm_R, y_norm_R, rotation_matrix, translation_matrix,
 			X_L, Y_L, Z_L, X_R, Y_R, Z_R, error);
-		if(confidence_map[serial_id] > 10 && error< 2.0)	
+		if(confidence_map[serial_id] > 10 && error< 3.0)	
 		//if(confidence_map[serial_id] > 10 && error< 0.5 && dlp_x> 0.0 && dlp_y > 0.0)
 		{
 		    d_out_point_cloud_map[3 * serial_id + 0] = X_L;

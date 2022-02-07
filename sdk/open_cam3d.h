@@ -132,6 +132,9 @@ DF_SDK_API int DfGetFrameHdr(float* depth, int depth_buf_size,
 DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+DF_SDK_API int DfGetRepetitionFrame03(int count,float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size);
+
 DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param);
 
 DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_param);

@@ -818,6 +818,93 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
 
 }
 
+
+int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
+{
+    /**************************************************************************************/
+
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	return DF_FAILED;
+    }
+	
+    
+    int repetition_count = 1;
+
+    int ret = recv_buffer(client_sock, (char*)(&repetition_count), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+    LOG(INFO)<<"repetition_count: "<<repetition_count<<"\n";
+    /***************************************************************************************/
+
+
+    int depth_buf_size = 1920*1200*4;
+    float* depth_map = new float[depth_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+
+    if(repetition_count< 1)
+    {
+      repetition_count = 1;
+    }
+    
+    if(repetition_count> 10)
+    {
+      repetition_count = 10;
+    }
+
+    lc3010.pattern_mode03_repetition(repetition_count); 
+    camera.captureFrame03RepetitionToGpu(repetition_count);
+  
+    ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
+
+    
+    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    
+    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+    printf("brightness ret=%d\n", ret);
+
+    LOG(INFO)<<"Send Frame03 Repetition";
+
+    float temperature = read_temperature(0);
+    
+    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    printf("frame sent!\n");
+    // delete [] buffer;
+    delete [] depth_map;
+    delete [] brightness;
+    return DF_SUCCESS;
+    
+
+}
+
 int handle_cmd_get_frame_03_parallel(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -1333,8 +1420,12 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_FRAME_03:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_03";  
     	// handle_cmd_get_frame_03(client_sock);
-    	handle_cmd_get_frame_03_parallel(client_sock);
+    	handle_cmd_get_frame_03_parallel(client_sock); 
 	    break;
+	case DF_CMD_GET_REPETITION_FRAME_03:
+	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_03";   
+        handle_cmd_get_frame_03_repetition_parallel(client_sock);
+	    break; 
 	case DF_CMD_GET_POINTCLOUD:
 	    LOG(INFO)<<"DF_CMD_GET_POINTCLOUD";
   //  	    camera.warmupCamera();
