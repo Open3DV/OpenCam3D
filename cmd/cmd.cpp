@@ -47,6 +47,10 @@ open_cam3d.exe --enable-checkerboard --ip 192.168.x.x\n\
 \n\
 13.Disable checkerboard: \n\
 open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
+\n\
+14.Get Repetition Frame 03: \n\
+open_cam3d.exe --get-repetition-frame-03 --count 6 --ip 192.168.x.x --path ./frame03_repetition\n\
+\n\
 ";
 
 
