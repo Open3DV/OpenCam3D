@@ -5,3 +5,5 @@ firmware/build
 *.log
 .vscode
 tools/patterns
+example/*.dll
+example/*.lib
