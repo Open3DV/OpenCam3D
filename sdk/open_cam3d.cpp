@@ -8,7 +8,8 @@
 #include<chrono>
 #include<ctime>
 #include <time.h>
-#include<stddef.h> 
+#include <stddef.h> 
+#include "../test/triangulation.h"
 using namespace std;
 using namespace std::chrono;
 
@@ -145,6 +146,12 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 	float camera_cy = calibration_param_.camera_intrinsic[5];
 
 
+	float k1 = calibration_param_.camera_distortion[0];
+	float k2 = calibration_param_.camera_distortion[1];
+	float p1 = calibration_param_.camera_distortion[2];
+	float p2 = calibration_param_.camera_distortion[3];
+	float k3 = calibration_param_.camera_distortion[4];
+
 	//LOG(INFO) << "camera_fx: " << camera_fx << std::endl;
 	//LOG(INFO) << "camera_fy: " << camera_fy << std::endl;
 	//LOG(INFO) << "camera_cx: " << camera_cx << std::endl;
@@ -165,11 +172,17 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 
 		for (int c = 0; c < nc; c++)
 		{
+			double undistort_x = 0;
+			double undistort_y = 0;
+
+			undistortPoint(c, r, camera_fx, camera_fy,
+				camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+
 			int offset = r * camera_width_ + c;
 			if (depth_map[offset] > 0)
 			{
-				point_cloud_map[3 * offset + 0] = (c - camera_cx) * depth_map[offset] / camera_fx;
-				point_cloud_map[3 * offset + 1] = (r - camera_cy) * depth_map[offset] / camera_fy;
+				point_cloud_map[3 * offset + 0] = (undistort_x - camera_cx) * depth_map[offset] / camera_fx;
+				point_cloud_map[3 * offset + 1] = (undistort_y - camera_cy) * depth_map[offset] / camera_fy;
 				point_cloud_map[3 * offset + 2] = depth_map[offset];
 
 

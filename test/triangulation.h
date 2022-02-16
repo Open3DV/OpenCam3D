@@ -6,6 +6,11 @@ void normalizePoint(double x, double y,
 	double k1, double k2, double k3, double p1, double p2,
 	double& x_norm, double& y_norm);
 
+void undistortPoint(double x, double y,
+	double fc_x, double fc_y,
+	double cc_x, double cc_y,
+	double k1, double k2, double k3, double p1, double p2,
+	double& x_undistort, double& y_undistort);
 
 void triangulation(double x_norm_L, double y_norm_L,
     double x_norm_R, double y_norm_R,

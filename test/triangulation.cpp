@@ -34,6 +34,38 @@ void normalizePoint(
     return;
 }
 
+void undistortPoint(double x, double y,
+    double fc_x, double fc_y,
+    double cc_x, double cc_y,
+    double k1, double k2, double k3, double p1, double p2,
+    double& x_undistort, double& y_undistort)
+{
+    double x_distort = (x - cc_x) / fc_x;
+    double y_distort = (y - cc_y) / fc_y;
+
+    double x_iter = x_distort;
+    double y_iter = y_distort;
+
+    for (int i = 0; i < 20; i++)
+    {
+        double r_2 = x_iter * x_iter + y_iter * y_iter;
+        double r_4 = r_2 * r_2;
+        double r_6 = r_4 * r_2;
+        double k_radial = 1 + k1 * r_2 + k2 * r_4 + k3 * r_6;
+        double delta_x = 2 * p1 * x_iter * y_iter + p2 * (r_2 + 2 * x_iter * x_iter);
+        double delta_y = p1 * (r_2 + 2 * y_iter * y_iter) + 2 * p2 * x_iter * y_iter;
+        x_iter = (x_distort - delta_x) / k_radial;
+        y_iter = (y_distort - delta_y) / k_radial;
+    }
+    x_undistort = x_iter*fc_x+ cc_x;
+    y_undistort = y_iter*fc_y + cc_y;
+
+    //x_undistort = x_iter;
+    //y_undistort = y_iter;
+
+    return;
+}
+
 void triangulation(double x_norm_L, double y_norm_L,
     double x_norm_R, double y_norm_R,
     double* R, double* T,

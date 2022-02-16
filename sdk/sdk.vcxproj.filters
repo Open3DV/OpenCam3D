@@ -27,6 +27,9 @@
     <ClCompile Include="open_cam3d.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\test\triangulation.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="socket_tcp.h">
