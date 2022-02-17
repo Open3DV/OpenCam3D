@@ -7,3 +7,4 @@ firmware/build
 tools/patterns
 example/*.dll
 example/*.lib
+build

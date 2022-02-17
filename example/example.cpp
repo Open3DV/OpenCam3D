@@ -86,7 +86,7 @@ int main()
     if (0 == ret_code)
     {
 
-        ret_code = DfCaptureData(1, timestamp_data);
+        ret_code = DfCaptureData(2, timestamp_data);
 
         std::cout << "timestamp: " << timestamp_data << std::endl;
 

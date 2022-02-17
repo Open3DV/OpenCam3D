@@ -92,7 +92,7 @@ std::string get_timestamp()
 	sprintf(time_str[3], "%02d", time_ptr->tm_hour);//时
 	sprintf(time_str[4], "%02d", time_ptr->tm_min);// 分
 	sprintf(time_str[5], "%02d", time_ptr->tm_sec);//时
-	sprintf(time_str[6], "%02d", msec);// 分
+	sprintf(time_str[6], "%02lld", msec);// 分
 	//for (int i = 0; i < 7; i++)
 	//{
 	//	std::cout << "time_str[" << i << "] is: " << time_str[i] << std::endl;
@@ -292,7 +292,7 @@ DF_SDK_API int DfGetCameraResolution(int* width, int* height)
 
 //函数名： DfCaptureData
 //功能： 采集一帧数据并阻塞至返回状态
-//输入参数： exposure_num（曝光次数）：可设置值为1、2、3.
+//输入参数： exposure_num（曝光次数）：大于1的为多曝光模式
 //输出参数： timestamp(时间戳)
 //返回值： 类型（int）:返回0表示获取采集数据成功;返回-1表示采集数据失败.
 DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
@@ -308,9 +308,20 @@ DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 	//	return 0;
 	//}
 
+	bool ret = -1;
 
-	LOG(TRACE) << "Debug Get Frame03:";
-	bool ret = DfGetFrame03(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+	if (exposure_num > 1)
+	{
+		LOG(TRACE) << " Get Frame HDR:";
+		ret = DfGetFrameHdr(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+	}
+	else
+	{
+
+		LOG(TRACE) << " Get Frame03:";
+		ret = DfGetFrame03(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+	}
+
 
 	//LOG(TRACE) << "Debug Get Temperature:"; 
 	//float temperature_value = 0; 
