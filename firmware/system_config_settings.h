@@ -21,9 +21,9 @@ struct SystemConfigParam
 	float camera_exposure_time;
 	//相机增益DB
 	float camera_gain;
-	//外参标识:1-相机、2-光机、3-外部标定板。
+	//外参标识:0-相机、1-光机、2-外部标定板。
 	int external_param_flag;
-	//相机外参
+	//相机外参:前9个为R、后3个为T。
 	float external_param[12];
 	//基准平面
 	float standard_plane[4];
