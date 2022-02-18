@@ -189,8 +189,8 @@ bool SystemConfigDataStruct::saveToSettings(const std::string& f)
         plane_param_str += std::to_string(instance_.config_param_.standard_plane[i]);
         plane_param_str +=",";
     }
-    plane_param_str += std::to_string(instance_.config_param_.external_param[3]); 
-    ofile << "external_param: " << plane_param_str << std::endl; 
+    plane_param_str += std::to_string(instance_.config_param_.standard_plane[3]); 
+    ofile << "standard_plane: " << plane_param_str << std::endl; 
  
 
     ofile.close();
