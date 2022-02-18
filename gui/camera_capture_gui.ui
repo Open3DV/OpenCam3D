@@ -152,6 +152,29 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="pushButton_calibrate_external_param">
+          <property name="minimumSize">
+           <size>
+            <width>48</width>
+            <height>48</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset resource="dexforce_camera_gui.qrc">
+            <normaloff>:/dexforce_camera_gui/image/external_param.png</normaloff>:/dexforce_camera_gui/image/external_param.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -375,6 +398,9 @@
              </property>
              <property name="keyboardTracking">
               <bool>false</bool>
+             </property>
+             <property name="minimum">
+              <number>-5000</number>
              </property>
              <property name="maximum">
               <number>5000</number>

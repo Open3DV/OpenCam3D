@@ -108,6 +108,7 @@ bool CameraCaptureGui::initializeFunction()
 
 	connect(ui.pushButton_save_as, SIGNAL(clicked()), this, SLOT(do_pushButton_save_as()));
 	connect(ui.pushButton_test_accuracy, SIGNAL(clicked()), this, SLOT(do_pushButton_test_accuracy()));
+	connect(ui.pushButton_calibrate_external_param, SIGNAL(clicked()), this, SLOT(do_pushButton_calibrate_external_param()));
 
 	connect(&capture_timer_, SIGNAL(timeout()), this, SLOT(do_timeout_slot()));
 	capture_timer_.setInterval(50);
@@ -722,6 +723,129 @@ double CameraCaptureGui::computePointsDistance(cv::Point2f p_0, cv::Point2f p_1,
 	double differ_val = std::sqrtf(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
 
 	return differ_val;
+}
+
+
+void CameraCaptureGui::do_pushButton_calibrate_external_param()
+{
+
+	if (depth_map_.empty())
+	{
+		return;
+	}
+
+	//PNP
+	cv::Mat cameraMatrix(3, 3, CV_32FC1, camera_calibration_param_.camera_intrinsic);
+	cv::Mat distCoeffs = cv::Mat(5, 1, CV_32F, camera_calibration_param_.camera_distortion); 
+
+	cv::Mat raux, taux;
+	cv::Mat rotate_mat;
+	cv::Mat translation_mat;
+
+	cv::Mat img = brightness_map_.clone();
+
+	Calibrate_Function calib_function;
+	std::vector<cv::Point2f> circle_points;
+	bool found = calib_function.findCircleBoardFeature(img, circle_points);
+
+	if (found)
+	{
+		Calibrate_Function calib_machine;
+		std::vector<cv::Point3f> objects = calib_machine.generateAsymmetricWorldFeature(20.0, 10.0); 
+
+		std::vector<cv::Point2f> image_points_pro; 
+		cv::solvePnP(objects, circle_points, cameraMatrix, distCoeffs, raux, taux);
+
+		cv::Mat pnp_rotate_mat; 
+		cv::Rodrigues(raux, pnp_rotate_mat); 
+		rotate_mat = pnp_rotate_mat.t(); 
+		   
+		cv::Mat new_T =  -1*rotate_mat *taux;
+		translation_mat = new_T.clone();
+
+
+		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
+		depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
+
+		  
+		rotate_mat.convertTo(rotate_mat, CV_32F);
+		translation_mat.convertTo(translation_mat, CV_32F); 
+		transformPointcloudInv((float*)points_map.data, (float*)rotate_mat.data, (float*)translation_mat.data); 
+
+		std::vector<cv::Mat> channels;
+		cv::split(points_map, channels);
+		depth_map_ = channels[2].clone();
+
+		cv::Mat height_map = channels[2].clone();
+		 
+
+		for (int i = 0; i < 9; i++)
+		{
+			system_config_param_.external_param[i] = rotate_mat.ptr<float>(0)[i];
+			qDebug() << system_config_param_.external_param[i];
+		}
+
+		for (int i = 0; i < 3; i++)
+		{
+			system_config_param_.external_param[9+i] = translation_mat.ptr<float>(0)[i];
+			qDebug() << translation_mat.ptr<float>(0)[i];
+		}
+
+		int ret_code = DfSetSystemConfigParam(system_config_param_);
+		if (0 != ret_code)
+		{
+			qDebug() << "Get Param Error;";
+			return;
+		}
+
+
+		QString str = QString::fromLocal8Bit("保存高度映射基准平面");
+
+		addLogMessage(str);
+
+
+		ui.spinBox_min_z->setValue(-70);
+		ui.spinBox_max_z->setValue(30);
+
+	} 
+
+
+
+	//cv::Mat depth_new_0 = channels[2].clone();
+	/*********************************************************************************/
+	 
+	//QDir dir(last_path_ + "/test_lala");
+	//QString path_name = dir.absolutePath();
+
+	//QString points_str = path_name + ".ply"; 
+	//FileIoFunction file_io_machine;
+	//file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_);
+	//qDebug() << "save: " << points_str;
+
+	/****************************************************/
+
+	//cv::Mat rotete_x_180 = (cv::Mat_<double>(3, 1) << 0, CV_PI, 0);
+	//cv::Mat rotate_x_180_mat;
+	////转化成旋转矩阵
+	//cv::Rodrigues(rotete_x_180, rotate_x_180_mat); 
+	//std::cout << "rotate_x_180_mat: " << std::endl << rotate_x_180_mat << std::endl;
+
+
+	//cv::Mat points_map_inv = points_map.clone();
+	//cv::Mat new_translation_mat = cv::Mat(3, 1, CV_32F, cv::Scalar(0));
+
+	//transformPointcloud((float*)points_map_inv.data, (float*)rotate_x_180_mat.data, (float*)new_translation_mat.data);
+
+	/************************************************/
+
+	//std::vector<cv::Mat> channels;
+	//cv::split(points_map_inv, channels);
+	//depth_map_ = channels[2].clone();
+
+	//cv::Mat depth_new = channels[2].clone();
+
+	//renderDepthImage(depth_map_);
+	//showImage();
 }
 
 void CameraCaptureGui::do_pushButton_test_accuracy()

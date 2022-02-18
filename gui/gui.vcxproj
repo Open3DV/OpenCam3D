@@ -85,7 +85,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <AdditionalDependencies>$(TargetDir)open_cam3d_sdk.lib;opencv_calib3d420d.lib;opencv_core420d.lib;opencv_dnn420d.lib;opencv_features2d420d.lib;opencv_flann420d.lib;opencv_gapi420d.lib;opencv_highgui420d.lib;opencv_imgcodecs420d.lib;opencv_imgproc420d.lib;opencv_ml420d.lib;opencv_objdetect420d.lib;opencv_photo420d.lib;opencv_stitching420d.lib;opencv_ts420d.lib;opencv_video420d.lib;opencv_videoio420d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(TargetDir)open_cam3d_sdkd.lib;opencv_calib3d420d.lib;opencv_core420d.lib;opencv_dnn420d.lib;opencv_features2d420d.lib;opencv_flann420d.lib;opencv_gapi420d.lib;opencv_highgui420d.lib;opencv_imgcodecs420d.lib;opencv_imgproc420d.lib;opencv_ml420d.lib;opencv_objdetect420d.lib;opencv_photo420d.lib;opencv_stitching420d.lib;opencv_ts420d.lib;opencv_video420d.lib;opencv_videoio420d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
@@ -110,7 +110,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>

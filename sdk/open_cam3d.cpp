@@ -129,6 +129,84 @@ int on_dropped(void* param)
 }
 
 
+bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* translation)
+{
+
+	int point_num = camera_height_ * camera_width_;
+
+	int nr = camera_height_;
+	int nc = camera_width_;
+
+#pragma omp parallel for
+	for (int r = 0; r < nr; r++)
+	{
+
+		for (int c = 0; c < nc; c++)
+		{
+
+			int offset = r * camera_width_ + c;
+
+			float x = point_cloud_map[3 * offset + 0] + translation[0];
+			float y = point_cloud_map[3 * offset + 1] + translation[1];
+			float z = point_cloud_map[3 * offset + 2] + translation[2];
+			 
+			point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z;
+			point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z;
+			point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z;
+  
+		}
+
+	}
+
+
+	return true;
+}
+
+ bool transformPointcloud(float* point_cloud_map, float* rotate, float* translation)
+{
+
+
+	 int point_num = camera_height_ * camera_width_;
+
+	 int nr = camera_height_;
+	 int nc = camera_width_;
+
+	#pragma omp parallel for
+	 for (int r = 0; r < nr; r++)
+	 {
+
+		 for (int c = 0; c < nc; c++)
+		 {
+ 
+			 int offset = r * camera_width_ + c;
+
+			 float x = point_cloud_map[3 * offset + 0];
+			 float y = point_cloud_map[3 * offset + 1];
+			 float z = point_cloud_map[3 * offset + 2];
+			  
+			 //if (z > 0)
+			 //{
+				 point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z + translation[0];
+				 point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z + translation[1];
+				 point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z + translation[2];
+				  
+			 //}
+			 //else
+			 //{
+				// point_cloud_map[3 * offset + 0] = 0;
+				// point_cloud_map[3 * offset + 1] = 0;
+				// point_cloud_map[3 * offset + 2] = 0;
+			 //}
+
+
+		 }
+
+	 }
+
+
+	 return true;
+}
+
 bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 {
 
@@ -412,6 +490,58 @@ DF_SDK_API int DfGetBrightnessData(unsigned char* brightness)
 	//brightness = brightness_buf_;
 
 	LOG(INFO) << "Get Brightness!";
+
+	return 0;
+}
+
+//函数名： DfGetHeightMapData
+//功能： 采集点云数据并阻塞至返回结果
+//输入参数：无
+//输出参数： height_map(高度映射图)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetHeightMapData(unsigned char* height_map)
+{
+	if (!connected_flag_)
+	{
+		return -1;
+	}
+
+
+	struct SystemConfigParam system_config_param;
+	int ret_code = DfGetSystemConfigParam(system_config_param);
+	if (0 != ret_code)
+	{
+		std::cout << "Get Param Error;";
+		return -1;
+	}
+
+	LOG(INFO) << "Transform Pointcloud:"; 
+	depthTransformPointcloud(depth_buf_, point_cloud_buf_); 
+	transformPointcloudInv(point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
+
+	int nr = camera_height_;
+	int nc = camera_width_; 
+	#pragma omp parallel for
+	for (int r = 0; r < nr; r++)
+	{ 
+		for (int c = 0; c < nc; c++)
+		{
+			int offset = r * camera_width_ + c; 
+			if (depth_buf_[offset] > 0)
+			{
+				height_map[offset] = point_cloud_buf_[offset*3];
+			}
+			else
+			{
+				height_map[offset] = NULL;
+			}
+
+		}
+
+
+	}
+
+	LOG(INFO) << "Get Height Map!";
 
 	return 0;
 }

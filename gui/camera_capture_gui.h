@@ -73,8 +73,6 @@ public slots:
 
 	void do_timeout_slot();
 
- 
-
 
 private slots:
 	void do_QRadioButton_toggled_brightness(bool state);
@@ -107,6 +105,8 @@ private slots:
 	void do_pushButton_capture_many_frame();
 
 	void do_pushButton_test_accuracy();
+
+	void do_pushButton_calibrate_external_param();
 
 	void do_pushButton_capture_continuous();
 
