@@ -72,6 +72,9 @@ int main()
     float* point_cloud_data = (float*)malloc(sizeof(float) * width * height * 3);
     memset(point_cloud_data, 0, sizeof(float) * width * height * 3);
 
+    float* height_map_data = (float*)malloc(sizeof(float) * width * height);
+    memset(height_map_data, 0, sizeof(float) * width * height);
+
     unsigned short* depth_data = (unsigned short*)malloc(sizeof(unsigned short) * width * height);
     memset(depth_data, 0, sizeof(unsigned short) * width * height);
 
@@ -86,7 +89,7 @@ int main()
     if (0 == ret_code)
     {
 
-        ret_code = DfCaptureData(2, timestamp_data);
+        ret_code = DfCaptureData(1, timestamp_data);
 
         std::cout << "timestamp: " << timestamp_data << std::endl;
 
@@ -104,6 +107,13 @@ int main()
             {
                 std::cout << "Get Depth!" << std::endl;
             } 
+
+            ret_code = DfGetHeightMapData(height_map_data);
+
+            if (0 == ret_code)
+            {
+                std::cout << "Get Height Map!" << std::endl;
+            }
 
             ret_code = DfGetPointcloudData(point_cloud_data);
             if (0 == ret_code)
@@ -127,6 +137,7 @@ int main()
     free(brightness_data);
     free(depth_data);
     free(point_cloud_data);
+    free(height_map_data);
     free(timestamp_data);
 
     DfDisconnect("192.168.88.109");

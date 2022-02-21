@@ -31,8 +31,8 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	
   
 
-	renderBrightnessImage(brightness_map_);
-	renderDepthImage(depth_map_);
+	//renderBrightnessImage(brightness_map_);
+	//renderDepthImage(depth_map_);
 
 	radio_button_flag_ = SELECT_BRIGHTNESS_FLAG_;
 	showImage();
@@ -333,7 +333,7 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 {
 	processing_settings_data_.Instance().low_z_value = val;
 
-	renderDepthImage( depth_map_);
+	renderDepthImage(height_map_);
 	showImage();
 	 
  
@@ -368,7 +368,7 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 	processing_settings_data_.Instance().high_z_value = val;
 
 
-	renderDepthImage(depth_map_);
+	renderDepthImage(height_map_);
 	showImage();
 
  
@@ -527,6 +527,7 @@ bool CameraCaptureGui::capture_one_frame_data()
 
 	cv::Mat brightness(height, width, CV_8U, cv::Scalar(0));
 	cv::Mat depth(height, width, CV_32F, cv::Scalar(0.));
+	cv::Mat point_cloud(height, width, CV_32FC3, cv::Scalar(0.)); 
 
 	int depth_buf_size = image_size * 1 * 4;  
 	int brightness_bug_size = image_size; 
@@ -557,6 +558,14 @@ bool CameraCaptureGui::capture_one_frame_data()
 	{
 		brightness_map_ = brightness.clone();
 		depth_map_ = depth.clone();
+		 
+		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);  
+		transformPointcloudInv((float*)point_cloud.data, system_config_param_.external_param, &system_config_param_.external_param[9]);
+	 
+		std::vector<cv::Mat> channels;
+		cv::split(point_cloud, channels);
+		height_map_ = channels[2].clone();
+
 
 		addLogMessage(QString::fromLocal8Bit("采集完成！"));
   
@@ -770,7 +779,7 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		  
 		rotate_mat.convertTo(rotate_mat, CV_32F);
 		translation_mat.convertTo(translation_mat, CV_32F); 
-		transformPointcloudInv((float*)points_map.data, (float*)rotate_mat.data, (float*)translation_mat.data); 
+		transformPointcloud((float*)points_map.data, (float*)rotate_mat.data, (float*)translation_mat.data); 
 
 		std::vector<cv::Mat> channels;
 		cv::split(points_map, channels);
@@ -782,30 +791,38 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		for (int i = 0; i < 9; i++)
 		{
 			system_config_param_.external_param[i] = rotate_mat.ptr<float>(0)[i];
-			qDebug() << system_config_param_.external_param[i];
+			//qDebug() << system_config_param_.external_param[i];
 		}
 
 		for (int i = 0; i < 3; i++)
 		{
 			system_config_param_.external_param[9+i] = translation_mat.ptr<float>(0)[i];
-			qDebug() << translation_mat.ptr<float>(0)[i];
+			//qDebug() << translation_mat.ptr<float>(0)[i];
 		}
 
-		int ret_code = DfSetSystemConfigParam(system_config_param_);
-		if (0 != ret_code)
+		if (connected_flag_)
 		{
-			qDebug() << "Get Param Error;";
-			return;
+			int ret_code = DfSetSystemConfigParam(system_config_param_);
+			if (0 != ret_code)
+			{
+				qDebug() << "Get Param Error;";
+				return;
+			} 
+
+			QString str = QString::fromLocal8Bit("保存高度映射基准平面"); 
+			addLogMessage(str);
+		}
+		else
+		{
+			QString str = QString::fromLocal8Bit("相机已断连！");
+			addLogMessage(str);
 		}
 
 
-		QString str = QString::fromLocal8Bit("保存高度映射基准平面");
-
-		addLogMessage(str);
 
 
-		ui.spinBox_min_z->setValue(-70);
-		ui.spinBox_max_z->setValue(30);
+		//ui.spinBox_min_z->setValue(-70);
+		//ui.spinBox_max_z->setValue(30);
 
 	} 
 
@@ -1097,7 +1114,7 @@ bool CameraCaptureGui::capture_one_frame_and_render()
 	{
 
 		renderBrightnessImage(brightness_map_);
-		renderDepthImage(depth_map_);
+		renderDepthImage(height_map_);
 		showImage();
 
 		if (ui.checkBox_auto_save->isChecked())

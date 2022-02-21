@@ -10,6 +10,9 @@
 #include <time.h>
 #include <stddef.h> 
 #include "../test/triangulation.h"
+#include "../firmware/protocol.h" 
+#include "../firmware/system_config_settings.h"
+
 using namespace std;
 using namespace std::chrono;
 
@@ -44,8 +47,10 @@ const char* camera_ip_ = "";
 
 
 int depth_buf_size_ = 0;
+int pointcloud_buf_size_ = 0;
 int brightness_bug_size_ = 0;
 float* point_cloud_buf_ = NULL;
+bool transform_pointcloud_flag_ = false;
 float* depth_buf_ = NULL;
 unsigned char* brightness_buf_ = NULL;
 
@@ -338,7 +343,8 @@ DF_SDK_API int DfConnect(const char* camera_id)
 	depth_buf_size_ = image_size * 1 * 4;
 	depth_buf_ = (float*)(new char[depth_buf_size_]);
 
-	point_cloud_buf_ = (float*)(new char[depth_buf_size_ * 3]);
+	pointcloud_buf_size_ = depth_buf_size_ * 3;
+	point_cloud_buf_ = (float*)(new char[pointcloud_buf_size_]);
 
 	brightness_bug_size_ = image_size;
 	brightness_buf_ = new unsigned char[brightness_bug_size_];
@@ -418,6 +424,7 @@ DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 		timestamp[i] = time[i];
 	}
 
+	transform_pointcloud_flag_ = false;
 
 
 	return 0;
@@ -499,7 +506,7 @@ DF_SDK_API int DfGetBrightnessData(unsigned char* brightness)
 //输入参数：无
 //输出参数： height_map(高度映射图)
 //返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
-DF_SDK_API int DfGetHeightMapData(unsigned char* height_map)
+DF_SDK_API int DfGetHeightMapData(float* height_map)
 {
 	if (!connected_flag_)
 	{
@@ -516,8 +523,14 @@ DF_SDK_API int DfGetHeightMapData(unsigned char* height_map)
 	}
 
 	LOG(INFO) << "Transform Pointcloud:"; 
-	depthTransformPointcloud(depth_buf_, point_cloud_buf_); 
-	transformPointcloudInv(point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
+
+	if (!transform_pointcloud_flag_)
+	{
+		depthTransformPointcloud(depth_buf_, point_cloud_buf_);
+		transform_pointcloud_flag_ = true;
+	}
+ 
+	transformPointcloud(point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
 
 	int nr = camera_height_;
 	int nc = camera_width_; 
@@ -541,6 +554,7 @@ DF_SDK_API int DfGetHeightMapData(unsigned char* height_map)
 
 	}
 
+
 	LOG(INFO) << "Get Height Map!";
 
 	return 0;
@@ -560,7 +574,14 @@ DF_SDK_API int DfGetPointcloudData(float* point_cloud)
 
 	LOG(INFO) << "Transform Pointcloud:";
 
-	depthTransformPointcloud(depth_buf_, point_cloud);
+	if (!transform_pointcloud_flag_)
+	{
+		depthTransformPointcloud(depth_buf_, point_cloud_buf_);
+		transform_pointcloud_flag_ = true;
+	} 
+
+	memcpy(point_cloud, point_cloud_buf_, pointcloud_buf_size_);
+	 
 
 	LOG(INFO) << "Get Pointcloud!";
 
