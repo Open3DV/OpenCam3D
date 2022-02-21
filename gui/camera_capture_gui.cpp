@@ -153,13 +153,15 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 	path_name = dir.absolutePath();
 
 	 
-	QString brightness_str = path_name + ".bmp";
+	QString brightness_str = path_name + "bright.bmp";
 	cv::imwrite(brightness_str.toStdString(), brightness_map_); 
 	 
-	QString depth_str = path_name + ".tiff";
+	QString depth_str = path_name + "_depth_map.tiff";
 	cv::imwrite(depth_str.toStdString(), depth_map_); 
 
-	 
+	QString height_str = path_name + "_height_map.tiff";
+	cv::imwrite(depth_str.toStdString(), depth_map_);
+
 	QString points_str = path_name + ".ply"; 
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 
@@ -560,7 +562,7 @@ bool CameraCaptureGui::capture_one_frame_data()
 		depth_map_ = depth.clone();
 		 
 		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);  
-		transformPointcloudInv((float*)point_cloud.data, system_config_param_.external_param, &system_config_param_.external_param[9]);
+		transformPointcloud((float*)point_cloud.data, system_config_param_.external_param, &system_config_param_.external_param[9]);
 	 
 		std::vector<cv::Mat> channels;
 		cv::split(point_cloud, channels);
@@ -626,7 +628,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 			if (0 != ret_code)
 			{
 				qDebug() << "Get Param Error;";
-				return;
+				//return;
 			}
 
 			undateSystemConfigUiData();
