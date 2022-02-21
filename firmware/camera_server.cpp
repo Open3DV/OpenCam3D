@@ -1274,7 +1274,394 @@ int handle_disable_checkerboard(int client_sock)
     
     return DF_SUCCESS;
 }
+/*****************************************************************************************/
+bool set_internal_pattern_stop()
+{
+    bool ack = true;
 
+    lc3010.set_internal_pattern_stop();
+
+    return ack;
+}
+
+bool set_flash_data_type()
+{
+    bool ack = true;
+
+    lc3010.set_flash_data_type();
+
+    return ack;
+}
+
+bool set_flash_build_data_size(unsigned int data_size)
+{
+    bool ack = true;
+
+    ack = lc3010.set_flash_build_data_size(data_size);
+
+    return ack;
+}
+
+bool set_erase_flash()
+{
+    bool ack = true;
+
+    lc3010.set_erase_flash();
+
+    return ack;
+}
+
+bool check_erase_flash_status()
+{
+    bool ack = true;
+
+    ack = lc3010.check_erase_flash_status();
+
+    return ack;
+}
+
+bool set_flash_data_length(unsigned short dataLen)
+{
+    bool ack = true;
+
+    lc3010.set_flash_data_length(dataLen);
+
+    return ack;
+}
+
+bool write_internal_pattern_data_into_the_flash(char *WriteData, unsigned int data_size)
+{
+    bool ack = true;
+    int i = 0;
+    unsigned int send_package = data_size / WRITE_PACKAGE_SIZE;
+    unsigned int send_separately = data_size % WRITE_PACKAGE_SIZE;
+
+ //   char string[50] = {'\0'};
+    int wtCnt = 0;
+    wtCnt = lc3010.write_data_into_the_flash(Write_Flash_Start, WriteData, WRITE_PACKAGE_SIZE);
+ //   sprintf(string, "Write_Flash_Start size: %d", wtCnt);
+ //   LOG(INFO)<<string;
+
+    for (i = 1; i < send_package; i++) {
+        lc3010.write_data_into_the_flash(Write_Flash_Continue, &WriteData[i*WRITE_PACKAGE_SIZE], WRITE_PACKAGE_SIZE);
+    }
+
+    lc3010.set_flash_data_length(send_separately);
+    wtCnt = lc3010.write_data_into_the_flash(Write_Flash_Continue, &WriteData[i*WRITE_PACKAGE_SIZE], send_separately);
+//    sprintf(string, "Write_Flash_Continue size: %d", wtCnt);
+//    LOG(INFO)<<string;
+/*
+	FILE* fw;
+	fw = fopen("pattern_data_1.dat", "wb");
+    if (fw != NULL) {
+		fwrite(WriteData, 1, data_size, fw);
+		fclose(fw);
+	}
+	else {
+        LOG(INFO)<< "save pattern data fail";
+	}
+
+    LOG(INFO)<< "data size--" << data_size;
+    LOG(INFO)<< "send_package--" << send_package;
+    LOG(INFO)<< "send_separately--" << send_separately;
+*/
+    return ack;
+}
+
+bool read_internal_pattern_data_from_the_flash(char *ReadData, unsigned int data_size)
+{
+    bool ack = true;
+    int i = 0;
+    unsigned int read_package = data_size / READ_PACKAGE_SIZE;
+    unsigned int read_separately = data_size % READ_PACKAGE_SIZE;
+
+    lc3010.read_data_from_the_flash(Read_Flash_Start, ReadData, READ_PACKAGE_SIZE);
+
+    for (i = 1; i < read_package; i++) {
+        lc3010.read_data_from_the_flash(Read_Flash_Continue, &ReadData[i*READ_PACKAGE_SIZE], READ_PACKAGE_SIZE);
+    }
+
+    lc3010.set_flash_data_length(read_separately);
+    lc3010.read_data_from_the_flash(Read_Flash_Continue, &ReadData[i*READ_PACKAGE_SIZE], read_separately);
+/*
+	FILE* fw;
+	fw = fopen("read_pattern_data.dat", "wb");
+    if (fw != NULL) {
+		fwrite(ReadData, 1, data_size, fw);
+		fclose(fw);
+	}
+	else {
+        LOG(INFO)<< "save pattern data fail";
+	}
+*/
+    return ack;
+}
+
+bool reload_pattern_order_table_from_flash()
+{
+    bool ack = true;
+
+    lc3010.reload_pattern_order_table_from_flash();
+
+    return ack;
+}
+/*****************************************************************************************/
+bool load_pattern_process(char *ReadData, unsigned int data_size, char *string)
+{
+    bool ack = true;
+
+    // step1 -- Set Internal Pattern Stop, Do not repeat (run once)
+    if ( !set_internal_pattern_stop() )
+    {
+        strcpy(string, "step1 -- set_internal_pattern_stop error.");
+        return false;
+    }
+
+    // step2 -- Flash Data Type (D0h for pattern data)
+    if ( !set_flash_data_type() )
+    {
+        strcpy(string, "step2 -- set_flash_data_type error.");
+        return false;
+    }
+
+    // step3 -- set read internal pattern data length, 256 bytes once opation.
+    if ( !set_flash_data_length(0x0100) )
+    {
+        strcpy(string, "step5 -- set_flash_data_length error.");
+        return false;
+    }
+
+    // step4 -- start to read flash data, 256 bytes once opation. 
+    if ( !read_internal_pattern_data_from_the_flash(ReadData, data_size) )
+    {
+        strcpy(string, "step6 -- read_internal_pattern_data_from_the_flash error.");
+        return false;
+    }
+
+    return ack;
+}
+
+bool program_pattern_process(char *WriteData, char *ReadData, unsigned int data_size, char *string)
+{
+    bool ack = true;
+ 
+    // step1 -- Set Internal Pattern Stop, Do not repeat (run once)
+    if ( !set_internal_pattern_stop() )
+    {
+        strcpy(string, "step1 -- set_internal_pattern_stop error.");
+        return false;
+    }
+
+    // step2 -- Flash Data Type (D0h for pattern data)
+    if ( !set_flash_data_type() )
+    {
+        strcpy(string, "step2 -- set_flash_data_type error.");
+        return false;
+    }
+
+    // step3 -- set Flash Build Data Size (LSB ~ MSB), return err or not. 
+    if ( !set_flash_build_data_size(data_size) )
+    {
+        strcpy(string, "step3 -- set_flash_build_data_size error.");
+        return false;
+    }
+
+    // step4 -- Flash Data Type (D0h for pattern data)
+    if ( !set_flash_data_type() )
+    {
+        strcpy(string, "step4 -- set_flash_data_type error.");
+        return false;
+    }
+
+    // step5 -- Signature: Value = AAh, BBh, CCh, DDh.
+    if ( !set_erase_flash() )
+    {
+        strcpy(string, "step5 -- set_erase_flash error.");
+        return false;
+    }
+
+    // step6 -- erase flash status check.
+    if ( !check_erase_flash_status() )
+    {
+        strcpy(string, "step6 -- check_erase_flash_status error.");
+        return false;
+    }
+
+    // step7 -- Flash Data Type (D0h for pattern data)
+    if ( !set_flash_data_type() )
+    {
+        strcpy(string, "step7 -- set_flash_data_type error.");
+        return false;
+    }
+
+    // step8 -- Set  Flash Data Length 256 bytes.
+    if ( !set_flash_data_length(0x0100) )
+    {
+        strcpy(string, "step8 -- set_flash_data_length error.");
+        return false;
+    }
+
+    // step9 -- write internal pattern data into the flash. Write 256 bytes once operation.
+    if ( !write_internal_pattern_data_into_the_flash(WriteData, data_size) )
+    {
+        strcpy(string, "step9 -- write_internal_pattern_data_into_the_flash error.");
+        return false;
+    }
+
+    // step10 -- Flash Data Type (D0h for pattern data)
+    if ( !set_flash_data_type() )
+    {
+        strcpy(string, "step2 -- set_flash_data_type error.");
+        return false;
+    }
+
+    // step11 -- set read internal pattern data length, 256 bytes once opation.
+    if ( !set_flash_data_length(0x0100) )
+    {
+        strcpy(string, "step5 -- set_flash_data_length error.");
+        return false;
+    }
+
+    // step12 -- start to read flash data, 256 bytes once opation. 
+    if ( !read_internal_pattern_data_from_the_flash(ReadData, data_size) )
+    {
+        strcpy(string, "step6 -- read_internal_pattern_data_from_the_flash error.");
+        return false;
+    }
+
+    // step13 --Reload from flash
+    if ( !reload_pattern_order_table_from_flash() )
+    {
+        strcpy(string, "step13 -- reload_pattern_order_table_from_flash error.");
+        return false;
+    }
+
+    return ack;
+}
+/*****************************************************************************************/
+int handle_load_pattern_data(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    unsigned int data_size;
+    int ret = recv_buffer(client_sock, (char*)(&data_size), sizeof(data_size));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+
+    char string[100] = {'\0'};
+    sprintf(string, "load pattern data size: 0x%X", data_size);
+    char *ReadData = new char[data_size];
+    memset(ReadData, 0, data_size);
+    load_pattern_process(ReadData, data_size, string);
+
+    LOG(INFO)<<string;
+
+    ret = send_buffer(client_sock, ReadData, data_size);
+    delete [] ReadData;
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
+
+int handle_program_pattern_data(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    unsigned int pattern_size;
+    int ret = recv_buffer(client_sock, (char*)(&pattern_size), sizeof(pattern_size));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"recv error, close this connection!\n";
+	    return DF_FAILED;
+    }
+
+    char string[100] = {'\0'};
+    sprintf(string, "program pattern data size: 0x%X", pattern_size);
+
+    char *org_buffer = new char[pattern_size];
+    char *back_buffer = new char[pattern_size];
+    memset(back_buffer, 0, pattern_size);
+/*
+	FILE* fr;
+    fr = fopen("pattern_data.dat", "rb");
+	if (fr != NULL) {
+		fread(org_buffer, 1, pattern_size, fr);
+		fclose(fr);
+	}
+	else {
+		sprintf(string, "read pattern data fail");
+	}
+*/
+    ret = recv_buffer(client_sock, org_buffer, pattern_size);
+    if (ret == DF_FAILED)
+    {
+        delete [] org_buffer;
+        delete [] back_buffer;
+        LOG(INFO)<<"recv error, close this connection!\n";
+	    return DF_FAILED;
+    }
+
+    program_pattern_process(org_buffer, back_buffer, pattern_size, string);
+    LOG(INFO)<<string;
+
+    ret = send_buffer(client_sock, back_buffer, pattern_size);
+    delete [] org_buffer;
+    delete [] back_buffer;
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
+/*****************************************************************************************/
+int read_bandwidth()
+{
+    int val = 0;
+    char data[100];
+
+    std::ifstream infile;
+    infile.open("/sys/class/net/eth0/speed");
+    infile >> data;
+    val = (int)std::atoi(data);
+    infile.close();
+
+    return val;
+}
+
+int handle_get_network_bandwidth(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"get network bandwidth!";
+
+    int speed = read_bandwidth();
+    int ret = send_buffer(client_sock, (char*)(&speed), sizeof(speed));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
 /*****************************************************************************************/
 int handle_commands(int client_sock)
 {
@@ -1377,6 +1764,21 @@ int handle_commands(int client_sock)
 	    break;
     // -----------------------------------------------------------
 
+    case DF_CMD_LOAD_PATTERN_DATA:
+	    LOG(INFO)<<"DF_CMD_LOAD_PATTERN_DATA";
+	    handle_load_pattern_data(client_sock);
+        break;
+
+    case DF_CMD_PROGRAM_PATTERN_DATA:
+	    LOG(INFO)<<"DF_CMD_PROGRAM_PATTERN_DATA";
+	    handle_program_pattern_data(client_sock);
+        break;
+
+	case DF_CMD_GET_NETWORK_BANDWIDTH:
+	    LOG(INFO)<<"DF_CMD_GET_NETWORK_BANDWIDTH";
+	    handle_get_network_bandwidth(client_sock);
+	    break;
+
 	case DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS:
 	    LOG(INFO)<<"DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS";
 	    handle_get_system_config_parameters(client_sock);
@@ -1397,7 +1799,6 @@ int handle_commands(int client_sock)
 
 int init()
 {
-
     readSystemConfig();
 
     brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
@@ -1426,8 +1827,6 @@ int main()
     LOG(INFO)<<"server started";
     init();
     LOG(INFO)<<"inited";
-
-
 
     int server_sock;
     do

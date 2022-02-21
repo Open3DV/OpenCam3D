@@ -47,6 +47,16 @@ open_cam3d.exe --enable-checkerboard --ip 192.168.x.x\n\
 \n\
 13.Disable checkerboard: \n\
 open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
+\n\
+14.Load pattern data: \n\
+open_cam3d.exe --load-pattern-data --ip 192.168.x.x\n\
+\n\
+15.Program pattern data: \n\
+open_cam3d.exe --program-pattern-data --ip 192.168.x.x\n\
+\n\
+16.Get network bandwidth: \n\
+open_cam3d.exe --get-network-bandwidth --ip 192.168.x.x\n\
+\n\
 ";
 
 
@@ -69,6 +79,9 @@ int set_calib_param(const char* ip, const char* calib_param_path);
 int get_temperature(const char* ip);
 int enable_checkerboard(const char* ip);
 int disable_checkerboard(const char* ip);
+int load_pattern_data(const char* ip);
+int program_pattern_data(const char* ip);
+int get_network_bandwidth(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -90,7 +103,10 @@ enum opt_set
 	GET_BRIGHTNESS,
 	HELP,
 	ENABLE_CHECKER_BOARD,
-	DISABLE_CHECKER_BOARD
+	DISABLE_CHECKER_BOARD,
+	LOAD_PATTERN_DATA,
+	PROGRAM_PATTERN_DATA,
+	GET_NETWORK_BANDWIDTH
 };
 
 static struct option long_options[] =
@@ -111,6 +127,9 @@ static struct option long_options[] =
 	{"help",no_argument,NULL,HELP},
 	{"enable-checkerboard",no_argument,NULL,ENABLE_CHECKER_BOARD},
 	{"disable-checkerboard",no_argument,NULL,DISABLE_CHECKER_BOARD},
+	{"load-pattern-data",no_argument,NULL,LOAD_PATTERN_DATA},
+	{"program-pattern-data",no_argument,NULL,PROGRAM_PATTERN_DATA},
+	{"get-network-bandwidth",no_argument,NULL,GET_NETWORK_BANDWIDTH},
 };
 
 
@@ -188,6 +207,15 @@ int main(int argc, char* argv[])
 		break;
 	case DISABLE_CHECKER_BOARD:
 		disable_checkerboard(camera_id);
+		break;
+	case LOAD_PATTERN_DATA:
+		load_pattern_data(camera_id);
+		break;
+	case PROGRAM_PATTERN_DATA:
+		program_pattern_data(camera_id);
+		break;
+	case GET_NETWORK_BANDWIDTH:
+		get_network_bandwidth(camera_id);
 		break;
 	default:
 		break;
@@ -699,6 +727,100 @@ int disable_checkerboard(const char* ip)
 	float temperature = 0;
 	DfDisableCheckerboard(temperature);
 	std::cout << "Disable checkerboard: " << temperature << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+// -------------------------------------------------------------------
+#define PATTERN_DATA_SIZE 0xA318						// Now the pattern data build size is 0xA318 = 41752 bytes.
+int load_pattern_data(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	char * LoadBuffer = new char[PATTERN_DATA_SIZE];
+
+	DfLoadPatternData(PATTERN_DATA_SIZE, LoadBuffer);							
+
+	char string[50] = { '\0' };
+	FILE* fw;
+	if (fopen_s(&fw, "pattern_data.dat", "wb") == 0) {
+		fwrite(LoadBuffer, 1, PATTERN_DATA_SIZE, fw);
+		fclose(fw);
+		sprintf_s(string, "pattern_data.dat");
+	}
+	else {
+		sprintf_s(string, "save pattern data fail");
+	}
+
+	std::cout << "Load Pattern save as:" << string << std::endl;
+
+	delete[] LoadBuffer;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int program_pattern_data(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	// allocate the org pattern data & read back data buffer.
+	char* pOrg = new char[PATTERN_DATA_SIZE];
+	char* pBack = new char[PATTERN_DATA_SIZE];
+
+	// read the pattern data from file into the front half of the buffer.
+	FILE* fw;
+	if (fopen_s(&fw, "pattern_data.dat", "rb") == 0) {
+		fread_s(pOrg, PATTERN_DATA_SIZE, 1, PATTERN_DATA_SIZE, fw);
+		fclose(fw);
+		std::cout << "Program Pattern:" << "load file ok!" << std::endl;
+	}
+	else {
+		std::cout << "Program Pattern:" << "load file fail..." << std::endl;
+	}
+
+	DfProgramPatternData(pOrg, pBack, PATTERN_DATA_SIZE);
+
+	// check the program and load data be the same.
+	if ( memcmp(pOrg, pBack, PATTERN_DATA_SIZE) ) {
+		std::cout << "Program Pattern:" << "fail..." << std::endl;
+	} else {
+		std::cout << "Program Pattern:" << "ok!" << std::endl;
+	}
+
+	delete[] pOrg;
+	delete[] pBack;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int get_network_bandwidth(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int speed = 0;
+	DfGetNetworkBandwidth(speed);
+	std::cout << "Network bandwidth: " << speed << std::endl;
 
 	DfDisconnectNet();
 	return 1;

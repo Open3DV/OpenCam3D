@@ -1,6 +1,9 @@
 #ifndef CAMERA_PARAM_H
 #define CAMERA_PARAM_H
 
+#define WRITE_PACKAGE_SIZE      256//1024
+#define READ_PACKAGE_SIZE       256
+
 struct CameraCalibParam
 {
     float camera_intrinsic[9];
