@@ -8,6 +8,8 @@
 #endif
 /***************************************************************************************/
 
+/***************************************************************************************/
+
 extern "C"
 {
 
@@ -21,7 +23,7 @@ extern "C"
 		float intrinsic[3 * 3];
 		//相机外参
 		float extrinsic[4 * 4];
-		//相机畸变
+		//相机畸变，只用前5个
 		float distortion[1 * 12];//<k1,k2,p1,p2,k3,k4,k5,k6,s1,s2,s3,s4>
 
 	};
@@ -29,7 +31,7 @@ extern "C"
 
 	//函数名： DfConnect
 	//功能： 连接相机
-	//输入参数： camera_id（相机id）
+	//输入参数： camera_id（相机ip地址）
 	//输出参数： 无
 	//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 	DF_SDK_API int DfConnect(const char* camera_id);
@@ -43,7 +45,7 @@ extern "C"
 
 	//函数名： DfCaptureData
 	//功能： 采集一帧数据并阻塞至返回状态
-	//输入参数： exposure_num（曝光次数）：可设置值为1、2、3.
+	//输入参数： exposure_num（曝光次数）：设置值为1为单曝光，大于1为多曝光模式（具体参数在相机gui中设置）.
 	//输出参数： timestamp(时间戳)
 	//返回值： 类型（int）:返回0表示获取采集数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp);
@@ -63,6 +65,13 @@ extern "C"
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetBrightnessData(unsigned char* brightness);
 
+	//函数名： DfGetHeightMapData
+	//功能： 采集点云数据并阻塞至返回结果
+	//输入参数：无
+	//输出参数： height_map(高度映射图)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetHeightMapData(float* height_map);
+
 	//函数名： DfGetPointcloudData
 	//功能： 采集点云数据并阻塞至返回结果
 	//输入参数：无
@@ -72,7 +81,7 @@ extern "C"
 
 	//函数名： DfConnect
 	//功能： 断开相机连接
-	//输入参数： camera_id（相机id）
+	//输入参数： camera_id（相机ip地址）
 	//输出参数： 无
 	//返回值： 类型（int）:返回0表示断开成功;返回-1表示断开失败.
 	DF_SDK_API int DfDisconnect(const char* camera_id);
@@ -88,7 +97,5 @@ extern "C"
 	/***************************************************************************************************************************************************************/
 
 
-
 }
 
-/**************************************************************************************/
