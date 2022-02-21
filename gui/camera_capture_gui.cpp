@@ -153,14 +153,14 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 	path_name = dir.absolutePath();
 
 	 
-	QString brightness_str = path_name + "bright.bmp";
+	QString brightness_str = path_name + "_bright.bmp";
 	cv::imwrite(brightness_str.toStdString(), brightness_map_); 
 	 
 	QString depth_str = path_name + "_depth_map.tiff";
 	cv::imwrite(depth_str.toStdString(), depth_map_); 
 
 	QString height_str = path_name + "_height_map.tiff";
-	cv::imwrite(depth_str.toStdString(), depth_map_);
+	cv::imwrite(height_str.toStdString(), height_map_);
 
 	QString points_str = path_name + ".ply"; 
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
@@ -784,8 +784,7 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		transformPointcloud((float*)points_map.data, (float*)rotate_mat.data, (float*)translation_mat.data); 
 
 		std::vector<cv::Mat> channels;
-		cv::split(points_map, channels);
-		depth_map_ = channels[2].clone();
+		cv::split(points_map, channels); 
 
 		cv::Mat height_map = channels[2].clone();
 		 
