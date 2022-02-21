@@ -10,6 +10,18 @@
 #define Write_Display_Size				0x12
 #define Write_Rgb_Led_Enable			0x52
 
+#define Write_Internal_Pattern_Control	0x9E
+#define Write_Flash_Data_Type_Select	0xDE
+#define Read_Flash_Update_Precheck		0xDD
+#define Write_Flash_Erase				0xE0
+#define Read_Short_Status				0xD0
+#define Write_Flash_Data_Length			0xDF
+#define Write_Flash_Start				0xE1
+#define Write_Flash_Continue			0xE2
+#define Read_Flash_Start 				0xE3
+#define Read_Flash_Continue				0xE4
+#define Write_Pattern_Order_Table_Entry	0x98
+
 class LightCrafter3010
 {
 private:
@@ -45,5 +57,15 @@ public:
 
 	void enable_checkerboard();
 	void disable_checkerboard();
+
+	void set_internal_pattern_stop();
+	void set_flash_data_type();
+	bool set_flash_build_data_size(unsigned int data_size);
+	void set_erase_flash();
+	bool check_erase_flash_status();
+	void set_flash_data_length(unsigned short dataLen);
+	int write_data_into_the_flash(unsigned char writeFlashCmd, char *TxBuffer, unsigned short dataLen);
+	void read_data_from_the_flash(unsigned char readFlashCmd, char *RxBuffer, unsigned short dataLen);
+	void reload_pattern_order_table_from_flash();
 };
 

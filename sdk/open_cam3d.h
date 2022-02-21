@@ -150,3 +150,9 @@ DF_SDK_API int DfSetSystemConfigParam(const struct SystemConfigParam& config_par
 DF_SDK_API int DfEnableCheckerboard(float& temperature);
 
 DF_SDK_API int DfDisableCheckerboard(float& temperature);
+
+DF_SDK_API int DfLoadPatternData(int buildDataSize, char* LoadBuffer);
+
+DF_SDK_API int DfProgramPatternData(char* org_buffer, char* back_buffer, unsigned int pattern_size);
+
+DF_SDK_API int DfGetNetworkBandwidth(int &speed);

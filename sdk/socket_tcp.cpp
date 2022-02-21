@@ -116,7 +116,7 @@ int recv_buffer(char* buffer, int buffer_size, SOCKET& sock)
 			null_flag++;
 		}
 
-		if (null_flag > 10)
+		if (null_flag > 100)
 		{ 
 			return DF_FAILED;
 		}

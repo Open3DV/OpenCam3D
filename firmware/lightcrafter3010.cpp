@@ -2,7 +2,8 @@
 #include "i2c.h"
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
+#include "easylogging++.h"
 
 LightCrafter3010::LightCrafter3010()
 {
@@ -12,12 +13,14 @@ LightCrafter3010::LightCrafter3010()
 		perror("Open i2c bus error");
 		return;
 	}
+
 	memset(&_device, 0, sizeof(_device));
 	i2c_init_device(&_device);
+
 	_device.bus = fd;
-        _device.addr = 0x1b & 0x3ff;  //0x1b is LC3010 device address
-        _device.page_bytes = 32;
-        _device.iaddr_bytes = 1;
+    _device.addr = 0x1b & 0x3ff;        //0x1b is LC3010 device address
+    _device.page_bytes = 256;//32;
+    _device.iaddr_bytes = 1;
 }
 
 size_t LightCrafter3010::read(char inner_addr, void* buffer, size_t buffer_size)
@@ -147,6 +150,103 @@ void LightCrafter3010::disable_checkerboard()
     write(Write_Image_Freeze, TxBuffer, 1);
 } 
 
+void LightCrafter3010::set_internal_pattern_stop()
+{
+    unsigned char TxBuffer[8];
+    
+    TxBuffer[0] = 0x01;
+    TxBuffer[1] = 0x00;
+    write(Write_Internal_Pattern_Control, TxBuffer, 2);
+}
+
+void LightCrafter3010::set_flash_data_type()
+{
+    unsigned char TxBuffer[8];
+    
+    TxBuffer[0] = 0xD0;
+    write(Write_Flash_Data_Type_Select, TxBuffer, 1);
+}
+
+bool LightCrafter3010::set_flash_build_data_size(unsigned int data_size)
+{
+    bool ack = true;
+    unsigned char MxBuffer[8];
+    
+    MxBuffer[0] = (data_size >> 0) & 0xff;
+    MxBuffer[1] = (data_size >> 8) & 0xff;
+    MxBuffer[2] = (data_size >> 16) & 0xff;
+    MxBuffer[3] = (data_size >> 24) & 0xff;
+    write(Read_Flash_Update_Precheck, MxBuffer, 4);
+
+    return ack;
+}
+
+void LightCrafter3010::set_erase_flash()
+{
+    unsigned char TxBuffer[8];
+    
+    TxBuffer[0] = 0xAA;
+    TxBuffer[1] = 0xBB;
+    TxBuffer[2] = 0xCC;
+    TxBuffer[3] = 0xDD;
+    write(Write_Flash_Erase, TxBuffer, 4);
+}
+
+bool LightCrafter3010::check_erase_flash_status()
+{
+    bool ack = true;
+    unsigned char RxBuffer[8];
+    int i;
+    
+    for (i = 0; i < 30; i++)
+    {
+        read(Read_Short_Status, RxBuffer, 1);
+
+        char string[50] = {'\0'};
+        sprintf(string, "Read_Short_Status: %d- 0x%X", i, RxBuffer[0]);
+        LOG(INFO)<<string;
+
+        if ((RxBuffer[0] & 0x7E) != 0) {
+            ack = false;
+        } else {
+            ack = true;
+            break;
+        }
+
+        usleep(10000);
+    }
+
+    return ack;
+}
+
+void LightCrafter3010::set_flash_data_length(unsigned short dataLen)
+{
+    unsigned char TxBuffer[8];
+    
+    TxBuffer[0] = (dataLen >> 0) & 0xff;
+    TxBuffer[1] = (dataLen >> 8) & 0xff;
+    write(Write_Flash_Data_Length, TxBuffer, 2);
+}
+
+int LightCrafter3010::write_data_into_the_flash(unsigned char writeFlashCmd, char *TxBuffer, unsigned short dataLen)
+{
+    return write(writeFlashCmd, TxBuffer, dataLen);
+}
+
+void LightCrafter3010::read_data_from_the_flash(unsigned char readFlashCmd, char *RxBuffer, unsigned short dataLen)
+{
+    read(readFlashCmd, RxBuffer, dataLen);
+}
+
+void LightCrafter3010::reload_pattern_order_table_from_flash()
+{
+    unsigned char TxBuffer[24];
+    
+    memset(TxBuffer, 0, sizeof(TxBuffer));
+    TxBuffer[0] = 0x02;
+    write(Write_Pattern_Order_Table_Entry, TxBuffer, 24);
+}
+
 void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len)
 {
     unsigned char buffer[24];
@@ -156,7 +256,6 @@ void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len
     buffer[2] = 0x06;  //Number of pattern to display
     //buffer[3] = 0x07;  //RGB
     buffer[3] = 0x04;  //RGB
-
 
     // Pattern Invert
     buffer[4] = 0; 
@@ -188,9 +287,9 @@ void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len
 
     for(int i=0; i<len; i++)
     {
-	buffer[1] = pattern_index[i];
+	    buffer[1] = pattern_index[i];
         write(0x98, buffer, 24);
-	buffer[0] = 0x00;
+	    buffer[0] = 0x00;
     }
 }
 

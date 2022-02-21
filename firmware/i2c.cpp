@@ -6,7 +6,7 @@
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #include "i2c.h"
-
+#include "easylogging++.h"
 
 /* I2C default delay */
 #define I2C_DEFAULT_DELAY 1
@@ -235,7 +235,6 @@ ssize_t i2c_read(const I2CDevice *device, unsigned int iaddr, void *buf, size_t 
         perror("Write i2c internal address error");
         return -1;
     }
-
     /* Wait a while */
     i2c_delay(delay);
 
@@ -322,7 +321,7 @@ ssize_t i2c_write_3010(const I2CDevice *device, unsigned int iaddr, const void *
     if (remain > device->page_bytes)
     {
         perror("I2C write error:");
-	return 0;
+	    return 0;
     }
     
     while (remain > 0) {
