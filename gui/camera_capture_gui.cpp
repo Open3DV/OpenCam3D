@@ -1066,14 +1066,14 @@ void CameraCaptureGui::do_pushButton_save_as()
 
 	last_path_ = path;
 
-	QStringList str_list = path.split(".");
+	//QStringList str_list = path.split(".");
 
-	QString name = str_list[0];
+	//QString name = str_list[0];
 	 
 
-	std::thread t_s(&CameraCaptureGui::saveOneFrameData,this,name);
+	std::thread t_s(&CameraCaptureGui::saveOneFrameData,this, path);
 	t_s.detach(); 
-	addLogMessage(QString::fromLocal8Bit("保存路径：")+ name); 
+	addLogMessage(QString::fromLocal8Bit("保存路径：")+ path);
 	 
 
 }
