@@ -813,6 +813,7 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 			QString str = QString::fromLocal8Bit("保存高度映射基准平面"); 
 			addLogMessage(str);
 
+			height_map_ = height_map.clone();
 			renderDepthImage(height_map);
 			showImage();
 		}
