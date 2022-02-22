@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>..\x64\Release</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--capture --ip 192.168.88.124 --patterns .\capture\test --calib .\capture\param.txt --pointcloud .\capture</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--capture --ip 192.168.88.108 --patterns .\capture\test --calib .\capture\param.txt --pointcloud .\capture</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

@@ -479,8 +479,8 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 		double fq12 = mapping.at<double>(y2, x1);
 		double fq22 = mapping.at<double>(y2, x2);
 
-		if (fq11 < 0 || fq21 < 0 || fq12 < 0 || fq22 < 0)
-			return -1;
+		//if (fq11 < 0 || fq21 < 0 || fq12 < 0 || fq22 < 0)
+		//	return -1;
 
 		double out = 0;
 		out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
@@ -495,8 +495,8 @@ double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& m
 		float fq12 = mapping.at<float>(y2, x1);
 		float fq22 = mapping.at<float>(y2, x2);
 
-		if (fq11 < 0 || fq21 < 0 || fq12 < 0 || fq22 < 0)
-			return -1;
+		//if (fq11 < 0 || fq21 < 0 || fq12 < 0 || fq22 < 0)
+		//	return -1;
 
 		float out = 0;
 		out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
