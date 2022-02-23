@@ -11,6 +11,74 @@ PrecisionTest::~PrecisionTest()
 }
 
 
+// arr1: Mat (1, N) CV_64F
+// arr2: Mat (1, M) CV_64F
+// return: Mat (N, M) CV_64F
+Mat PrecisionTest::kronProductArr(const Mat& arr1, const Mat& arr2)
+{
+	int N = arr1.cols;
+	int M = arr2.cols;
+	Mat arr1Expand = repeat(arr1.t(), 1, M);
+	Mat arr2Expand = repeat(arr2, N, 1);
+	Mat kroProduct = arr1Expand.mul(arr2Expand);
+	return kroProduct;
+}
+
+// R * pc2 + t = pc1
+// pc1: Mat (N, 3) CV_64F
+// pc2: Mat (N, 3) CV_64F
+// r: Mat (3, 3) CV_64F
+// t: Mat (3, 1) CV_64F
+void PrecisionTest::svdIcp(const Mat& pc1, const Mat& pc2, Mat& r, Mat& t)
+{
+	int pointNum = pc1.rows;
+	Mat pc1Mean = pcMean(pc1);
+	Mat pc2Mean = pcMean(pc2);
+	Mat pc1Centered = pc1 - repeat(pc1Mean, pointNum, 1);
+	Mat pc2Centered = pc2 - repeat(pc2Mean, pointNum, 1);
+	Mat w = Mat::zeros(3, 3, CV_64F);
+	for (int i = 0; i < pointNum; i++) {
+		Mat q1 = pc1Centered(sliceMask(i, -1, 0, 3));
+		Mat q2 = pc2Centered(sliceMask(i, -1, 0, 3));
+		w += kronProductArr(q2, q1);
+	}
+	Mat u, sigma, vt;
+	SVD::compute(w, sigma, u, vt);
+	r = vt.t() * u.t();
+	double det = determinant(r);
+	if (det < 0) {
+		vt.at<double>(2, 0) = -vt.at<double>(2, 0);
+		vt.at<double>(2, 1) = -vt.at<double>(2, 1);
+		vt.at<double>(2, 2) = -vt.at<double>(2, 2);
+		r = vt.t() * u.t();
+	}
+	t = pc1Mean - pc2Mean * r.t();
+	t = t.t();   // from (1, 3) to (3, 1)
+}
+
+// end == -1: take only 1 row or colume
+Rect PrecisionTest::sliceMask(int rowStart, int rowEnd, int colStart, int colEnd)
+{
+	if (colEnd == -1) { colEnd = colStart + 1; }
+	if (rowEnd == -1) { rowEnd = rowStart + 1; }
+	return Rect(colStart, rowStart, colEnd - colStart, rowEnd - rowStart);
+}
+
+
+// pc: Mat (N, 3) CV_64F
+// return: pcMean (1, 3) CV_64F
+Mat PrecisionTest::pcMean(const Mat& pc)
+{
+	Mat xList = pc(sliceMask(0, pc.rows, 0, -1));
+	Mat yList = pc(sliceMask(0, pc.rows, 1, -1));
+	Mat zList = pc(sliceMask(0, pc.rows, 2, -1));
+	Mat meanXYZ =
+		(Mat_<double>(1, 3) << mean(xList)[0],
+			mean(yList)[0],
+			mean(zList)[0]);   //[0]: denoted for the first channel(only one channel in this case)
+	return meanXYZ;
+}
+
 float PrecisionTest::computeTwoPointDistance(cv::Point3f p0, cv::Point3f p1)
 {
 	cv::Point3f differ_p = p0 - p1;

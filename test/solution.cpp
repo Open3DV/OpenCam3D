@@ -424,8 +424,9 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	DF_Reconstruct reconstruct_machine_;
 	reconstruct_machine_.setCalibData(calib_param);
 	 
+	cv::Mat err_map;
 
-	ret = reconstruct_machine_.rebuildData(unwrap_ver, unwrap_hor, 1, deep_map);
+	ret = reconstruct_machine_.rebuildData(unwrap_ver, unwrap_hor, 1, deep_map, err_map);
 	if (!ret)
 	{
 		std::cout << "Rebuild Error!";
@@ -440,7 +441,7 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	reconstruct_machine_.undistortedImage(texture_map, undistort_img);
 	texture_map = undistort_img.clone();
 
-
+	err_map.convertTo(err_map, CV_32F);
 	/*********************************************************************************/
 	 
 
@@ -456,6 +457,8 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 
 	deep_channels[2].convertTo(depth_map, CV_32F);
 
+
+	std::string save_err_tiff = work_path_ + "_err.tiff";
 	std::string save_depth_tiff = work_path_ + "_depth.tiff";
 	std::string save_points_dir = work_path_ + "_points.xyz";
 	std::string save_depth_txt_dir = work_path_ + "_depth.txt";
@@ -468,6 +471,8 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	MapToColor(deep_map, color_map, grey_map, 400, 800);
 	MaskZMap(color_map, unwrap_mask);
 
+
+	cv::imwrite(save_err_tiff, err_map);
 	cv::imwrite(save_depth_tiff, depth_map);
 	cv::imwrite(save_brightness_dir, texture_map); 
 	cv::imwrite(save_depth_dir, color_map);

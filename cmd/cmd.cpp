@@ -1,4 +1,6 @@
 ﻿#include "../sdk/open_cam3d.h"
+#include "../firmware/system_config_settings.h"
+#include "../firmware/protocol.h"
 #include "opencv2/opencv.hpp"
 #include <windows.h>
 #include <assert.h>

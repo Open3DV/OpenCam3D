@@ -13,7 +13,7 @@
 /**********************************************************************************************/
 //并行于图像采集
 
-
+bool transform_pointcloud(float* rotate,float* translation,float * const transform_depth);
 /**********************************************************************************************/
 //重复模式
 bool parallel_cuda_copy_repetition_signal_patterns(unsigned char* patterns_ptr,int serial_flag);

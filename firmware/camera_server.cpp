@@ -1231,11 +1231,13 @@ bool set_system_config(SystemConfigParam &rect_config_param)
     }
 
     //set many exposure param
-    system_config_settings_machine_.Instance().config_param_.exposure_num = rect_config_param.exposure_num;
-
+    system_config_settings_machine_.Instance().config_param_.exposure_num = rect_config_param.exposure_num; 
     std::memcpy(system_config_settings_machine_.Instance().config_param_.exposure_param , rect_config_param.exposure_param,sizeof(rect_config_param.exposure_param));
  
  
+    //set external param
+    
+    std::memcpy(system_config_settings_machine_.Instance().config_param_.external_param , rect_config_param.external_param,sizeof(rect_config_param.external_param));
 
     return true;
 }

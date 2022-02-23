@@ -616,6 +616,131 @@ bool DF_Reconstruct::phaseToCoord(cv::Mat unwrap_map, float size, cv::Mat& coord
 	return true;
 }
 
+
+bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int period_nun, cv::Mat& deep_map, cv::Mat& err_map)
+{
+	if (!M_1_.data || !M_2_.data)
+	{
+		return false;
+	}
+
+	if (!unwrap_map_x.data || !unwrap_map_y.data)
+	{
+		return false;
+	}
+
+
+	double phase_max = 2 * CV_PI * period_nun;
+
+	int nr = unwrap_map_x.rows;
+	int nc = unwrap_map_x.cols;
+
+
+	cv::Mat mask(nr, nc, CV_8U, cv::Scalar(0));
+
+	std::vector<cv::Point2d> camera_points;
+	std::vector<cv::Point2d> dlp_points;
+	std::vector<double> error_list;
+	//map to dlp pos
+
+	for (int r = 0; r < nr; r++)
+	{
+		double* ptr_x = unwrap_map_x.ptr<double>(r);
+		double* ptr_y = unwrap_map_y.ptr<double>(r);
+		uchar* ptr_m = mask.ptr<uchar>(r);
+		for (int c = 0; c < nc; c++)
+		{
+			if (0 != ptr_x[c])
+			{
+				cv::Point2d dlp_p;
+				dlp_p.x = dlp_width_ * ptr_x[c] / phase_max;
+				dlp_p.y = dlp_height_ * ptr_y[c] / phase_max;
+
+				cv::Point2d camera_p(c, r);
+				camera_points.push_back(camera_p);
+				dlp_points.push_back(dlp_p);
+
+				ptr_m[c] = 255;
+
+			}
+
+		}
+	}
+	/*********************************************************************************/
+
+
+	//»û±äÐ£Õý
+	std::vector<cv::Point2d> correct_camera_points;
+	std::vector<cv::Point2d> correct_dlp_points;
+
+
+
+
+	undistortedPoints(camera_points, camera_intrinsic_, camera_distortion_, correct_camera_points);
+	undistortedPoints(dlp_points, project_intrinsic_, projector_distortion_, correct_dlp_points);
+
+
+	//std::vector<cv::Point2d> correct_camera_points_user;
+	//std::vector<cv::Point2d> correct_dlp_points_user;
+	//cv::undistortPoints(camera_points, correct_camera_points_user, camera_intrinsic_, camera_distortion_, cv::noArray(), camera_intrinsic_);
+	//cv::undistortPoints(dlp_points, correct_dlp_points_user, project_intrinsic_, projector_distortion_, cv::noArray(), project_intrinsic_);
+
+
+
+	std::vector<cv::Point3d> rebuild_points_test;
+	std::vector<cv::Point3d> rebuild_points;
+
+	rebuildPoints(correct_camera_points, correct_dlp_points, rebuild_points, error_list);
+
+	int points_num = 0;
+
+	cv::Mat deep_map_real_data(nr, nc, CV_64FC3, cv::Scalar(0, 0, 0));
+	cv::Mat deep_map_real_data_test(nr, nc, CV_64FC3, cv::Scalar(0, 0, 0));
+	cv::Mat error_map(nr, nc, CV_64FC1, cv::Scalar(0));
+
+	for (int r = 0; r < nr; r++)
+	{
+		uchar* ptr_m = mask.ptr<uchar>(r);
+		cv::Vec3d* ptr_dr = deep_map_real_data.ptr<cv::Vec3d>(r);
+		cv::Vec3d* ptr_dr_test = deep_map_real_data_test.ptr<cv::Vec3d>(r);
+		double* ptr_err = error_map.ptr<double>(r);
+		for (int c = 0; c < nc; c++)
+		{
+			if (0 != ptr_m[c])
+			{
+				if (points_num < rebuild_points.size())
+				{
+
+					ptr_err[c] = error_list[points_num];
+
+					if (error_list[points_num] < 2)
+					{
+						ptr_dr[c][0] = rebuild_points[points_num].x;
+						ptr_dr[c][1] = rebuild_points[points_num].y;
+						ptr_dr[c][2] = rebuild_points[points_num].z;
+					}
+
+					points_num++;
+				}
+
+
+			}
+
+		}
+
+	}
+
+
+	deep_map = deep_map_real_data.clone();
+
+	err_map = error_map.clone();
+	/***************************************************************************************************************/
+
+ 
+
+	return true;
+}
+
 bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int period_nun, cv::Mat &deep_map)
 {
 	if (!M_1_.data || !M_2_.data)

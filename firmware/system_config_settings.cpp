@@ -15,6 +15,32 @@ SystemConfigDataStruct::SystemConfigDataStruct()
     {
         instance_.config_param_.exposure_param[i] = (i+1)*100;
     }
+ 
+
+    instance_.config_param_.camera_exposure_time = 12000;
+    instance_.config_param_.camera_gain = 0;
+    instance_.config_param_.external_param_flag = 0;
+    
+    instance_.config_param_.external_param[0] = 1;
+    instance_.config_param_.external_param[1] = 0;
+    instance_.config_param_.external_param[2] = 0;
+
+    instance_.config_param_.external_param[3] = 0;
+    instance_.config_param_.external_param[4] = 1;
+    instance_.config_param_.external_param[5] = 0;
+
+    instance_.config_param_.external_param[6] = 0;
+    instance_.config_param_.external_param[7] = 0;
+    instance_.config_param_.external_param[8] = 1;
+
+    instance_.config_param_.external_param[9] = 0;
+    instance_.config_param_.external_param[10] = 0;
+    instance_.config_param_.external_param[11] = 0;
+
+    instance_.config_param_.standard_plane[0] = 0;
+    instance_.config_param_.standard_plane[1] = 0;
+    instance_.config_param_.standard_plane[2] = 1;
+    instance_.config_param_.standard_plane[3] = 0;
 
 }
 
@@ -71,8 +97,42 @@ bool SystemConfigDataStruct::loadFromSettings(const std::string& f)
                     }
                 }
             }
-       
+            else if( "camera_exposure_time" == param_list[0])
+            {
+                instance_.config_param_.camera_exposure_time = atof(param_list[1].c_str());
+            }
+            else if( "camera_gain" == param_list[0])
+            {
+                instance_.config_param_.camera_gain = atof(param_list[1].c_str());
+            }
+            else if( "external_param_flag" == param_list[0])
+            {
+                instance_.config_param_.external_param_flag = atoi(param_list[1].c_str());
+            }
+            else if( "external_param" == param_list[0])
+            {
+                std::vector<std::string> external_param_list = vStringSplit(param_list[1], ",");
 
+                if(12 == external_param_list.size())
+                {
+                    for(int i = 0;i< 12;i++)
+                    {
+                        instance_.config_param_.external_param[i] = atof(external_param_list[i].c_str());
+                    }
+                }
+            }
+            else if( "standard_plane" == param_list[0])
+            {
+                std::vector<std::string> plane_param_list = vStringSplit(param_list[1], ",");
+
+                if(4 == plane_param_list.size())
+                {
+                    for(int i = 0;i< 4;i++)
+                    {
+                        instance_.config_param_.standard_plane[i] = atof(plane_param_list[i].c_str());
+                    }
+                }
+            }
              
         }
     }
@@ -106,7 +166,33 @@ bool SystemConfigDataStruct::saveToSettings(const std::string& f)
     }
     exposure_param_str += std::to_string(instance_.config_param_.exposure_param[5]); 
     ofile << "exposure_param: " << exposure_param_str << std::endl; 
+
+    //
+    ofile << "camera_exposure_time: " << instance_.config_param_.camera_exposure_time << std::endl; 
+    ofile << "camera_gain: " << instance_.config_param_.camera_gain << std::endl; 
+    ofile << "external_param_flag: " << instance_.config_param_.external_param_flag << std::endl; 
   
+    //
+    std::string external_param_str = ""; 
+    for(int i = 0;i< 11;i++)
+    {
+        external_param_str += std::to_string(instance_.config_param_.external_param[i]);
+        external_param_str +=",";
+    }
+    external_param_str += std::to_string(instance_.config_param_.external_param[11]); 
+    ofile << "external_param: " << external_param_str << std::endl; 
+
+    //
+    std::string plane_param_str = ""; 
+    for(int i = 0;i< 3;i++)
+    {
+        plane_param_str += std::to_string(instance_.config_param_.standard_plane[i]);
+        plane_param_str +=",";
+    }
+    plane_param_str += std::to_string(instance_.config_param_.standard_plane[3]); 
+    ofile << "standard_plane: " << plane_param_str << std::endl; 
+ 
+
     ofile.close();
    
 	return true;

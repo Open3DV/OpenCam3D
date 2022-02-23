@@ -10,6 +10,8 @@
 #include <qheaderview.h>
 #include "../calibration/calibrate_function.h"
 #include "PrecisionTest.h"
+ 
+  
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	: QWidget(parent)
@@ -31,8 +33,8 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	
   
 
-	renderBrightnessImage(brightness_map_);
-	renderDepthImage(depth_map_);
+	//renderBrightnessImage(brightness_map_);
+	//renderDepthImage(depth_map_);
 
 	radio_button_flag_ = SELECT_BRIGHTNESS_FLAG_;
 	showImage();
@@ -108,6 +110,7 @@ bool CameraCaptureGui::initializeFunction()
 
 	connect(ui.pushButton_save_as, SIGNAL(clicked()), this, SLOT(do_pushButton_save_as()));
 	connect(ui.pushButton_test_accuracy, SIGNAL(clicked()), this, SLOT(do_pushButton_test_accuracy()));
+	connect(ui.pushButton_calibrate_external_param, SIGNAL(clicked()), this, SLOT(do_pushButton_calibrate_external_param()));
 
 	connect(&capture_timer_, SIGNAL(timeout()), this, SLOT(do_timeout_slot()));
 	capture_timer_.setInterval(50);
@@ -152,13 +155,15 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 	path_name = dir.absolutePath();
 
 	 
-	QString brightness_str = path_name + ".bmp";
+	QString brightness_str = path_name + "_bright.bmp";
 	cv::imwrite(brightness_str.toStdString(), brightness_map_); 
 	 
-	QString depth_str = path_name + ".tiff";
+	QString depth_str = path_name + "_depth_map.tiff";
 	cv::imwrite(depth_str.toStdString(), depth_map_); 
 
-	 
+	QString height_str = path_name + "_height_map.tiff";
+	cv::imwrite(height_str.toStdString(), height_map_);
+
 	QString points_str = path_name + ".ply"; 
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 
@@ -332,7 +337,7 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 {
 	processing_settings_data_.Instance().low_z_value = val;
 
-	renderDepthImage( depth_map_);
+	renderDepthImage(height_map_);
 	showImage();
 	 
  
@@ -367,7 +372,7 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 	processing_settings_data_.Instance().high_z_value = val;
 
 
-	renderDepthImage(depth_map_);
+	renderDepthImage(height_map_);
 	showImage();
 
  
@@ -526,6 +531,7 @@ bool CameraCaptureGui::capture_one_frame_data()
 
 	cv::Mat brightness(height, width, CV_8U, cv::Scalar(0));
 	cv::Mat depth(height, width, CV_32F, cv::Scalar(0.));
+	cv::Mat point_cloud(height, width, CV_32FC3, cv::Scalar(0.)); 
 
 	int depth_buf_size = image_size * 1 * 4;  
 	int brightness_bug_size = image_size; 
@@ -556,6 +562,14 @@ bool CameraCaptureGui::capture_one_frame_data()
 	{
 		brightness_map_ = brightness.clone();
 		depth_map_ = depth.clone();
+		 
+		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);  
+		transformPointcloud((float*)point_cloud.data, system_config_param_.external_param, &system_config_param_.external_param[9]);
+	 
+		std::vector<cv::Mat> channels;
+		cv::split(point_cloud, channels);
+		height_map_ = channels[2].clone();
+
 
 		addLogMessage(QString::fromLocal8Bit("采集完成！"));
   
@@ -616,7 +630,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 			if (0 != ret_code)
 			{
 				qDebug() << "Get Param Error;";
-				return;
+				//return;
 			}
 
 			undateSystemConfigUiData();
@@ -722,6 +736,107 @@ double CameraCaptureGui::computePointsDistance(cv::Point2f p_0, cv::Point2f p_1,
 	double differ_val = std::sqrtf(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
 
 	return differ_val;
+} 
+
+void CameraCaptureGui::do_pushButton_calibrate_external_param()
+{
+
+	if (depth_map_.empty() || brightness_map_.empty())
+	{
+		return;
+	}
+	   
+	cv::Mat cameraMatrix(3, 3, CV_32FC1, camera_calibration_param_.camera_intrinsic);
+	cv::Mat distCoeffs = cv::Mat(5, 1, CV_32F, camera_calibration_param_.camera_distortion);  
+
+	if (true)
+	{
+		//ICP
+		cv::Mat undist_img;
+		cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
+
+
+		Calibrate_Function calib_function;
+		std::vector<cv::Point2f> undist_circle_points;
+		bool found = calib_function.findCircleBoardFeature(undist_img, undist_circle_points);
+
+		if (!found)
+		{
+			return;
+		}
+		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
+		depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
+
+		/*******************************************************************************************/
+		std::vector<cv::Point3f> point_3d;
+		bilinearInterpolationFeaturePoints(undist_circle_points, point_3d, points_map);
+
+		PrecisionTest precision_machine;
+		cv::Mat pc1(point_3d.size(), 3, CV_64F, cv::Scalar(0));
+		cv::Mat pc2(point_3d.size(), 3, CV_64F, cv::Scalar(0));
+
+		std::vector<cv::Point3f> world_points = calib_function.generateAsymmetricWorldFeature(20, 10);
+
+		for (int r = 0; r < point_3d.size(); r++)
+		{
+			pc2.at<double>(r, 0) = point_3d[r].x;
+			pc2.at<double>(r, 1) = point_3d[r].y;
+			pc2.at<double>(r, 2) = point_3d[r].z;
+		}
+		for (int r = 0; r < world_points.size(); r++)
+		{
+			pc1.at<double>(r, 0) = world_points[r].x;
+			pc1.at<double>(r, 1) = world_points[r].y;
+			pc1.at<double>(r, 2) = world_points[r].z;
+		}
+
+		cv::Mat r(3, 3, CV_64F, cv::Scalar(0));
+		cv::Mat t(3, 3, CV_64F, cv::Scalar(0));
+
+		precision_machine.svdIcp(pc1, pc2, r, t);  
+		r.convertTo(r, CV_32F);
+		t.convertTo(t, CV_32F);
+		transformPointcloud((float*)points_map.data, (float*)r.data, (float*)t.data);
+
+		std::vector<cv::Mat> channels;
+		cv::split(points_map, channels); 
+		cv::Mat height_map = channels[2].clone(); 
+
+		height_map_ = height_map.clone();
+		renderDepthImage(height_map);
+		showImage();
+
+		for (int i = 0; i < 9; i++)
+		{
+			system_config_param_.external_param[i] = r.ptr<float>(0)[i];
+			//qDebug() << system_config_param_.external_param[i];
+		}
+
+		for (int i = 0; i < 3; i++)
+		{
+			system_config_param_.external_param[9 + i] = t.ptr<float>(0)[i];
+			//qDebug() << translation_mat.ptr<float>(0)[i];
+		} 
+		if (connected_flag_)
+		{
+			int ret_code = DfSetSystemConfigParam(system_config_param_);
+			if (0 != ret_code)
+			{
+				qDebug() << "Get Param Error;";
+				return;
+			} 
+			QString str = QString::fromLocal8Bit("保存高度映射基准平面");
+			addLogMessage(str); 
+
+		}
+		else
+		{
+			QString str = QString::fromLocal8Bit("相机已断连！");
+			addLogMessage(str);
+		} 
+	}
+
+	/**************************************************************************************************/ 
 }
 
 void CameraCaptureGui::do_pushButton_test_accuracy()
@@ -951,14 +1066,14 @@ void CameraCaptureGui::do_pushButton_save_as()
 
 	last_path_ = path;
 
-	QStringList str_list = path.split(".");
+	//QStringList str_list = path.split(".");
 
-	QString name = str_list[0];
+	//QString name = str_list[0];
 	 
 
-	std::thread t_s(&CameraCaptureGui::saveOneFrameData,this,name);
+	std::thread t_s(&CameraCaptureGui::saveOneFrameData,this, path);
 	t_s.detach(); 
-	addLogMessage(QString::fromLocal8Bit("保存路径：")+ name); 
+	addLogMessage(QString::fromLocal8Bit("保存路径：")+ path);
 	 
 
 }
@@ -973,7 +1088,7 @@ bool CameraCaptureGui::capture_one_frame_and_render()
 	{
 
 		renderBrightnessImage(brightness_map_);
-		renderDepthImage(depth_map_);
+		renderDepthImage(height_map_);
 		showImage();
 
 		if (ui.checkBox_auto_save->isChecked())

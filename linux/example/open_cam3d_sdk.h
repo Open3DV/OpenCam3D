@@ -6,8 +6,7 @@
 #elif __linux
 #define DF_SDK_API 
 #endif
- 
-
+/***************************************************************************************/
 
 /***************************************************************************************/
 
@@ -96,73 +95,7 @@ extern "C"
 
 
 	/***************************************************************************************************************************************************************/
-	 
+
 
 }
 
-
-/**************************************************************************************/
-
-DF_SDK_API int DfConnectNet(const char* ip);
-
-DF_SDK_API int DfDisconnectNet();
-
-DF_SDK_API int DfGetCameraResolution(int* width, int* height);
-
-DF_SDK_API int DfGetCameraData(
-	short* depth, int depth_buf_size,
-	unsigned char* brightness, int brightness_buf_size,
-	short* point_cloud, int point_cloud_buf_size,
-	unsigned char* confidence, int confidence_buf_size);
-
-DF_SDK_API int GetBrightness(unsigned char* brightness, int brightness_buf_size);
-
-DF_SDK_API int DfGetCameraRawData01(unsigned char* raw, int raw_buf_size);
-
-DF_SDK_API int DfGetCameraRawData02(unsigned char* raw, int raw_buf_size);
-
-DF_SDK_API int DfGetCameraRawDataTest(unsigned char* raw, int raw_buf_size);
-
-DF_SDK_API int DfGetCameraRawData03(unsigned char* raw, int raw_buf_size);
-
-DF_SDK_API bool depthTransformPointcloud(float* depth_map, float* point_cloud_map);
-
-DF_SDK_API bool transformPointcloud(float* point_cloud_map, float* rotate, float* translation);
-
-DF_SDK_API bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* translation);
-
-DF_SDK_API int DfGetPointCloud(float* point_cloud, int point_cloud_buf_size);
-
-DF_SDK_API int DfGetFrame01(float* depth, int depth_buf_size,
-	unsigned char* brightness, int brightness_buf_size);
-
-DF_SDK_API int DfGetFrameHdr(float* depth, int depth_buf_size,
-	unsigned char* brightness, int brightness_buf_size);
-
-DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
-	unsigned char* brightness, int brightness_buf_size);
-
-DF_SDK_API int DfGetRepetitionFrame03(int count,float* depth, int depth_buf_size,
-	unsigned char* brightness, int brightness_buf_size);
-
-DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param);
-
-DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_param);
-
-DF_SDK_API int DfGetDeviceTemperature(float& temperature);
-
-DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*));
-
-DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param);
-
-DF_SDK_API int DfSetSystemConfigParam(const struct SystemConfigParam& config_param);
-
-DF_SDK_API int DfEnableCheckerboard(float& temperature);
-
-DF_SDK_API int DfDisableCheckerboard(float& temperature);
-
-DF_SDK_API int DfLoadPatternData(int buildDataSize, char* LoadBuffer);
-
-DF_SDK_API int DfProgramPatternData(char* org_buffer, char* back_buffer, unsigned int pattern_size);
-
-DF_SDK_API int DfGetNetworkBandwidth(int &speed);

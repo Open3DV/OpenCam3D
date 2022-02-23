@@ -22,6 +22,8 @@ public:
 
 	bool rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int period_nun, cv::Mat &deep_map);
 
+	bool rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int period_nun, cv::Mat& deep_map, cv::Mat& err_map);
+
 	bool undistortedPoints(std::vector<cv::Point2d> distortPoints,cv::Mat intrinsic,cv::Mat distortion, std::vector<cv::Point2d> &undisted_points);
 
 	bool undistortedImage(cv::Mat distort_img, cv::Mat& undistort_img);

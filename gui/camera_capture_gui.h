@@ -5,6 +5,8 @@
 #include "settings_file_function.h"
 #include <opencv2/core.hpp>
 #include "../sdk/open_cam3d.h"
+#include "../firmware/system_config_settings.h"
+#include "../firmware/protocol.h"
 #include <QThread>
 #include <QDebug>
 #include <QtCore/QTimer>
@@ -73,8 +75,6 @@ public slots:
 
 	void do_timeout_slot();
 
- 
-
 
 private slots:
 	void do_QRadioButton_toggled_brightness(bool state);
@@ -108,6 +108,8 @@ private slots:
 
 	void do_pushButton_test_accuracy();
 
+	void do_pushButton_calibrate_external_param();
+
 	void do_pushButton_capture_continuous();
 
 	void do_spin_led_current_changed(int val);
@@ -131,6 +133,7 @@ private:
 
 	cv::Mat depth_map_;
 	cv::Mat brightness_map_;
+	cv::Mat height_map_;
 	cv::Mat render_image_brightness_;
 	cv::Mat render_image_gray_depth_;
 	cv::Mat render_image_color_depth_;
