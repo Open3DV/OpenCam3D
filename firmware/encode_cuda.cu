@@ -163,7 +163,7 @@ __global__ void cuda_merge_six_step_phase_shift(unsigned short * const d_in_0, u
 		float b = (s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset])/repetition_count;
 
   
-		confidence[offset] = std::sqrt(a*a + b*b);
+		confidence[offset] = std::sqrt(a*a + b*b)*repetition_count;
 		d_out[offset] = DF_PI + std::atan2(a, b);
 	}
 
