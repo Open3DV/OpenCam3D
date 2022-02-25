@@ -145,45 +145,122 @@ DF_SDK_API int DfGetCameraRawData01(unsigned char* raw, int raw_buf_size);
 
 //函数名： DfGetCameraRawData02
 //功能： 采集一组相移图，一共37幅，24个四步相移条纹图+12个六步相移条纹图+一个亮度图
-//输入参数：raw_buf_size（24张8位图的尺寸）
+//输入参数：raw_buf_size（37张8位图的尺寸）
 //输出参数：raw
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraRawData02(unsigned char* raw, int raw_buf_size);
 
+//函数名： DfGetCameraRawDataTest
+//功能： 采集一组条纹图 
+//输入参数：raw_buf_size（一组图的尺寸）
+//输出参数：raw内存指针
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraRawDataTest(unsigned char* raw, int raw_buf_size);
 
+//函数名： DfGetCameraRawData03
+//功能： 采集一组相移图，一共31幅，24个四步相移条纹图+6个垂直方向的六步相移条纹图+一个亮度图
+//输入参数：raw_buf_size（31张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraRawData03(unsigned char* raw, int raw_buf_size);
 
+//函数名： depthTransformPointcloud
+//功能： 深度图转点云接口
+//输入参数：depth_map（深度图）
+//输出参数：point_cloud_map（点云）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API bool depthTransformPointcloud(float* depth_map, float* point_cloud_map);
 
+//函数名： transformPointcloud
+//功能： 点云坐标系转换接口
+//输入参数：rotate（旋转矩阵）、translation（平移矩阵）
+//输出参数：point_cloud_map（点云）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API bool transformPointcloud(float* point_cloud_map, float* rotate, float* translation);
 
+//函数名： transformPointcloudInv
+//功能： 点云坐标系反变换（测试接口）
 DF_SDK_API bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* translation);
 
+//函数名： DfGetPointCloud
+//功能： 获取点云接口，基于24张四步相移图
+//输入参数：point_cloud_buf_size（点云内存大小）
+//输出参数：point_cloud_map（点云）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetPointCloud(float* point_cloud, int point_cloud_buf_size);
 
+//函数名： DfGetFrame01
+//功能： 获取一帧数据（亮度图+深度图），基于Raw01的相移图
+//输入参数：depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetFrame01(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetFrameHdr
+//功能： 获取一帧数据（亮度图+深度图），基于Raw03相位图的HDR模式
+//输入参数：depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetFrameHdr(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetFrame03
+//功能： 获取一帧数据（亮度图+深度图），基于Raw03相位图
+//输入参数：depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetRepetitionFrame03
+//功能： 获取一帧数据（亮度图+深度图），基于Raw03相位图，6步相移的图重复count次
+//输入参数：count（重复次数）、depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetRepetitionFrame03(int count,float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetCalibrationParam
+//功能：获取标定参数接口
+//输入参数：无
+//输出参数：calibration_param（标定参数）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param);
 
+//函数名： DfGetCalibrationParam
+//功能：设置标定参数接口
+//输入参数：calibration_param（标定参数）
+//输出参数：无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_param);
 
+//函数名： DfGetDeviceTemperature
+//功能：获取设备温度
+//输入参数：无
+//输出参数：temperature（摄氏度）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetDeviceTemperature(float& temperature);
 
+//函数名： DfRegisterOnDropped
+//功能：注册断连回调函数
+//输入参数：无
+//输出参数：p_function（回调函数）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*));
 
+//函数名： DfGetCalibrationParam
+//功能：获取相机配置参数接口
+//输入参数：config_param（配置参数）
+//输出参数：无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param);
 
+//函数名： DfGetCalibrationParam
+//功能：设置相机配置参数接口
+//输入参数：config_param（配置参数）
+//输出参数：无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfSetSystemConfigParam(const struct SystemConfigParam& config_param);
 
 DF_SDK_API int DfEnableCheckerboard(float& temperature);
