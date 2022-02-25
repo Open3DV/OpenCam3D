@@ -102,23 +102,52 @@ extern "C"
 
 
 /**************************************************************************************/
-
+//函数名： DfConnectNet（区别于DfConnect:带注册的连接，DfConnectNet：不带注册直接连接）
+//功能： 连接相机
+//输入参数： ip
+//输出参数： 无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfConnectNet(const char* ip);
 
+//函数名： DfDisconnectNet
+//功能： 断开相机
+//输入参数：无
+//输出参数： 无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfDisconnectNet();
 
-DF_SDK_API int DfGetCameraResolution(int* width, int* height);
+//DF_SDK_API int DfGetCameraResolution(int* width, int* height);
 
+//函数名： DfGetCameraData
+//功能： 获取一帧相机数据
+//输入参数：无
+//输出参数： 无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraData(
 	short* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size,
 	short* point_cloud, int point_cloud_buf_size,
 	unsigned char* confidence, int confidence_buf_size);
 
+//函数名： GetBrightness
+//功能： 获取一个亮度图数据
+//输入参数：brightness_buf_size（亮度图尺寸sizeof(unsigned char) * width * height）
+//输出参数：brightness
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int GetBrightness(unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetCameraRawData01
+//功能： 采集一组相移图，一共24幅四步相移条纹图
+//输入参数：raw_buf_size（24张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraRawData01(unsigned char* raw, int raw_buf_size);
 
+//函数名： DfGetCameraRawData02
+//功能： 采集一组相移图，一共37幅，24个四步相移条纹图+12个六步相移条纹图+一个亮度图
+//输入参数：raw_buf_size（24张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraRawData02(unsigned char* raw, int raw_buf_size);
 
 DF_SDK_API int DfGetCameraRawDataTest(unsigned char* raw, int raw_buf_size);

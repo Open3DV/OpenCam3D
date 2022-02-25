@@ -50,6 +50,7 @@ int depth_buf_size_ = 0;
 int pointcloud_buf_size_ = 0;
 int brightness_bug_size_ = 0;
 float* point_cloud_buf_ = NULL;
+float* trans_point_cloud_buf_ = NULL;
 bool transform_pointcloud_flag_ = false;
 float* depth_buf_ = NULL;
 unsigned char* brightness_buf_ = NULL;
@@ -346,6 +347,8 @@ DF_SDK_API int DfConnect(const char* camera_id)
 	pointcloud_buf_size_ = depth_buf_size_ * 3;
 	point_cloud_buf_ = (float*)(new char[pointcloud_buf_size_]);
 
+	trans_point_cloud_buf_ = (float*)(new char[pointcloud_buf_size_]);
+
 	brightness_bug_size_ = image_size;
 	brightness_buf_ = new unsigned char[brightness_bug_size_];
 
@@ -526,11 +529,13 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 
 	if (!transform_pointcloud_flag_)
 	{
-		depthTransformPointcloud(depth_buf_, point_cloud_buf_);
+		depthTransformPointcloud((float*)depth_buf_, (float*)point_cloud_buf_);
 		transform_pointcloud_flag_ = true;
 	}
- 
-	transformPointcloud(point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
+
+	memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
+	transformPointcloud((float*)trans_point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
+	 
 
 	int nr = camera_height_;
 	int nc = camera_width_; 
@@ -542,7 +547,7 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 			int offset = r * camera_width_ + c; 
 			if (depth_buf_[offset] > 0)
 			{
-				height_map[offset] = point_cloud_buf_[offset*3];
+				height_map[offset] = trans_point_cloud_buf_[offset*3+2];
 			}
 			else
 			{
@@ -605,6 +610,8 @@ DF_SDK_API int DfDisconnect(const char* camera_id)
 
 	delete[] depth_buf_;
 	delete[] brightness_buf_;
+	delete[] point_cloud_buf_;
+	delete[] trans_point_cloud_buf_;
 
 	connected_flag_ = false;
 
