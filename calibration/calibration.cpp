@@ -2,10 +2,12 @@
 //
 
 #include <iostream>  
+#include <string.h>
 #include "../test/encode.h"   
 #include "../test/support_function.h"
 #include "Calibrate_Function.h"
 #include "../cmd/getopt.h"
+#include "../firmware/version.h"
 
 const char* help_info =
 "Examples:\n\
@@ -40,6 +42,7 @@ const char* patterns_path;
 const char* calib_path; 
 int command = HELP;
 
+void project_version();
 bool calibrate_stereo(std::string patterns_path, std::string calib_path);
 
 int main(int argc, char* argv[])
@@ -66,13 +69,13 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	//switch (command)
-	//{
-	//case HELP:
-	//	printf(help_info);
-	//	break;
-	//case  CALIBRATE:
-	//{
+	switch (command)
+	{
+	case HELP:
+		project_version();
+		break;
+	case  CALIBRATE:
+	{
 		std::string patterns_str(patterns_path);
 		std::string calib_str(calib_path);
 
@@ -81,27 +84,35 @@ int main(int argc, char* argv[])
 		if (!ok)
 		{
 			printf(help_info);
-		}
+		 }
 		
-		//}
-	//	break; 
-	//default:
-	//	break;
-	//}
-
+	}
+		break; 
+	default:
+		break;
+	}
 
 	return 1;
 }
 
+void project_version()
+{
+	char info[100 * 1024] = { '\0' };
+	char version[] = _VERSION_;
+	char enter[] = "\n";
 
+	strcpy_s(info, sizeof(enter), enter);
+	strcat_s(info, sizeof(info), version);
+	strcat_s(info, sizeof(info), enter);
+	strcat_s(info, sizeof(info), enter);
+
+	printf_s(info);
+}
 
 bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 {
-
-
 	std::string path = patterns_path;
 	Calibrate_Function calib_function;
-
 
 	//读取多组标定条纹图案图像
 	std::vector<std::vector<std::string>> files_list;

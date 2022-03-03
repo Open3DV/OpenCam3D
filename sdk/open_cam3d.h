@@ -263,12 +263,44 @@ DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param);
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfSetSystemConfigParam(const struct SystemConfigParam& config_param);
 
+//函数名：  DfEnableCheckerboard
+//功能：    打开光机，投影棋盘格
+//输入参数：无
+//输出参数：nano温度1
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfEnableCheckerboard(float& temperature);
 
+//函数名：  DfDisableCheckerboard
+//功能：    关闭光机投影
+//输入参数：无
+//输出参数：nano温度2
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfDisableCheckerboard(float& temperature);
 
+//函数名：  DfLoadPatternData
+//功能：    从光机控制板读取预先设置的42张投影图片数据--Pattern Data
+//输入参数：获取Pattern Data的缓冲区大小、获取Pattern Data的缓冲区地址
+//输出参数：Pattern Data数据
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfLoadPatternData(int buildDataSize, char* LoadBuffer);
 
+//函数名：  DfProgramPatternData
+//功能：    将光机控制板DLP的投影图片数据--Pattern Data，由PC端写入至控制板FLASH
+//输入参数：要写入的数据包地址，回读回来的数据包地址，数据包大小
+//输出参数：回读的数据内容
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfProgramPatternData(char* org_buffer, char* back_buffer, unsigned int pattern_size);
 
+//函数名：  DfGetNetworkBandwidth
+//功能：    获取链路的网络带宽
+//输入参数：无
+//输出参数：网络带宽大小
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetNetworkBandwidth(int &speed);
+
+//函数名：  DfGetFirmwareVersion
+//功能：    获取固件版本
+//输入参数：版本号缓冲区地址，缓冲区长度
+//输出参数：版本号
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetFirmwareVersion(char* pVersion, int length);

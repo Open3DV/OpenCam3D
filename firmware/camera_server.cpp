@@ -19,6 +19,7 @@
 #include "easylogging++.h"
 #include "encode_cuda.cuh"
 #include "system_config_settings.h"
+#include "version.h"
 
 
 INITIALIZE_EASYLOGGINGPP 
@@ -1320,8 +1321,6 @@ bool config_checkerboard(bool enable)
     return true;
 }
 //*****************************************************************************************/
-// Enable and disable checkerboard, by wangtong, 2022-01-27
-//*****************************************************************************************/
 int handle_enable_checkerboard(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -1752,6 +1751,26 @@ int handle_get_network_bandwidth(int client_sock)
     return DF_SUCCESS;
 }
 /*****************************************************************************************/
+int handle_get_firmware_version(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"get firmware version!";
+
+    char version[_VERSION_LENGTH_] = _VERSION_;
+    int ret = send_buffer(client_sock, version, _VERSION_LENGTH_);
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
+/*****************************************************************************************/
 int handle_commands(int client_sock)
 {
     int command;
@@ -1844,8 +1863,6 @@ int handle_commands(int client_sock)
 			 param.translation_matrix);
 	    break;
 
-    // -----------------------------------------------------------
-    // -- Enable and disable checkerboard, by wangtong, 2022-01-27 
 	case DF_CMD_ENABLE_CHECKER_BOARD:
 	    LOG(INFO)<<"DF_CMD_ENABLE_CHECKER_BOARD";
 	    handle_enable_checkerboard(client_sock);
@@ -1855,7 +1872,6 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_DISABLE_CHECKER_BOARD";
 	    handle_disable_checkerboard(client_sock);
 	    break;
-    // -----------------------------------------------------------
 
     case DF_CMD_LOAD_PATTERN_DATA:
 	    LOG(INFO)<<"DF_CMD_LOAD_PATTERN_DATA";
@@ -1870,6 +1886,11 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_NETWORK_BANDWIDTH:
 	    LOG(INFO)<<"DF_CMD_GET_NETWORK_BANDWIDTH";
 	    handle_get_network_bandwidth(client_sock);
+	    break;
+
+	case DF_CMD_GET_FIRMWARE_VERSION:
+	    LOG(INFO)<<"DF_CMD_GET_FIRMWARE_VERSION";
+	    handle_get_firmware_version(client_sock);
 	    break;
 
 	case DF_CMD_GET_SYSTEM_CONFIG_PARAMETERS:

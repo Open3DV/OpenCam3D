@@ -1,10 +1,12 @@
 ﻿#include "../sdk/open_cam3d.h"
 #include "../firmware/system_config_settings.h"
 #include "../firmware/protocol.h"
+#include "../firmware/version.h"
 #include "opencv2/opencv.hpp"
 #include <windows.h>
 #include <assert.h>
 #include <fstream>
+#include <string.h>
 #include "getopt.h" 
 
 
@@ -61,9 +63,12 @@ open_cam3d.exe --program-pattern-data --ip 192.168.x.x\n\
 17.Get network bandwidth: \n\
 open_cam3d.exe --get-network-bandwidth --ip 192.168.x.x\n\
 \n\
+18.Get firmware version: \n\
+open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
+\n\
 ";
 
-
+void help_with_version(const char* help);
 bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map);
 int get_frame_01(const char* ip, const char* frame_path);
 int get_frame_03(const char* ip, const char* frame_path);
@@ -87,6 +92,7 @@ int disable_checkerboard(const char* ip);
 int load_pattern_data(const char* ip);
 int program_pattern_data(const char* ip);
 int get_network_bandwidth(const char* ip);
+int get_firmware_version(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -113,7 +119,8 @@ enum opt_set
 	DISABLE_CHECKER_BOARD,
 	LOAD_PATTERN_DATA,
 	PROGRAM_PATTERN_DATA,
-	GET_NETWORK_BANDWIDTH
+	GET_NETWORK_BANDWIDTH,
+	GET_FIRMWARE_VERSION
 };
 
 static struct option long_options[] =
@@ -139,6 +146,7 @@ static struct option long_options[] =
 	{"load-pattern-data",no_argument,NULL,LOAD_PATTERN_DATA},
 	{"program-pattern-data",no_argument,NULL,PROGRAM_PATTERN_DATA},
 	{"get-network-bandwidth",no_argument,NULL,GET_NETWORK_BANDWIDTH},
+	{"get-firmware-version",no_argument,NULL,GET_FIRMWARE_VERSION},
 };
 
 
@@ -179,7 +187,7 @@ int main(int argc, char* argv[])
 	switch (command)
 	{
 	case HELP:
-		printf(help_info);
+		help_with_version(help_info);
 		break;
 	case GET_TEMPERATURE:
 		get_temperature(camera_id);
@@ -210,7 +218,6 @@ int main(int argc, char* argv[])
 		int num = std::atoi(repetition_count);
 		get_repetition_frame_03(camera_id, num, path);
 	}
-
 		break;
 	case GET_FRAME_HDR:
 		get_frame_hdr(camera_id, path);
@@ -221,7 +228,6 @@ int main(int argc, char* argv[])
 	case GET_BRIGHTNESS:
 		get_brightness(camera_id, path);
 		break;
-	// -- enable and disable checkerboard, by wangtong, 2022-01-27
 	case ENABLE_CHECKER_BOARD:
 		enable_checkerboard(camera_id);
 		break;
@@ -237,11 +243,29 @@ int main(int argc, char* argv[])
 	case GET_NETWORK_BANDWIDTH:
 		get_network_bandwidth(camera_id);
 		break;
+	case GET_FIRMWARE_VERSION:
+		get_firmware_version(camera_id);
+		break;
 	default:
 		break;
 	}
 
 	return 0;
+}
+
+void help_with_version(const char* help)
+{
+	char info[100 * 1024] = {'\0'};
+	char version[] = _VERSION_;
+	char enter[] = "\n";
+
+	strcpy_s(info, sizeof(enter), enter);
+	strcat_s(info, sizeof(info), version);
+	strcat_s(info, sizeof(info), enter);
+	strcat_s(info, sizeof(info), enter);
+	strcat_s(info, sizeof(info), help);
+
+	printf_s(info);
 }
 
 int on_dropped(void* param)
@@ -250,14 +274,12 @@ int on_dropped(void* param)
 	return 0;
 }
 
-
 bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map)
 {
 	if (depth_map.empty())
 	{
 		return false;
 	}
-	 
 
 	double camera_fx = calibration_param_.camera_intrinsic[0];
 	double camera_fy = calibration_param_.camera_intrinsic[4];
@@ -302,9 +324,7 @@ bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map)
 
 	}
 
-
 	point_cloud_map = points_map.clone();
-
 
 	return true;
 }
@@ -408,7 +428,6 @@ int get_brightness(const char* ip, const char* image_path)
 	DfDisconnectNet();
 	return 1;
 }
-
 
 int get_frame_hdr(const char* ip, const char* frame_path)
 {
@@ -879,6 +898,24 @@ int get_network_bandwidth(const char* ip)
 	int speed = 0;
 	DfGetNetworkBandwidth(speed);
 	std::cout << "Network bandwidth: " << speed << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int get_firmware_version(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	char version[_VERSION_LENGTH_] = { '\0' };
+	DfGetFirmwareVersion(version, _VERSION_LENGTH_);
+	std::cout << "Firmware: " << version << std::endl;
 
 	DfDisconnectNet();
 	return 1;

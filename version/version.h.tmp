@@ -1,0 +1,4 @@
+#ifndef _VERSION_
+#define _VERSION_ "MYVERSION"
+#define _VERSION_LENGTH_ 500
+#endif
