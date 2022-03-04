@@ -8,4 +8,4 @@ tools/patterns
 example/*.dll
 example/*.lib
 build
-version/version.h
+firmware/version.h

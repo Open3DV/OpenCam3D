@@ -95,6 +95,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>open_cam3d_sdk</TargetName>
+    <CustomBuildBeforeTargets>
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -171,6 +173,15 @@ copy $(TargetDir)\open_cam3d_sdkd.dll $(ProjectDir)..\example</Command>
       <Command>copy $(TargetDir)\open_cam3d_sdk.lib $(ProjectDir)..\example
 copy $(TargetDir)\open_cam3d_sdk.dll $(ProjectDir)..\example</Command>
     </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <PreBuildEvent>
+      <Command>$(ProjectDir)
+cd ..\version
+build.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
