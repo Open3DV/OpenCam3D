@@ -9,19 +9,18 @@
 #include <QMouseEvent>
 #include <QMessageBox>
 #include <QLabel>
+#include "../firmware/version.h"
 
 camera_gui::camera_gui(QWidget *parent)
 	: QMainWindow(parent)
 { 
-	 
     ui.setupUi(this);
 
-
-
-
+    connect(ui.actionAbout, &QAction::triggered, []() {
+        QMessageBox::about(NULL, "About", _VERSION_);
+        });
 
     processing_settings_data_.saveToSettings("./processing_settings.ini");
-
 
     //cv::Mat img_b = cv::imread("G:/Code/GitCode/DF8/DF15_SDK/x64/Release/capture_data/frame03_data/0604/data_01.bmp", 0);
     //cv::Mat img_depth = cv::imread("G:/Code/GitCode/DF8/DF15_SDK/x64/Release/capture_data/frame03_data/0604/data_01.tiff", cv::IMREAD_UNCHANGED);
@@ -30,12 +29,12 @@ camera_gui::camera_gui(QWidget *parent)
     label_temperature_ = new QLabel(this); 
     ui.statusBar->addPermanentWidget(label_temperature_);
      
-
     connect(ui.tab_capture, SIGNAL(send_temperature_update(float)), this, SLOT(do_update_temperature(float)));
 }
 
 camera_gui::~camera_gui()
 {
+
 }
 
 
