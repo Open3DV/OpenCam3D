@@ -364,6 +364,18 @@ bool parallel_cuda_reconstruct()
 }
 
 
+bool parallel_cuda_copy_pointcloud_from_gpu(float* pointcloud,unsigned char* brightness)
+{
+	if(!load_calib_data_flag_)
+	{
+		return false;
+	} 
+
+	LOG(INFO)<<"copy......"; 
+	cuda_get_brightness_data(brightness); 
+	cuda_get_pointcloud_data(pointcloud); 
+	LOG(INFO)<<"copy result";
+}
 
 bool parallel_cuda_copy_result_from_gpu(float* depth,unsigned char* brightness)
 {
@@ -1124,6 +1136,13 @@ bool cuda_reconstruct()
 	// cv::imwrite("points_map.tiff",points_map);
 
 
+}
+
+
+bool cuda_get_pointcloud_data(float* pointcloud)
+{
+	
+	CHECK(cudaMemcpy(pointcloud, d_point_cloud_map_, 3 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
 }
 
 bool cuda_get_depth_data(float* depth)

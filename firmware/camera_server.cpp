@@ -19,7 +19,7 @@
 #include "easylogging++.h"
 #include "encode_cuda.cuh"
 #include "system_config_settings.h"
-
+#include "configure_standard_plane.h"
 
 INITIALIZE_EASYLOGGINGPP 
 
@@ -904,6 +904,73 @@ int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
     
 
 }
+
+
+int handle_cmd_get_standard_plane_param_parallel(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int pointcloud_buf_size = 1920*1200*4*3;
+    float* pointcloud_map = new float[pointcloud_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+
+
+    lc3010.pattern_mode03(); 
+    camera.captureFrame03ToGpu();
+  
+    int ret= parallel_cuda_copy_pointcloud_from_gpu((float*)pointcloud_map,brightness);
+
+
+    int plane_buf_size = 12*4;
+    float* plane_param = new float[plane_buf_size];
+
+    memset(plane_param, 0, sizeof(float) * 12);
+
+    float* R = new float[9];
+    float* T = new float[3];
+    
+    memset(R, 0, sizeof(float) * 9);
+    memset(T, 0, sizeof(float) * 3);
+
+    ConfigureStandardPlane plane_machine;
+    plane_machine.setCalibrateParam(param);
+    bool found = plane_machine.getStandardPlaneParam(pointcloud_map,brightness,R,T);
+
+    if(found)
+    {
+        memcpy(plane_param, R, sizeof(float) * 9);
+        memcpy(plane_param+9, T, sizeof(float) * 3);
+    }
+
+
+
+    printf("start send plane param, buffer_size=%d\n", plane_buf_size);
+    ret = send_buffer(client_sock, (const char*)plane_param, plane_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] pointcloud_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+     
+    printf("plane param sent!\n");
+    // delete [] buffer;
+    delete [] pointcloud_map;
+    delete [] brightness;
+    return DF_SUCCESS;
+     
+}
+   
 
 int handle_cmd_get_frame_03_parallel(int client_sock)
 {
@@ -1880,6 +1947,10 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SET_SYSTEM_CONFIG_PARAMETERS";
 	    handle_set_system_config_parameters(client_sock);
         saveSystemConfig();
+	    break;
+	case DF_CMD_GET_STANDARD_PLANE_PARAM:
+	    LOG(INFO)<<"DF_CMD_GET_STANDARD_PLANE_PARAM";   
+    	handle_cmd_get_standard_plane_param_parallel(client_sock); 
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
