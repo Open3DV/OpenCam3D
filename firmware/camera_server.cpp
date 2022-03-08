@@ -937,6 +937,8 @@ int handle_cmd_get_standard_plane_param_parallel(int client_sock)
     memset(R, 0, sizeof(float) * 9);
     memset(T, 0, sizeof(float) * 3);
 
+ 
+
     ConfigureStandardPlane plane_machine;
     plane_machine.setCalibrateParam(param);
     bool found = plane_machine.getStandardPlaneParam(pointcloud_map,brightness,R,T);

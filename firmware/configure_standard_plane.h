@@ -1,3 +1,6 @@
+#ifndef OPENVSLAM_DATA_FRAME_STATISTICS_H
+#define OPENVSLAM_DATA_FRAME_STATISTICS_H
+
 #pragma once 
 #include <iostream> 
 #include <opencv2/imgcodecs.hpp>
@@ -10,7 +13,7 @@
 
 
 #include "camera_param.h"
-using namespace cv;
+// using namespace cv;
  
 class ConfigureStandardPlane
 {
@@ -18,7 +21,7 @@ public:
 	ConfigureStandardPlane();
 	~ConfigureStandardPlane();
 
-	bool getStandardPlaneParam(const float* ptr_point_cloud,const uchar* bright,float* R,float* T);
+	bool getStandardPlaneParam(float* ptr_point_cloud,uchar* bright,float* R,float* T);
 
 	void setCalibrateParam(struct CameraCalibParam param){
 		camera_calibration_param_ = param;
@@ -31,13 +34,13 @@ public:
 	// pc2: Mat (N, 3) CV_64F
 	// r: Mat (3, 3) CV_64F
 	// t: Mat (3, 1) CV_64F
-	void svdIcp(const Mat& pc1, const Mat& pc2, Mat& r, Mat& t);
+	void svdIcp(const cv::Mat& pc1, const cv::Mat& pc2, cv::Mat& r, cv::Mat& t);
 
 
 private:
 	bool bilinearInterpolationFeaturePoints(std::vector<cv::Point2f> feature_points, std::vector<cv::Point3f>& point_3d, cv::Mat point_cloud);
  
-	double Bilinear_interpolation(double x, double y, cv::Mat& mapping); 
+	float Bilinear_interpolation(float x, float y, cv::Mat& mapping); 
 	
 	std::vector<cv::Point3f> generateAsymmetricWorldFeature(float width, float height);
 
@@ -47,13 +50,13 @@ private:
 	// arr1: Mat (1, N) CV_64F
 	// arr2: Mat (1, M) CV_64F
 	// return: Mat (N, M) CV_64F
-	Mat kronProductArr(const Mat& arr1, const Mat& arr2);
+	cv::Mat kronProductArr(const cv::Mat& arr1, const cv::Mat& arr2);
 
 	// end == -1: take only 1 row or colume
-	Rect sliceMask(int rowStart, int rowEnd, int colStart, int colEnd);
+	cv::Rect sliceMask(int rowStart, int rowEnd, int colStart, int colEnd);
 	// pc: Mat (N, 3) CV_64F
 	// return: pcMean (1, 3) CV_64F
-	Mat pcMean(const Mat& pc);
+	cv::Mat pcMean(const cv::Mat& pc);
 
 
 
@@ -63,7 +66,7 @@ private:
 	int image_width_;
 	int image_height_;
 
-	cv::size board_size_;
+	cv::Size board_size_;
 	// int board_width_;
 	// int board_height_;
 
@@ -72,3 +75,5 @@ private:
 	struct CameraCalibParam camera_calibration_param_;
  
 };
+
+#endif

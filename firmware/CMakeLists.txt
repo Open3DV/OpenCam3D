@@ -9,8 +9,7 @@ set(HOME /home/dexforce)
 
 message(${PROJECT_SOURCE_DIR})
 
- 
-
+  
 include_directories(${HOME}/opencv-4.4.0/include)
 include_directories(${HOME}/opencv-4.4.0/modules/core/include)
 include_directories(${HOME}/opencv-4.4.0/modules/highgui/include)
