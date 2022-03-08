@@ -12,7 +12,7 @@
 #include <QtCore/QTimer>
 
 #define SELECT_BRIGHTNESS_FLAG_ 1;
-#define SELECT_GRAY_DEPTH_FLAG_ 2;
+#define SELECT_HEIGHT_MAP_FLAG_ 2;
 #define SELECT_COLOR_DEPTH_FLAG_ 3;
 
 class CameraCaptureGui : public QWidget
@@ -55,6 +55,9 @@ private:
 	bool showImage();
 
 	bool setImage(cv::Mat img);
+
+
+	bool renderHeightImage(cv::Mat height);
 
 	bool renderDepthImage(cv::Mat depth);
 
@@ -137,6 +140,10 @@ private:
 	cv::Mat render_image_brightness_;
 	cv::Mat render_image_gray_depth_;
 	cv::Mat render_image_color_depth_;
+	cv::Mat render_image_color_height_;
+
+	int min_depth_value_;
+	int max_depth_value_;
 
 
 	//Camera 

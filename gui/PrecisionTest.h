@@ -21,21 +21,21 @@ public:
 	float computePointToPlaneDistance(cv::Point3f point, std::vector<float> plane);
  
 	// R * pc2 + t = pc1
-// pc1: Mat (N, 3) CV_64F
-// pc2: Mat (N, 3) CV_64F
-// r: Mat (3, 3) CV_64F
-// t: Mat (3, 1) CV_64F
+	// pc1: Mat (N, 3) CV_64F
+	// pc2: Mat (N, 3) CV_64F
+	// r: Mat (3, 3) CV_64F
+	// t: Mat (3, 1) CV_64F
 	void svdIcp(const Mat& pc1, const Mat& pc2, Mat& r, Mat& t);
 
 	// arr1: Mat (1, N) CV_64F
-// arr2: Mat (1, M) CV_64F
-// return: Mat (N, M) CV_64F
+	// arr2: Mat (1, M) CV_64F
+	// return: Mat (N, M) CV_64F
 	Mat kronProductArr(const Mat& arr1, const Mat& arr2);
 
 	// end == -1: take only 1 row or colume
 	Rect sliceMask(int rowStart, int rowEnd, int colStart, int colEnd);
 	// pc: Mat (N, 3) CV_64F
-// return: pcMean (1, 3) CV_64F
+	// return: pcMean (1, 3) CV_64F
 	Mat pcMean(const Mat& pc);
 };
 
