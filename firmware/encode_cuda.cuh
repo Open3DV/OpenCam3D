@@ -38,6 +38,8 @@ bool parallel_cuda_reconstruct();
 
 bool parallel_cuda_copy_result_from_gpu(float* depth,unsigned char* brightness);
 
+bool parallel_cuda_copy_pointcloud_from_gpu(float* pointcloud,unsigned char* brightness);
+
 bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* brightness); 
 
 bool parallel_cuda_copy_result_to_hdr(int serial_flag);
@@ -91,6 +93,8 @@ bool cuda_reconstruct();
 bool cuda_get_frame_data(float* depth,unsigned char* brightness);
 
 bool cuda_get_depth_data(float* depth);
+
+bool cuda_get_pointcloud_data(float* pointcloud);
 
 bool cuda_get_brightness_data(unsigned char* brightness);
 

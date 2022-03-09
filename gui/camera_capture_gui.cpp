@@ -11,7 +11,7 @@
 #include "../calibration/calibrate_function.h"
 #include "PrecisionTest.h"
  
-  
+ 
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	: QWidget(parent)
@@ -61,7 +61,7 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	ui.pushButton_capture_many_frame->hide();
 	ui.spinBox_multiframe->hide();
 
-	ui.radioButton_depth_grey->hide();
+	//ui.radioButton_depth_grey->hide();
 
 	/***************************************************************************************/
     //test
@@ -116,6 +116,8 @@ bool CameraCaptureGui::initializeFunction()
 	capture_timer_.setInterval(50);
 	start_timer_flag_ = false;
 
+	min_depth_value_ = 300;
+	max_depth_value_ = 1200;
 	/**********************************************************************************************************************/
 
 
@@ -218,6 +220,25 @@ bool CameraCaptureGui::renderBrightnessImage(cv::Mat brightness)
 	return true;
 }
 
+
+bool CameraCaptureGui::renderHeightImage(cv::Mat height)
+{
+	if (height.empty())
+	{
+		return false;
+	}
+
+	int low_z = processing_settings_data_.Instance().low_z_value;
+	int high_z = processing_settings_data_.Instance().high_z_value;
+
+	FileIoFunction io_machine; 
+
+	io_machine.depthToColor(height, render_image_color_height_, render_image_gray_depth_, low_z, high_z);
+
+	return true;
+
+}
+
 bool CameraCaptureGui::renderDepthImage(cv::Mat depth)
 {
 	if (depth.empty())
@@ -228,10 +249,10 @@ bool CameraCaptureGui::renderDepthImage(cv::Mat depth)
 
 	FileIoFunction io_machine;
 
-	int low_z = processing_settings_data_.Instance().low_z_value;
-	int high_z = processing_settings_data_.Instance().high_z_value;
+	//int low_z = processing_settings_data_.Instance().low_z_value;
+	//int high_z = processing_settings_data_.Instance().high_z_value;
 
-	io_machine.depthToColor(depth, render_image_color_depth_, render_image_gray_depth_, low_z, high_z);
+	io_machine.depthToColor(depth, render_image_color_depth_, render_image_gray_depth_, min_depth_value_, max_depth_value_);
 
 	return true;
 
@@ -337,7 +358,7 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 {
 	processing_settings_data_.Instance().low_z_value = val;
 
-	renderDepthImage(height_map_);
+	renderHeightImage(height_map_);
 	showImage();
 	 
  
@@ -372,7 +393,7 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 	processing_settings_data_.Instance().high_z_value = val;
 
 
-	renderDepthImage(height_map_);
+	renderHeightImage(height_map_);
 	showImage();
 
  
@@ -564,7 +585,7 @@ bool CameraCaptureGui::capture_one_frame_data()
 		depth_map_ = depth.clone();
 		 
 		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);  
-		transformPointcloud((float*)point_cloud.data, system_config_param_.external_param, &system_config_param_.external_param[9]);
+		transformPointcloud((float*)point_cloud.data,(float*)point_cloud.data, system_config_param_.external_param, &system_config_param_.external_param[9]);
 	 
 		std::vector<cv::Mat> channels;
 		cv::split(point_cloud, channels);
@@ -796,8 +817,9 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		precision_machine.svdIcp(pc1, pc2, r, t);  
 		r.convertTo(r, CV_32F);
 		t.convertTo(t, CV_32F);
-		transformPointcloud((float*)points_map.data, (float*)r.data, (float*)t.data);
+		transformPointcloud((float*)points_map.data, (float*)points_map.data, (float*)r.data, (float*)t.data);
 
+  
 		std::vector<cv::Mat> channels;
 		cv::split(points_map, channels); 
 		cv::Mat height_map = channels[2].clone(); 
@@ -1088,7 +1110,8 @@ bool CameraCaptureGui::capture_one_frame_and_render()
 	{
 
 		renderBrightnessImage(brightness_map_);
-		renderDepthImage(height_map_);
+		renderDepthImage(depth_map_);
+		renderHeightImage(height_map_);
 		showImage();
 
 		if (ui.checkBox_auto_save->isChecked())
@@ -1248,7 +1271,7 @@ void CameraCaptureGui::do_QRadioButton_toggled_gray_depth(bool state)
 {
 	if (state)
 	{
-		radio_button_flag_ = SELECT_GRAY_DEPTH_FLAG_;
+		radio_button_flag_ = SELECT_HEIGHT_MAP_FLAG_;
 		//qDebug() << "state: " << radio_button_flag_;
 		showImage();
 	}
@@ -1268,7 +1291,7 @@ bool CameraCaptureGui::showImage()
 
 	case 2:
 	{
-		setImage(render_image_gray_depth_);
+		setImage(render_image_color_height_);
 	}
 	break;
 

@@ -200,14 +200,14 @@
         <item>
          <widget class="QRadioButton" name="radioButton_depth_color">
           <property name="text">
-           <string>深度彩图</string>
+           <string>深度图</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QRadioButton" name="radioButton_depth_grey">
           <property name="text">
-           <string>深度灰图</string>
+           <string>高度图</string>
           </property>
          </widget>
         </item>
@@ -316,7 +316,7 @@
               </font>
              </property>
              <property name="text">
-              <string>最大深度</string>
+              <string>最大高度</string>
              </property>
             </widget>
            </item>
@@ -382,7 +382,7 @@
               </font>
              </property>
              <property name="text">
-              <string>最小深度</string>
+              <string>最小高度</string>
              </property>
             </widget>
            </item>

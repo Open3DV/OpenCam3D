@@ -168,7 +168,7 @@ bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* transl
 	return true;
 }
 
- bool transformPointcloud(float* point_cloud_map, float* rotate, float* translation)
+ bool transformPointcloud(float* org_point_cloud_map, float* transform_point_cloud_map, float* rotate, float* translation)
 {
 
 
@@ -186,15 +186,15 @@ bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* transl
  
 			 int offset = r * camera_width_ + c;
 
-			 float x = point_cloud_map[3 * offset + 0];
-			 float y = point_cloud_map[3 * offset + 1];
-			 float z = point_cloud_map[3 * offset + 2];
+			 float x = org_point_cloud_map[3 * offset + 0];
+			 float y = org_point_cloud_map[3 * offset + 1];
+			 float z = org_point_cloud_map[3 * offset + 2];
 			  
 			 //if (z > 0)
 			 //{
-				 point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z + translation[0];
-				 point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z + translation[1];
-				 point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z + translation[2];
+				 transform_point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z + translation[0];
+				 transform_point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z + translation[1];
+				 transform_point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z + translation[2];
 				  
 			 //}
 			 //else
@@ -504,6 +504,121 @@ DF_SDK_API int DfGetBrightnessData(unsigned char* brightness)
 	return 0;
 }
 
+//函数名： DfGetStandardPlaneParam
+//功能： 获取基准平面参数
+//输入参数：无
+//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetStandardPlaneParam(float* R, float* T)
+{
+
+	LOG(INFO) << "DfGetStandardPlaneParam";
+ 
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	int param_buf_size = 12 * 4;
+	float* plane_param = new float[param_buf_size];
+
+	ret = send_command(DF_CMD_GET_STANDARD_PLANE_PARAM, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		LOG(INFO) << "token checked ok";
+		LOG(INFO) << "receiving buffer, param_buf_size=" << param_buf_size;
+		ret = recv_buffer((char*)plane_param, param_buf_size, g_sock);
+		LOG(INFO) << "plane param received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		} 
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get frame rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	LOG(INFO) << "Get plane param success";
+	close_socket(g_sock);
+
+
+	memcpy(R, plane_param, 9*4);
+	memcpy(T, plane_param+9, 3 * 4);
+
+	delete [] plane_param;
+
+	return DF_SUCCESS;
+	  
+}
+
+//函数名： DfGetHeightMapDataBaseParam
+//功能： 获取校正到基准平面的高度映射图
+//输入参数：R(旋转矩阵)、T(平移矩阵)
+//输出参数： height_map(高度映射图)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetHeightMapDataBaseParam(float* R, float* T , float* height_map)
+{
+	if (!connected_flag_)
+	{
+		return -1;
+	} 
+	//struct SystemConfigParam system_config_param;
+	//int ret_code = DfGetSystemConfigParam(system_config_param);
+	//if (0 != ret_code)
+	//{
+	//	std::cout << "Get Param Error;";
+	//	return -1;
+	//}
+
+	LOG(INFO) << "Transform Pointcloud:";
+
+	if (!transform_pointcloud_flag_)
+	{
+		depthTransformPointcloud((float*)depth_buf_, (float*)point_cloud_buf_);
+		transform_pointcloud_flag_ = true;
+	}
+
+	//memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
+	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, R, T);
+
+
+	int nr = camera_height_;
+	int nc = camera_width_;
+	#pragma omp parallel for
+	for (int r = 0; r < nr; r++)
+	{
+		for (int c = 0; c < nc; c++)
+		{
+			int offset = r * camera_width_ + c;
+			if (depth_buf_[offset] > 0)
+			{
+				height_map[offset] = trans_point_cloud_buf_[offset * 3 + 2];
+			}
+			else
+			{
+				height_map[offset] = NULL;
+			}
+
+		}
+
+
+	}
+
+
+	LOG(INFO) << "Get Height Map!";
+
+	return 0;
+}
+
 //函数名： DfGetHeightMapData
 //功能： 采集点云数据并阻塞至返回结果
 //输入参数：无
@@ -533,8 +648,8 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 		transform_pointcloud_flag_ = true;
 	}
 
-	memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
-	transformPointcloud((float*)trans_point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
+	//memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
+	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
 	 
 
 	int nr = camera_height_;
