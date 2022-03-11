@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>..\x64\Release</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--get-frame-01 --ip 192.168.88.193 --path .\capture_data\frame01</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--test-calib-param --use plane --ip 192.168.88.106 --path .\capture</LocalDebuggerCommandArguments>
   </PropertyGroup>
 </Project>

@@ -16,6 +16,7 @@ public:
 	Calibrate_Function();
 	~Calibrate_Function();
 
+	bool bilinearInterpolationFeaturePoints(std::vector<cv::Point2f> feature_points, std::vector<cv::Point3f>& point_3d, cv::Mat point_cloud);
 
 
 	double Bilinear_interpolation(double x, double y, cv::Mat& mapping);

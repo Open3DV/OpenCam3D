@@ -2,6 +2,7 @@
 #include "../firmware/system_config_settings.h"
 #include "../firmware/protocol.h"
 #include "../firmware/version.h"
+#include "../test/solution.h"
 #include "opencv2/opencv.hpp"
 #include <windows.h>
 #include <assert.h>
@@ -66,6 +67,9 @@ open_cam3d.exe --get-network-bandwidth --ip 192.168.x.x\n\
 18.Get firmware version: \n\
 open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
 \n\
+19.Test camera calibration parameters: \n\
+open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\n\
+\n\
 ";
 
 void help_with_version(const char* help);
@@ -86,6 +90,7 @@ int get_raw_02(const char* ip, const char* raw_image_dir);
 int get_raw_03(const char* ip, const char* raw_image_dir);
 int get_calib_param(const char* ip, const char* calib_param_path);
 int set_calib_param(const char* ip, const char* calib_param_path);
+int test_calib_param(const char* ip, const char* result_path);
 int get_temperature(const char* ip);
 int enable_checkerboard(const char* ip);
 int disable_checkerboard(const char* ip);
@@ -105,6 +110,8 @@ enum opt_set
 	GET_TEMPERATURE,
 	GET_CALIB_PARAM,
 	SET_CALIB_PARAM,
+	TEST_CALIB_PARAM,
+	USE,
 	GET_RAW_01,
 	GET_RAW_02,
 	GET_RAW_03,
@@ -128,9 +135,11 @@ static struct option long_options[] =
 	{"ip",required_argument,NULL,IP},
 	{"path", required_argument, NULL, PATH},
 	{"count", required_argument, NULL, COUNT},
+	{"use", required_argument, NULL, USE},
 	{"get-temperature",no_argument,NULL,GET_TEMPERATURE},
 	{"get-calib-param",no_argument,NULL,GET_CALIB_PARAM},
 	{"set-calib-param",no_argument,NULL,SET_CALIB_PARAM},
+	{"test-calib-param",no_argument,NULL,TEST_CALIB_PARAM},
 	{"get-raw-01",no_argument,NULL,GET_RAW_01},
 	{"get-raw-02",no_argument,NULL,GET_RAW_02},
 	{"get-raw-03",no_argument,NULL,GET_RAW_03},
@@ -153,6 +162,7 @@ static struct option long_options[] =
 const char* camera_id;
 const char* path;
 const char* repetition_count;
+const char* use_command;
 int command = HELP;
 
 struct CameraCalibParam calibration_param_;
@@ -174,6 +184,9 @@ int main(int argc, char* argv[])
 			break;
 		case COUNT:
 			repetition_count = optarg;
+			break;
+		case USE:
+			use_command = optarg;
 			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
@@ -197,6 +210,9 @@ int main(int argc, char* argv[])
 		break;
 	case SET_CALIB_PARAM:
 		set_calib_param(camera_id, path);
+		break;
+	case TEST_CALIB_PARAM:
+		test_calib_param(camera_id, path);
 		break;
 	case GET_RAW_01:
 		get_raw_01(camera_id, path);
@@ -701,6 +717,67 @@ int get_raw_02(const char* ip, const char* raw_image_dir)
 	delete[] raw_buf;
 
 	DfDisconnectNet();
+	return 1;
+}
+
+
+int test_calib_param(const char* ip, const char* result_path)
+{ 
+	std::string cmd(use_command);
+
+	if ("plane" == cmd)
+	{
+		std::cout << "plane"<<std::endl;
+
+		struct CameraCalibParam calibration_param_;
+		DfSolution solution_machine_;
+		std::vector<cv::Mat> patterns_;
+
+		bool ret = solution_machine_.captureMixedVariableWavelengthPatterns(std::string(ip), patterns_);
+
+		if (!ret)
+		{
+			std::cout << "采集图像出错！" << std::endl;
+			return false;
+		}
+
+		ret = solution_machine_.getCameraCalibData(std::string(ip), calibration_param_);
+
+		if (!ret)
+		{
+			std::cout << "获取标定数据出错！" << std::endl;
+		}
+
+
+		solution_machine_.testCalibrationParamBasePlane(patterns_, calibration_param_, std::string(result_path));
+	}
+	else if("board" == cmd)
+	{
+		std::cout << "board" << std::endl; 
+
+		struct CameraCalibParam calibration_param_;
+		DfSolution solution_machine_;
+		std::vector<cv::Mat> patterns_;
+
+		bool ret = solution_machine_.captureMixedVariableWavelengthPatterns(std::string(ip), patterns_);
+
+		if (!ret)
+		{
+			std::cout << "采集图像出错！"<<std::endl;
+			return false;
+		}
+
+		ret = solution_machine_.getCameraCalibData(std::string(ip), calibration_param_);
+
+		if (!ret)
+		{
+			std::cout << "获取标定数据出错！" << std::endl;
+		}
+
+
+		solution_machine_.testCalibrationParamBaseBoard(patterns_, calibration_param_, std::string(result_path));
+	}
+
 	return 1;
 }
 

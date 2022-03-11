@@ -1,5 +1,5 @@
 #include "PrecisionTest.h"
-#include "QDebug"
+ 
 
 PrecisionTest::PrecisionTest()
 {
@@ -79,6 +79,33 @@ Mat PrecisionTest::pcMean(const Mat& pc)
 	return meanXYZ;
 }
 
+
+double PrecisionTest::computeTwoPointSetDistance(std::vector<cv::Point3f> point_set_0, std::vector<cv::Point3f> point_set_1)
+{
+	if (point_set_0.size() != point_set_1.size())
+	{
+		return -1;
+	}
+
+	std::vector<double> dist_list;
+
+	double sum_diff = 0;
+
+	for (int i = 0; i < point_set_0.size(); i++)
+	{
+		cv::Point3f differ_p = point_set_0[i] - point_set_1[i];
+		double differ_val = std::sqrtf(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
+		dist_list.push_back(differ_val);
+		//std::cout << differ_val;
+
+		sum_diff += std::abs(differ_val);
+	}
+
+
+	return sum_diff / point_set_0.size();
+
+}
+
 float PrecisionTest::computeTwoPointDistance(cv::Point3f p0, cv::Point3f p1)
 {
 	cv::Point3f differ_p = p0 - p1;
@@ -91,12 +118,41 @@ float PrecisionTest::computeTwoPointDistance(cv::Point3f p0, cv::Point3f p1)
 float PrecisionTest::computePointToPlaneDistance(cv::Point3f point, std::vector<float> plane)
 {
 	float mod_length = std::sqrtf(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
-	float rms = std::abs(point.x * plane[0] + point.y * plane[1] + point.z * plane[2] + plane[3]) / mod_length;
+	//float rms = std::abs(point.x * plane[0] + point.y * plane[1] + point.z * plane[2] + plane[3]) / mod_length;
+	float rms = point.x * plane[0] + point.y * plane[1] + point.z * plane[2] + plane[3] / mod_length;
 
-	qDebug() << point.x << " " << point.y << " " << point.z << " ";
-	qDebug() << plane[0] << " " << plane[1] << " " << plane[2] << " " << plane[3] << " ";
+ //   std::cout<< point.x << " " << point.y << " " << point.z << " ";
+	//std::cout << plane[0] << " " << plane[1] << " " << plane[2] << " " << plane[3] << " ";
 
 	return rms;
+}
+
+
+double PrecisionTest::transformPoints(std::vector<cv::Point3f> org_points, std::vector<cv::Point3f>& trans_points, cv::Mat R, cv::Mat T)
+{
+	 
+	trans_points.clear();
+	trans_points.resize(org_points.size());
+
+	double* rotate = R.ptr<double>(0);
+	double* translation = T.ptr<double>(0);
+
+	#pragma omp parallel for
+	for (int p_i = 0; p_i < org_points.size(); p_i++)
+	{
+		cv::Point3f o_point = org_points[p_i];
+		cv::Point3f trans_point;
+
+		trans_point.x = rotate[0] * o_point.x + rotate[1] * o_point.y + rotate[2] * o_point.z + translation[0];
+		trans_point.y = rotate[3] * o_point.x + rotate[4] * o_point.y + rotate[5] * o_point.z + translation[1];
+		trans_point.z = rotate[6] * o_point.x + rotate[7] * o_point.y + rotate[8] * o_point.z + translation[2];
+ 
+		trans_points[p_i] = trans_point;
+	}
+
+
+	return true;
+
 }
 
 float PrecisionTest::fitPlaneBaseLeastSquares(std::vector<cv::Point3f> points_3d, std::vector<float>& plane, cv::Point3f& center_point)
@@ -126,7 +182,7 @@ float PrecisionTest::fitPlaneBaseLeastSquares(std::vector<cv::Point3f> points_3d
 
 	}
 
-	qDebug() << "center point: " << centroid.at<float>(0, 0) << " , "
+	std::cout << "center point: " << centroid.at<float>(0, 0) << " , "
 	    << centroid.at<float>(0, 1) << " , " << centroid.at<float>(0, 2);
 
 	center_point.x = centroid.at<float>(0, 0);
@@ -155,7 +211,7 @@ float PrecisionTest::fitPlaneBaseLeastSquares(std::vector<cv::Point3f> points_3d
 	plane.push_back(plane_mat.at<float>(2, 0));
 	plane.push_back(-1 * plane_mat.at<float>(3, 0));
 
-	qDebug() << "Normal point: " << plane[0] << " , " << plane[1] << " , "
+	std::cout << "Normal point: " << plane[0] << " , " << plane[1] << " , "
 	    << plane[2] << " , " << plane[3];
 
 	double mod_length = std::sqrtf(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);

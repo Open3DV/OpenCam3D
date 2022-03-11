@@ -278,6 +278,100 @@ bool MaskZMap(cv::Mat& z_map, cv::Mat mask)
 }
 
 
+bool renderBrightnessImage(cv::Mat brightness , cv::Mat& render_brightness)
+{
+
+	cv::Mat color_map(brightness.size(), CV_8UC3, cv::Scalar(0, 0, 0));
+
+	int nr = color_map.rows;
+	int nc = color_map.cols;
+
+	for (int r = 0; r < nr; r++)
+	{
+		uchar* ptr_b = brightness.ptr<uchar>(r);
+		cv::Vec3b* ptr_cb = color_map.ptr<cv::Vec3b>(r);
+		for (int c = 0; c < nc; c++)
+		{
+			if (ptr_b[c] == 255)
+			{
+				ptr_cb[c][0] = 0;
+				ptr_cb[c][1] = 0;
+				ptr_cb[c][2] = 255;
+			}
+			else
+			{
+				ptr_cb[c][0] = ptr_b[c];
+				ptr_cb[c][1] = ptr_b[c];
+				ptr_cb[c][2] = ptr_b[c];
+			}
+		}
+
+	}
+
+	render_brightness = color_map.clone();
+	return true;
+}
+
+
+bool renderErrorMap(cv::Mat err_map, cv::Mat& color_map, cv::Mat& gray_map, float low_v, float high_v)
+{
+	if (!err_map.data)
+	{
+		return false;
+	}
+
+	cv::Mat handle_map(err_map.size(), CV_8U, cv::Scalar(0));
+
+	float range = high_v - low_v;
+
+	for (int r = 0; r < handle_map.rows; r++)
+	{
+		uchar* ptr_h = handle_map.ptr<uchar>(r);
+		double* ptr_dr = err_map.ptr<double>(r);
+
+		for (int c = 0; c < handle_map.cols; c++)
+		{
+ 
+			ptr_h[c] = 0.5 + 255.0 * (ptr_dr[c] - low_v) / range;
+		 
+		}
+	}
+	  
+	gray_map = handle_map.clone();
+
+	cv::applyColorMap(handle_map, color_map, cv::COLORMAP_JET);
+
+	for (int r = 0; r < color_map.rows; r++)
+	{
+		cv::Vec3b* ptr_h = color_map.ptr<cv::Vec3b>(r);
+		double* ptr_dr = err_map.ptr<double>(r);
+		uchar* ptr_g = gray_map.ptr<uchar>(r);
+
+		for (int c = 0; c < color_map.cols; c++)
+		{
+
+			if (0 == ptr_dr[c])
+			{
+				ptr_h[c][0] = 0;
+				ptr_h[c][1] = 0;
+				ptr_h[c][2] = 0;
+			}
+			else if (high_v < ptr_dr[c])
+			{
+				ptr_h[c][0] = 255;
+				ptr_h[c][1] = 255;
+				ptr_h[c][2] = 255;
+
+				ptr_g[c] = 255;
+			}
+		}
+	}
+
+	renderBrightnessImage(gray_map, gray_map);
+
+	return true;
+}
+
 bool MapToColor(cv::Mat deep_map, cv::Mat& color_map, cv::Mat& grey_map, int low_z, int high_z)
 {
 

@@ -765,7 +765,8 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 	if (depth_map_.empty() || brightness_map_.empty())
 	{
 		return;
-	}
+	} 
+	 
 	   
 	cv::Mat cameraMatrix(3, 3, CV_32FC1, camera_calibration_param_.camera_intrinsic);
 	cv::Mat distCoeffs = cv::Mat(5, 1, CV_32F, camera_calibration_param_.camera_distortion);  
@@ -785,6 +786,10 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		{
 			return;
 		}
+
+
+		cv::medianBlur(depth_map_, depth_map_, 3);
+
 		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 		depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
 
@@ -934,7 +939,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 
 	/*****************************************************************************************************/
 	//平台测试精度
-	if (true)
+	if (false)
 	{
 
 		PrecisionTest p_test_machine;
@@ -1005,6 +1010,107 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	}
 
 
+	/*********************************************************************************************/
+	//icp
+	if (true)
+	{
+		//ICP
+		cv::Mat undist_img;
+		cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs); 
+		Calibrate_Function calib_function;
+		std::vector<cv::Point2f> undist_circle_points;
+		bool found = calib_function.findCircleBoardFeature(undist_img, undist_circle_points);
+
+		if (!found)
+		{
+			return;
+		}
+
+		//显示
+		if (true)
+		{
+			cv::Mat color_img;
+			cv::Size board_size = calib_function.getBoardSize();
+			cv::cvtColor(brightness_map_, color_img, cv::COLOR_GRAY2BGR);
+			cv::drawChessboardCorners(color_img, board_size, undist_circle_points, found);
+			render_image_brightness_ = color_img.clone();
+			showImage();
+		}
+
+
+		cv::medianBlur(depth_map_, depth_map_, 3);
+		cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
+		depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
+
+		/*******************************************************************************************/
+		std::vector<cv::Point3f> point_3d;
+		bilinearInterpolationFeaturePoints(undist_circle_points, point_3d, points_map);
+
+		PrecisionTest precision_machine;
+		cv::Mat pc1(point_3d.size(), 3, CV_64F, cv::Scalar(0));
+		cv::Mat pc2(point_3d.size(), 3, CV_64F, cv::Scalar(0));
+
+		std::vector<cv::Point3f> world_points = calib_function.generateAsymmetricWorldFeature(20, 10);
+
+		for (int r = 0; r < point_3d.size(); r++)
+		{
+			pc2.at<double>(r, 0) = point_3d[r].x;
+			pc2.at<double>(r, 1) = point_3d[r].y;
+			pc2.at<double>(r, 2) = point_3d[r].z;
+		}
+		for (int r = 0; r < world_points.size(); r++)
+		{
+			pc1.at<double>(r, 0) = world_points[r].x;
+			pc1.at<double>(r, 1) = world_points[r].y;
+			pc1.at<double>(r, 2) = world_points[r].z;
+		}
+
+		cv::Mat r(3, 3, CV_64F, cv::Scalar(0));
+		cv::Mat t(3, 3, CV_64F, cv::Scalar(0));
+
+		precision_machine.svdIcp(pc1, pc2, r, t);
+
+		std::vector<cv::Point3f> transform_points;
+
+		precision_machine.transformPoints(point_3d, transform_points, r, t);
+
+		double diff = precision_machine.computeTwoPointSetDistance(world_points, transform_points);
+
+		//addLogMessage(QString::fromLocal8Bit("平均点偏差: ") + QString::number(diff) +
+		//	QString::fromLocal8Bit(" 距离: ") + QString::number(0));
+
+
+		//计算平面距离
+
+		std::vector<float> plane;
+		cv::Point3f center_point; 
+		float rms = precision_machine.fitPlaneBaseLeastSquares(point_3d, plane, center_point);
+		  
+
+		center_points_list_.push_back(center_point);
+		rms_list_.push_back(rms);
+		plane_list_.push_back(plane);
+		feature_points_list_.push_back(point_3d);
+
+
+		if (center_points_list_.size() > 1)
+		{
+			float dist = precision_machine.computePointToPlaneDistance(center_points_list_[center_points_list_.size() - 1],
+				plane_list_[center_points_list_.size() - 2]);
+			 
+
+			addLogMessage(QString::fromLocal8Bit("标定精度: ") + QString::number(diff) +
+				QString::fromLocal8Bit("	距离: ") + QString::number(dist));
+		}
+		else
+		{
+			addLogMessage(QString::fromLocal8Bit("标定精度: ") + QString::number(diff) +
+				QString::fromLocal8Bit("	距离: ") + QString::number(0));
+		}
+
+
+
+	}
 
 	/**********************************************************************************************/
 	//点距离

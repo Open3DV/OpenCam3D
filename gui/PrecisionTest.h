@@ -1,7 +1,6 @@
 #pragma once
 #include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc.hpp> 
 #include <iostream>
 #include <fstream>
 
@@ -20,12 +19,19 @@ public:
 
 	float computePointToPlaneDistance(cv::Point3f point, std::vector<float> plane);
  
+	double computeTwoPointSetDistance(std::vector<cv::Point3f> point_set_0, std::vector<cv::Point3f> point_set_1);
+
+	double transformPoints(std::vector<cv::Point3f> org_points, std::vector<cv::Point3f>& trans_points, cv::Mat R, cv::Mat T);
+
 	// R * pc2 + t = pc1
 	// pc1: Mat (N, 3) CV_64F
 	// pc2: Mat (N, 3) CV_64F
 	// r: Mat (3, 3) CV_64F
 	// t: Mat (3, 1) CV_64F
 	void svdIcp(const Mat& pc1, const Mat& pc2, Mat& r, Mat& t);
+
+private:
+
 
 	// arr1: Mat (1, N) CV_64F
 	// arr2: Mat (1, M) CV_64F

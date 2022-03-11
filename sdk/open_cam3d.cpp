@@ -256,11 +256,11 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 
 		for (int c = 0; c < nc; c++)
 		{
-			double undistort_x = 0;
-			double undistort_y = 0;
+			double undistort_x = c;
+			double undistort_y = r;
 
-			undistortPoint(c, r, camera_fx, camera_fy,
-				camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+			//undistortPoint(c, r, camera_fx, camera_fy,
+			//	camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
 
 			int offset = r * camera_width_ + c;
 			if (depth_map[offset] > 0)

@@ -37,7 +37,11 @@ bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map);
 //Ωÿ»°z-map RoiÕº
 bool MaskZMap(cv::Mat& z_map, cv::Mat mask);
 
-bool MapToColor(cv::Mat deep_map, cv::Mat& color_map, cv::Mat& grey_map, int low_z, int high_z);
+bool MapToColor(cv::Mat deep_map, cv::Mat& color_map, cv::Mat& grey_map, int low_z, int high_z); 
+
+bool renderBrightnessImage(cv::Mat brightness, cv::Mat& render_brightness);
+
+bool renderErrorMap(cv::Mat err_map, cv::Mat& color_map, cv::Mat& gray_map, float low_v, float high_v);
 
 bool MergeTextureMap(std::vector<cv::Mat> patterns, cv::Mat& texture_map);
 

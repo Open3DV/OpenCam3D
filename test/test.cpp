@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 	case HELP:
 		printf(help_info);
 		break;
-	case  CAPTURE:
+	case CAPTURE:
 		capture();
 		break;
 	case READ:
@@ -129,6 +129,7 @@ void capture()
 	{
 		std::cout << "Get Camera Calib Data Failure!";
 	}
+
 
 
 	solution_machine_.reconstructMixedVariableWavelengthPatternsBaseXYSR(patterns_, calibration_param_, pointcloud_path);

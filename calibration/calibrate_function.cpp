@@ -463,6 +463,35 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 }
 
 
+bool Calibrate_Function::bilinearInterpolationFeaturePoints(std::vector<cv::Point2f> feature_points, std::vector<cv::Point3f>& point_3d, cv::Mat point_cloud)
+{
+	if (point_cloud.empty())
+		return false;
+
+	 
+	std::vector<cv::Mat> point_cloud_channels;
+	cv::split(point_cloud, point_cloud_channels);
+
+	point_3d.clear();
+
+	for (int i = 0; i < feature_points.size(); i++)
+	{
+		cv::Point2f p_0 = feature_points[i];
+		cv::Point3f f_p_inter;
+
+		f_p_inter.x = Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[0]);
+		f_p_inter.y = Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[1]);
+		f_p_inter.z = Bilinear_interpolation(p_0.x, p_0.y, point_cloud_channels[2]);
+
+
+
+		point_3d.push_back(f_p_inter);
+	}
+
+
+	return true;
+}
+
 double Calibrate_Function::Bilinear_interpolation(double x, double y, cv::Mat& mapping)
 {
 

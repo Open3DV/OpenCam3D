@@ -471,49 +471,111 @@ bool DF_Reconstruct::depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_
 	double camera_cx = camera_intrinsic_.at<double>(0, 2);
 	double camera_cy = camera_intrinsic_.at<double>(1, 2);
 
-
+	float k1 = camera_distortion_.at<double>(0, 0);
+	float k2 = camera_distortion_.at<double>(0, 1);
+	float p1 = camera_distortion_.at<double>(0, 2);
+	float p2 = camera_distortion_.at<double>(0, 3);
+	float k3 = camera_distortion_.at<double>(0, 4);
 
 	int nr = depth_map.rows;
 	int nc = depth_map.cols;
 
 
-	cv::Mat points_map(nr, nc, CV_64FC3, cv::Scalar(0, 0, 0));
-
-
-	for (int r = 0; r < nr; r++)
+	if (depth_map.type() == CV_64F)
 	{
+		cv::Mat points_map(nr, nc, CV_64FC3, cv::Scalar(0, 0, 0));
 
-		double* ptr_d = depth_map.ptr<double>(r);
-		cv::Vec3d* ptr_p = points_map.ptr<cv::Vec3d>(r); 
 
-		for (int c = 0; c < nc; c++)
+		for (int r = 0; r < nr; r++)
 		{
 
-			if (ptr_d[c] > 0)
+			double* ptr_d = depth_map.ptr<double>(r);
+			cv::Vec3d* ptr_p = points_map.ptr<cv::Vec3d>(r);
+
+			for (int c = 0; c < nc; c++)
 			{
 
-				cv::Point3d p;
-				p.z = ptr_d[c];
+				if (ptr_d[c] > 0)
+				{
+					/**********************************************************/
+					double undistort_x = c;
+					double undistort_y = r;
 
-				p.x = (c - camera_cx) * p.z / camera_fx;
-				p.y = (r - camera_cy) * p.z / camera_fy;
+					//undistortPoint(c, r, camera_fx, camera_fy,
+					//	camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+
+					/*********************************************************/
+					 
+					cv::Point3d p;
+					p.z = ptr_d[c];
+
+					p.x = (undistort_x - camera_cx) * p.z / camera_fx;
+					p.y = (undistort_y - camera_cy) * p.z / camera_fy;
 
 
-				ptr_p[c][0] = p.x;
-				ptr_p[c][1] = p.y;
-				ptr_p[c][2] = p.z;
+					ptr_p[c][0] = p.x;
+					ptr_p[c][1] = p.y;
+					ptr_p[c][2] = p.z;
+				}
+
+
 			}
 
 
 		}
 
 
+		point_cloud_map = points_map.clone();
 	}
-	
+	else if (depth_map.type() == CV_32F)
+	{
+		cv::Mat points_map(nr, nc, CV_32FC3, cv::Scalar(0, 0, 0));
 
-	point_cloud_map = points_map.clone();
+
+		for (int r = 0; r < nr; r++)
+		{
+
+			float* ptr_d = depth_map.ptr<float>(r);
+			cv::Vec3f* ptr_p = points_map.ptr<cv::Vec3f>(r);
+
+			for (int c = 0; c < nc; c++)
+			{
+
+				if (ptr_d[c] > 0)
+				{
+					/****************************************************************************************/
+
+					double undistort_x = c;
+					double undistort_y = r;
+
+					//undistortPoint(c, r, camera_fx, camera_fy,
+					//	camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+
+					/***************************************************************************************/
+
+					cv::Point3d p;
+					p.z = ptr_d[c];
+
+					p.x = (undistort_x - camera_cx) * p.z / camera_fx;
+					p.y = (undistort_y - camera_cy) * p.z / camera_fy;
 
 
+					ptr_p[c][0] = p.x;
+					ptr_p[c][1] = p.y;
+					ptr_p[c][2] = p.z;
+				}
+
+
+			}
+
+
+		}
+
+
+		point_cloud_map = points_map.clone();
+	}
+	 
+	 
 	return true;
 }
 

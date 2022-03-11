@@ -22,8 +22,12 @@ public:
 
 	bool reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param,std::string pointcloud_path = "./");
 
-	bool readCameraCalibData(std::string path, struct CameraCalibParam& param);
+	bool testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string err_map_path = "./");
 
+	bool testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string err_map_path = "./");
+
+	bool readCameraCalibData(std::string path, struct CameraCalibParam& param);
+  
 	bool getCameraCalibData(std::string ip, struct CameraCalibParam& param);
 
 	std::string& replaceAll(std::string& str, const   std::string& old_value, const   std::string& new_value);

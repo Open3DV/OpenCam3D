@@ -8,9 +8,13 @@
 #include <fstream>
 #include <iomanip>
 #include "../Firmware/protocol.h"
+#include "AnalyseError.h"
+#include "../calibration/calibrate_function.h" 
+#include "../gui/PrecisionTest.h"
+
 //#include "../cmd/getopt.h" 
 /**************************************************************************/
-int on_dropped(void* param)
+int on_dropped_solution(void* param)
 {
 	std::cout << "Network dropped!" << std::endl;
 	return 0;
@@ -143,9 +147,12 @@ bool DfSolution::readCameraCalibData(std::string path, struct CameraCalibParam& 
 	return true;
 }
 
+
+ 
+
 bool DfSolution::getCameraCalibData(std::string ip, struct CameraCalibParam& param)
 {
-	DfRegisterOnDropped(on_dropped);
+	DfRegisterOnDropped(on_dropped_solution);
 
 	int ret = DfConnectNet(ip.c_str());
 	if (ret == DF_FAILED)
@@ -172,7 +179,7 @@ bool DfSolution::getCameraCalibData(std::string ip, struct CameraCalibParam& par
 
 bool DfSolution::captureMixedVariableWavelengthPatterns(std::string ip, std::vector<cv::Mat>& patterns)
 {
-	DfRegisterOnDropped(on_dropped);
+	DfRegisterOnDropped(on_dropped_solution);
 
 	int ret = DfConnectNet(ip.c_str());
 	if (ret == DF_FAILED)
@@ -290,6 +297,437 @@ bool DfSolution::readImages(std::string dir, std::vector<cv::Mat>& patterns)
 	}
 
 
+
+	return true;
+}
+
+bool DfSolution::testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string err_map_path)
+{
+
+
+	if (31 != patterns.size())
+	{
+		return false;
+	}
+
+	bool ret = true;
+
+	int ver_pstterns_num = 18;
+	int hor_patterns_num = 12;
+
+	int nr = patterns[0].rows;
+	int nc = patterns[0].cols;
+
+	std::vector<cv::Mat> ver_patterns_img(patterns.begin(), patterns.begin() + ver_pstterns_num);
+	std::vector<cv::Mat> hor_patterns_img(patterns.begin() + ver_pstterns_num, patterns.end() - 1);
+
+	std::vector<cv::Mat> ver_wrap_img_4;
+	std::vector<cv::Mat> hor_wrap_img_4;
+	cv::Mat ver_confidence_map_4;
+	cv::Mat hor_confidence_map_4;
+
+	std::vector<cv::Mat> ver_wrap_img_6;
+	std::vector<cv::Mat> hor_wrap_img_6;
+	cv::Mat ver_confidence_map_6;
+	cv::Mat hor_confidence_map_6;
+
+	cv::Mat org_mask_(nr, nc, CV_8U, cv::Scalar(255));
+	cv::rectangle(org_mask_, cv::Point(0, 0), cv::Point(nc - 1, nr - 1), cv::Scalar(0), 3);
+
+
+	cv::Mat test_mask_ = org_mask_.clone();
+
+
+	std::vector<cv::Mat> ver_patterns_img_4(ver_patterns_img.begin(), ver_patterns_img.begin() + ver_pstterns_num - 6);
+	std::vector<cv::Mat> hor_patterns_img_4(hor_patterns_img.begin(), hor_patterns_img.begin() + hor_patterns_num);
+
+	std::vector<cv::Mat> ver_patterns_img_6(ver_patterns_img.begin() + ver_pstterns_num - 6, ver_patterns_img.begin() + ver_pstterns_num);
+
+
+	DF_Encode encode_machine_;
+	ret = encode_machine_.computePhaseBaseFourStep(ver_patterns_img_4, ver_wrap_img_4, test_mask_, ver_confidence_map_4);
+	ret = encode_machine_.computePhaseBaseFourStep(hor_patterns_img_4, hor_wrap_img_4, test_mask_, hor_confidence_map_4);
+
+
+	ret = encode_machine_.computePhaseBaseSixStep(ver_patterns_img_6, ver_wrap_img_6, test_mask_, ver_confidence_map_6);
+
+	std::vector<double> variable_wrap_rate;
+	variable_wrap_rate.push_back(8);
+	variable_wrap_rate.push_back(4);
+	variable_wrap_rate.push_back(4);
+
+
+	cv::Mat unwrap_mask = test_mask_.clone();
+
+
+	int discard_num = 0;
+
+	std::vector<cv::Mat> select_ver_wrap_img = ver_wrap_img_4;
+	std::vector<cv::Mat> select_hor_wrap_img = hor_wrap_img_4;
+
+	select_ver_wrap_img.push_back(ver_wrap_img_6[0]);
+
+
+	cv::Mat unwrap_hor, unwrap_ver;
+	float ver_period_num = 1;
+
+	for (int r_i = 0; r_i < variable_wrap_rate.size(); r_i++)
+	{
+		ver_period_num *= variable_wrap_rate[r_i];
+	}
+
+	ret = encode_machine_.unwrapVariableWavelengthPatterns(select_ver_wrap_img, variable_wrap_rate, unwrap_ver, unwrap_mask);
+	if (!ret)
+	{
+		std::cout << "unwrap Error!";
+		return false;
+	}
+
+	variable_wrap_rate.pop_back();
+
+	float hor_period_num = 1;
+
+	for (int r_i = 0; r_i < variable_wrap_rate.size(); r_i++)
+	{
+		hor_period_num *= variable_wrap_rate[r_i];
+	}
+
+	ret = encode_machine_.unwrapVariableWavelengthPatterns(select_hor_wrap_img, variable_wrap_rate, unwrap_hor, unwrap_mask);
+	if (!ret)
+	{
+		std::cout << "unwrap Error!";
+		return false;
+	}
+
+
+
+	float confidence_val = 10;
+
+	float ver_period = ver_period_num;
+	float hor_period = hor_period_num * 720.0 / 1280.0;
+
+
+	unwrap_ver /= ver_period;
+	unwrap_hor /= hor_period;
+
+	encode_machine_.selectMaskBaseConfidence(ver_confidence_map_6, confidence_val, unwrap_mask);
+
+
+	encode_machine_.maskMap(unwrap_mask, unwrap_ver);
+	encode_machine_.maskMap(unwrap_mask, unwrap_hor);
+
+
+
+	cv::Mat deep_map;
+	DF_Reconstruct reconstruct_machine_;
+	reconstruct_machine_.setCalibData(calib_param);
+
+	cv::Mat err_map;
+
+	ret = reconstruct_machine_.rebuildData(unwrap_ver, unwrap_hor, 1, deep_map, err_map);
+	if (!ret)
+	{
+		std::cout << "Rebuild Error!";
+
+		return false;
+
+	} 
+
+	cv::Mat texture_map = patterns[30]; 
+	cv::Mat undistort_img;
+	reconstruct_machine_.undistortedImage(texture_map, undistort_img);
+	texture_map = undistort_img.clone();
+
+
+	/**************************************************************************************************/
+		//ICP 
+	Calibrate_Function calib_function;
+	std::vector<cv::Point2f> undist_circle_points;
+	bool found = calib_function.findCircleBoardFeature(undistort_img, undist_circle_points);
+
+	if (!found)
+	{
+		return false;
+	}
+
+
+
+	std::vector<cv::Mat> deep_channels; 
+	cv::split(deep_map, deep_channels); 
+	cv::Mat depth_map; 
+	deep_channels[2].convertTo(depth_map, CV_32F); 
+	cv::medianBlur(depth_map, depth_map, 3);
+
+
+	cv::Mat points_map(depth_map.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
+	reconstruct_machine_.depthTransformPointcloud(depth_map, points_map);
+
+	/*******************************************************************************************/
+	std::vector<cv::Point3f> point_3d;
+	calib_function.bilinearInterpolationFeaturePoints(undist_circle_points, point_3d, points_map);
+
+	PrecisionTest precision_machine;
+	cv::Mat pc1(point_3d.size(), 3, CV_64F, cv::Scalar(0));
+	cv::Mat pc2(point_3d.size(), 3, CV_64F, cv::Scalar(0));
+
+	std::vector<cv::Point3f> world_points = calib_function.generateAsymmetricWorldFeature(20, 10);
+
+	for (int i = 0; i < point_3d.size(); i++)
+	{
+		pc2.at<double>(i, 0) = point_3d[i].x;
+		pc2.at<double>(i, 1) = point_3d[i].y;
+		pc2.at<double>(i, 2) = point_3d[i].z;
+	}
+	for (int i = 0; i < world_points.size(); i++)
+	{
+		pc1.at<double>(i, 0) = world_points[i].x;
+		pc1.at<double>(i, 1) = world_points[i].y;
+		pc1.at<double>(i, 2) = world_points[i].z;
+	}
+
+	cv::Mat r(3, 3, CV_64F, cv::Scalar(0));
+	cv::Mat t(3, 3, CV_64F, cv::Scalar(0));
+
+	precision_machine.svdIcp(pc1, pc2, r, t);
+
+	std::vector<cv::Point3f> transform_points;
+
+	precision_machine.transformPoints(point_3d, transform_points, r, t);
+
+	double diff = precision_machine.computeTwoPointSetDistance(world_points, transform_points);
+
+	std::cout << "相机精度: "<< diff<< " mm" << std::endl;
+
+	if (diff > 0.1)
+	{
+		std::cout << "相机内参精度不够！" << std::endl;
+
+		if (0 == calib_function.testOverExposure(undistort_img, undist_circle_points))
+		{
+			std::cout << "标定板过曝了！" << std::endl;
+			std::cout << "请调节投影亮度！" << std::endl;
+		}
+	} 
+	else
+	{
+		std::cout << "相机内参合格！" << std::endl; 
+	}
+	/****************************************************************************************************/
+
+		//显示
+
+	cv::Mat draw_color_img;
+	cv::Size board_size = calib_function.getBoardSize();
+	cv::cvtColor(undistort_img, draw_color_img, cv::COLOR_GRAY2BGR);
+	cv::drawChessboardCorners(draw_color_img, board_size, undist_circle_points, found);
+
+ 
+	cv::Mat render_brightness;
+	renderBrightnessImage(texture_map, render_brightness); 
+	err_map.convertTo(err_map, CV_32F);
+	/*********************************************************************************/
+
+
+	std::string work_path_ = err_map_path + "/test_calibration_param";
+
+	 
+	std::string save_draw_board_dir = work_path_ + "_draw_board.bmp";
+	std::string save_brightness_dir = work_path_ + "_brightness.bmp";
+
+	 
+	cv::imwrite(save_brightness_dir, render_brightness);
+	cv::imwrite(save_draw_board_dir, draw_color_img);
+	 
+	std::cout << "save image: " << save_brightness_dir << std::endl;
+	std::cout << "save image: " << save_draw_board_dir << std::endl;
+
+	return true;
+	 
+}
+
+
+bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string err_map_path)
+{
+
+	if (31 != patterns.size())
+	{
+		return false;
+	}
+
+	bool ret = true;
+
+	int ver_pstterns_num = 18;
+	int hor_patterns_num = 12;
+
+	int nr = patterns[0].rows;
+	int nc = patterns[0].cols;
+
+	std::vector<cv::Mat> ver_patterns_img(patterns.begin(), patterns.begin() + ver_pstterns_num);
+	std::vector<cv::Mat> hor_patterns_img(patterns.begin() + ver_pstterns_num, patterns.end() - 1);
+
+	std::vector<cv::Mat> ver_wrap_img_4;
+	std::vector<cv::Mat> hor_wrap_img_4;
+	cv::Mat ver_confidence_map_4;
+	cv::Mat hor_confidence_map_4;
+
+	std::vector<cv::Mat> ver_wrap_img_6;
+	std::vector<cv::Mat> hor_wrap_img_6;
+	cv::Mat ver_confidence_map_6;
+	cv::Mat hor_confidence_map_6;
+
+	cv::Mat org_mask_(nr, nc, CV_8U, cv::Scalar(255));
+	cv::rectangle(org_mask_, cv::Point(0, 0), cv::Point(nc - 1, nr - 1), cv::Scalar(0), 3);
+
+
+	cv::Mat test_mask_ = org_mask_.clone();
+
+
+	std::vector<cv::Mat> ver_patterns_img_4(ver_patterns_img.begin(), ver_patterns_img.begin() + ver_pstterns_num - 6);
+	std::vector<cv::Mat> hor_patterns_img_4(hor_patterns_img.begin(), hor_patterns_img.begin() + hor_patterns_num);
+
+	std::vector<cv::Mat> ver_patterns_img_6(ver_patterns_img.begin() + ver_pstterns_num - 6, ver_patterns_img.begin() + ver_pstterns_num);
+  
+
+	DF_Encode encode_machine_; 
+	ret = encode_machine_.computePhaseBaseFourStep(ver_patterns_img_4, ver_wrap_img_4, test_mask_, ver_confidence_map_4);
+	ret = encode_machine_.computePhaseBaseFourStep(hor_patterns_img_4, hor_wrap_img_4, test_mask_, hor_confidence_map_4);
+
+
+	ret = encode_machine_.computePhaseBaseSixStep(ver_patterns_img_6, ver_wrap_img_6, test_mask_, ver_confidence_map_6); 
+
+	std::vector<double> variable_wrap_rate;
+	variable_wrap_rate.push_back(8);
+	variable_wrap_rate.push_back(4);
+	variable_wrap_rate.push_back(4);
+
+
+	cv::Mat unwrap_mask = test_mask_.clone();
+
+
+	int discard_num = 0;
+
+	std::vector<cv::Mat> select_ver_wrap_img = ver_wrap_img_4;
+	std::vector<cv::Mat> select_hor_wrap_img = hor_wrap_img_4;
+
+	select_ver_wrap_img.push_back(ver_wrap_img_6[0]); 
+
+
+	cv::Mat unwrap_hor, unwrap_ver; 
+	float ver_period_num = 1;
+
+	for (int r_i = 0; r_i < variable_wrap_rate.size(); r_i++)
+	{
+		ver_period_num *= variable_wrap_rate[r_i];
+	}
+
+	ret = encode_machine_.unwrapVariableWavelengthPatterns(select_ver_wrap_img, variable_wrap_rate, unwrap_ver, unwrap_mask);
+	if (!ret)
+	{
+		std::cout << "unwrap Error!";
+		return false;
+	}
+
+	variable_wrap_rate.pop_back();
+
+	float hor_period_num = 1;
+
+	for (int r_i = 0; r_i < variable_wrap_rate.size(); r_i++)
+	{
+		hor_period_num *= variable_wrap_rate[r_i];
+	}
+
+	ret = encode_machine_.unwrapVariableWavelengthPatterns(select_hor_wrap_img, variable_wrap_rate, unwrap_hor, unwrap_mask);
+	if (!ret)
+	{
+		std::cout << "unwrap Error!";
+		return false;
+	}
+
+
+
+	float confidence_val = 10;
+
+	float ver_period = ver_period_num;
+	float hor_period = hor_period_num * 720.0 / 1280.0;
+
+
+	unwrap_ver /= ver_period;
+	unwrap_hor /= hor_period;
+
+	encode_machine_.selectMaskBaseConfidence(ver_confidence_map_6, confidence_val, unwrap_mask); 
+
+
+	encode_machine_.maskMap(unwrap_mask, unwrap_ver);
+	encode_machine_.maskMap(unwrap_mask, unwrap_hor);
+
+
+
+	cv::Mat deep_map; 
+	DF_Reconstruct reconstruct_machine_;
+	reconstruct_machine_.setCalibData(calib_param);
+
+	cv::Mat err_map;
+
+	ret = reconstruct_machine_.rebuildData(unwrap_ver, unwrap_hor, 1, deep_map, err_map);
+	if (!ret)
+	{
+		std::cout << "Rebuild Error!";
+
+		return false;
+
+	}
+
+	cv::Mat color_err_map;
+	cv::Mat gray_err_map;
+	renderErrorMap(err_map, color_err_map, gray_err_map, 0., 0.1);
+
+	AnalyseError analyse_err_machine;
+
+	double err_value = analyse_err_machine.computeError(err_map);
+	//std::cout << "calibrate err: " << err_value << std::endl;
+
+	std::cout << "相机精度: " << err_value << " mm" << std::endl;
+
+	if (err_value > 0.1)
+	{
+		std::cout << "相机内参精度不够！" << std::endl; 
+	}
+	else
+	{
+		std::cout << "相机内参合格！" << std::endl;
+
+	}
+
+
+	cv::Mat texture_map = patterns[30];
+
+	cv::Mat undistort_img;
+	reconstruct_machine_.undistortedImage(texture_map, undistort_img);
+	texture_map = undistort_img.clone();
+
+	cv::Mat render_brightness;
+	renderBrightnessImage(texture_map, render_brightness);
+
+	err_map.convertTo(err_map, CV_32F);
+	/*********************************************************************************/
+
+
+	std::string work_path_ = err_map_path + "/test_calibration_param";
+	 
+
+	std::string save_err_tiff = work_path_ + "_err.tiff";
+	std::string save_color_err_tiff = work_path_ + "_color_err.tiff";
+	std::string save_brightness_dir = work_path_ + "_brightness.bmp"; 
+
+  
+
+	cv::imwrite(save_err_tiff, err_map); 
+	cv::imwrite(save_brightness_dir, render_brightness);
+	cv::imwrite(save_color_err_tiff, gray_err_map);
+
+	std::cout << "save image: " << save_err_tiff<<std::endl;
+	std::cout << "save image: " << save_brightness_dir << std::endl;
+	std::cout << "save image: " << save_color_err_tiff << std::endl;
 
 	return true;
 }
@@ -435,6 +873,15 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 
 	}
 
+	cv::Mat color_err_map;
+	cv::Mat gray_err_map;
+	renderErrorMap(err_map, color_err_map, gray_err_map,  0., 0.1);
+
+	AnalyseError analyse_err_machine;
+
+	double err_value = analyse_err_machine.computeError(err_map);
+	std::cout << "calibrate err: " << err_value << std::endl;
+
 	cv::Mat texture_map = patterns[30];  
 
 	cv::Mat undistort_img;
@@ -470,6 +917,7 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	cv::Mat color_map, grey_map;
 	MapToColor(deep_map, color_map, grey_map, 400, 800);
 	MaskZMap(color_map, unwrap_mask);
+
 
 
 	cv::imwrite(save_err_tiff, err_map);
