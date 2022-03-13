@@ -110,8 +110,38 @@ extern "C"
 
 
 	/***************************************************************************************************************************************************************/
-	 
+	//参数设置
 
+
+	//函数名： DfSetParamLedCurrent
+	//功能： 设置LED电流
+	//输入参数： led（电流值）
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfSetParamLedCurrent(int led);
+
+
+	//函数名： DfGetParamLedCurrent
+	//功能： 设置LED电流
+	//输入参数： 无
+	//输出参数： led（电流值）
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfGetParamLedCurrent(int& led);
+
+	//函数名： DfSetParamHdr
+	//功能： 设置多曝光参数（最大曝光次数为6次）
+	//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfSetParamHdr(int num,int exposure_param[6]);
+
+
+	//函数名： DfGetParamHdr
+	//功能： 设置多曝光参数（最大曝光次数为6次）
+	//输入参数： 无
+	//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6]);
 }
 
 

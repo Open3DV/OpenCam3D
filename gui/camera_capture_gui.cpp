@@ -74,6 +74,7 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 
 	//cv::Rodrigues(r_mat, angle);
   
+  
 	/***************************************************************************************/
 }
 
@@ -374,10 +375,17 @@ void CameraCaptureGui::do_spin_led_current_changed(int val)
 	{
 		system_config_param_.led_current = val;
 
-		int ret_code = DfSetSystemConfigParam(system_config_param_);
+		//int ret_code = DfSetSystemConfigParam(system_config_param_);
+		//if (0 != ret_code)
+		//{
+		//	qDebug() << "Get Param Error;";
+		//	return;
+		//}
+
+		int ret_code = DfSetParamLedCurrent(system_config_param_.led_current);
 		if (0 != ret_code)
 		{
-			qDebug() << "Get Param Error;";
+			qDebug() << "Set Led Curretn Error;";
 			return;
 		}
 
@@ -429,10 +437,19 @@ void CameraCaptureGui::update_many_exposure_param()
 	system_config_param_.exposure_num = exposure_time_list_.size();
 
 
-	int ret_code = DfSetSystemConfigParam(system_config_param_);
+	//int ret_code = DfSetSystemConfigParam(system_config_param_);
+	//if (0 != ret_code)
+	//{
+	//	qDebug() << "Get Param Error;";
+	//	return;
+	//}
+
+
+	int ret_code = DfSetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
+
 	if (0 != ret_code)
 	{
-		qDebug() << "Get Param Error;";
+		qDebug() << "Set HDR Param Error;";
 		return;
 	}
 
