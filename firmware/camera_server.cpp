@@ -1342,8 +1342,117 @@ int handle_set_system_config_parameters(int client_sock)
 
 }
 
+/**********************************************************************************************************************/
+//设置多曝光参数
+int handle_cmd_set_param_hdr(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+    int param[7]; 
 
-/*****************************************************************************************/
+    int ret = recv_buffer(client_sock, (char*)(&param), sizeof(int)*7);
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    int num = param[0];  
+      //set led current
+    
+        if(0< num && num<= 6)
+        {
+ 
+            system_config_settings_machine_.Instance().config_param_.exposure_num = num;
+            memcpy(system_config_settings_machine_.Instance().config_param_.exposure_param, param+1, sizeof(int) * 6);
+            return DF_SUCCESS;
+        }
+  
+        return DF_FAILED; 
+}
+
+//获取多曝光参数
+int handle_cmd_get_param_hdr(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+  
+  		int param[7];
+		param[0] = system_config_settings_machine_.Instance().config_param_.exposure_num;
+
+		memcpy(param+1, system_config_settings_machine_.Instance().config_param_.exposure_param, sizeof(int)*6);
+	
+    int ret = send_buffer(client_sock, (char*)(&param), sizeof(int) * 7);
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	return DF_FAILED;
+    }
+    return DF_SUCCESS;
+ 
+       
+}
+
+//设置光机投影亮度
+int handle_cmd_set_param_led_current(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	 
+ 
+
+    int led= -1;
+
+    int ret = recv_buffer(client_sock, (char*)(&led), sizeof(led));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+
+      //set led current
+    
+        if(0<= led && led< 1024)
+        {
+            brightness_current = led;
+            lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current); 
+            system_config_settings_machine_.Instance().config_param_.led_current = brightness_current;
+             return DF_SUCCESS;
+        }
+ 
+     
+ 
+        return DF_FAILED; 
+}
+
+//获取光机投影亮度
+int handle_cmd_get_param_led_current(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+  
+	
+    int ret = send_buffer(client_sock, (char*)(&system_config_settings_machine_.Instance().config_param_.led_current), sizeof(system_config_settings_machine_.Instance().config_param_.led_current));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	return DF_FAILED;
+    }
+    return DF_SUCCESS;
+ 
+       
+}
+/*************************************************************************************************************************/
 
 int write_calib_param()
 {
@@ -1974,6 +2083,22 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_STANDARD_PLANE_PARAM:
 	    LOG(INFO)<<"DF_CMD_GET_STANDARD_PLANE_PARAM";   
     	handle_cmd_get_standard_plane_param_parallel(client_sock); 
+	    break;
+	case DF_CMD_GET_PARAM_LED_CURRENT:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_LED_CURRENT";   
+    	handle_cmd_get_param_led_current(client_sock);  
+	    break;
+	case DF_CMD_SET_PARAM_LED_CURRENT:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_LED_CURRENT";   
+    	handle_cmd_set_param_led_current(client_sock);  
+	    break;
+    case DF_CMD_GET_PARAM_HDR:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_HDR";   
+    	handle_cmd_get_param_hdr(client_sock);  
+	    break;
+	case DF_CMD_SET_PARAM_HDR:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_HDR";   
+    	handle_cmd_set_param_hdr(client_sock);  
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
