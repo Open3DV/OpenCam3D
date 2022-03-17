@@ -142,6 +142,20 @@ extern "C"
 	//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
 	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
 	DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6]);
+
+	//函数名： DfSetParamStandardPlaneExternal
+	//功能： 设置基准平面的外参
+	//输入参数：R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamStandardPlaneExternal(float* R, float* T);
+
+	//函数名： DfGetParamStandardPlaneExternal
+	//功能： 获取基准平面的外参
+	//输入参数：无
+	//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T);
 }
 
 

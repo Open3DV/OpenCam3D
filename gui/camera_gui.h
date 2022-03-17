@@ -13,13 +13,18 @@ public:
     camera_gui(QWidget* parent = Q_NULLPTR);
     ~camera_gui();
 
-    bool setSettingsData(ProcessingDataStruct & settings_data);
+    bool setSettingsData(GuiConfigDataStruct& settings_data);
 
     bool setShowImages(cv::Mat brightness, cv::Mat depth);
 
 public slots:
     void do_update_temperature(float val);
 
+    void do_action_load_camera_config();
+
+    void do_action_save_camera_config();
+
+    void do_action_exit();
 protected:
     void closeEvent(QCloseEvent * e);
 
@@ -28,7 +33,10 @@ private:
 
     bool setUiData();
 
-    ProcessingDataStruct processing_settings_data_;
+    GuiConfigDataStruct processing_gui_settings_data_;
 
     QLabel* label_temperature_;
+
+    QString default_config_path_;
+    QString last_config_path_;
 };

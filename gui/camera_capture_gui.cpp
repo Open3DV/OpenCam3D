@@ -27,21 +27,20 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	ui.tableWidget_more_exposure->setEditTriggers(QAbstractItemView::NoEditTriggers); //设置不可编辑
 	ui.tableWidget_more_exposure->setFrameShape(QFrame::Box);
 
- 
-
-	processing_settings_data_.loadFromSettings("../processing_settings.ini");
-	
   
+ 
+	config_system_param_machine_.loadProcessingSettingsFile("../camera_config.json");
+	config_system_param_machine_.getFirmwareConfigData(system_config_param_);
+	config_system_param_machine_.getGuiConfigData(processing_gui_settings_data_);
 
-	//renderBrightnessImage(brightness_map_);
-	//renderDepthImage(depth_map_);
+ 
 
 	radio_button_flag_ = SELECT_BRIGHTNESS_FLAG_;
 	showImage();
 
-	setUiData();
-
+	setUiData(); 
 	initializeFunction();
+	undateSystemConfigUiData();
 
 	last_path_ = "../TestData";
 	sys_path_ = "../TestData";
@@ -63,19 +62,7 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 
 	//ui.radioButton_depth_grey->hide();
 
-	/***************************************************************************************/
-    //test
-	//float r[9] = { -0.99978244,  0.0029611 , -0.02064691 ,0.02065578,  0.00299494, -0.99978216,-0.00289862, -0.99999113, -0.00305545 };
-
-	//cv::Mat r_mat(3, 3, CV_32FC1, r);
-	//cv::Mat angle;
-
-	//cv::Mat t_r_mat = r_mat.t();
-
-	//cv::Rodrigues(r_mat, angle);
-  
-  
-	/***************************************************************************************/
+ 
 }
 
 CameraCaptureGui::~CameraCaptureGui()
@@ -113,12 +100,20 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.pushButton_test_accuracy, SIGNAL(clicked()), this, SLOT(do_pushButton_test_accuracy()));
 	connect(ui.pushButton_calibrate_external_param, SIGNAL(clicked()), this, SLOT(do_pushButton_calibrate_external_param()));
 
-	connect(&capture_timer_, SIGNAL(timeout()), this, SLOT(do_timeout_slot()));
-	capture_timer_.setInterval(50);
+	connect(&capture_timer_, SIGNAL(timeout()), this, SLOT(do_timeout_capture_slot()));
+	capture_timer_.setInterval(100);
 	start_timer_flag_ = false;
+
+
+	connect(this, SIGNAL(send_images_update()), this, SLOT(do_undate_show_slot()));
+ 
 
 	min_depth_value_ = 300;
 	max_depth_value_ = 1200;
+
+	capture_show_flag_ = false;
+	capturing_flag_ = false;
+	camera_setting_flag_ = false;
 	/**********************************************************************************************************************/
 
 
@@ -140,12 +135,7 @@ void CameraCaptureGui::addLogMessage(QString str)
 
 	ui.textBrowser_log->repaint();
 }
-
-
-void CameraCaptureGui::testThread(QString path_name)
-{
-	qDebug() << path_name;
-}
+ 
 
 bool CameraCaptureGui::saveOneFrameData(QString path_name)
 {
@@ -159,13 +149,13 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 
 	 
 	QString brightness_str = path_name + "_bright.bmp";
-	cv::imwrite(brightness_str.toStdString(), brightness_map_); 
+	cv::imwrite(brightness_str.toLocal8Bit().toStdString(), brightness_map_); 
 	 
 	QString depth_str = path_name + "_depth_map.tiff";
-	cv::imwrite(depth_str.toStdString(), depth_map_); 
+	cv::imwrite(depth_str.toLocal8Bit().toStdString(), depth_map_);
 
 	QString height_str = path_name + "_height_map.tiff";
-	cv::imwrite(height_str.toStdString(), height_map_);
+	cv::imwrite(height_str.toLocal8Bit().toStdString(), height_map_);
 
 	QString points_str = path_name + ".ply"; 
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
@@ -174,7 +164,25 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 
 
 	FileIoFunction file_io_machine; 
-	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_); 
+	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_);
+
+	return true;
+}
+
+
+bool CameraCaptureGui::loadSettingData(QString path)
+{
+	bool ret =config_system_param_machine_.loadProcessingSettingsFile(path);
+	if (!ret)
+	{
+		return false;
+	}
+	
+	config_system_param_machine_.getFirmwareConfigData(system_config_param_);
+	config_system_param_machine_.getGuiConfigData(processing_gui_settings_data_);
+	   
+	setUiData();
+	undateSystemConfigUiData();
 
 	return true;
 }
@@ -182,8 +190,14 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 bool CameraCaptureGui::saveSettingData(QString path)
 {
 
-	return processing_settings_data_.saveToSettings(path);
+	//bool ret = processing_settings_data_.saveToSettings(path);
 	
+	config_system_param_machine_.setFirmwareConfigData(system_config_param_);
+	config_system_param_machine_.setGuiConfigData(processing_gui_settings_data_);
+
+	bool ok = config_system_param_machine_.saveProcessingSettingsFile(path);
+	
+	return ok;
 }
 
 
@@ -229,8 +243,8 @@ bool CameraCaptureGui::renderHeightImage(cv::Mat height)
 		return false;
 	}
 
-	int low_z = processing_settings_data_.Instance().low_z_value;
-	int high_z = processing_settings_data_.Instance().high_z_value;
+	int low_z = processing_gui_settings_data_.Instance().low_z_value;
+	int high_z = processing_gui_settings_data_.Instance().high_z_value;
 
 	FileIoFunction io_machine; 
 
@@ -265,8 +279,8 @@ bool CameraCaptureGui::setShowImages(cv::Mat brightness, cv::Mat depth)
 	cv::Mat gray_map;
 	FileIoFunction io_machine;
 
-	int low_z = processing_settings_data_.Instance().low_z_value;
-	int high_z = processing_settings_data_.Instance().high_z_value;
+	int low_z = processing_gui_settings_data_.Instance().low_z_value;
+	int high_z = processing_gui_settings_data_.Instance().high_z_value;
 
 	io_machine.depthToColor(depth, img_color, gray_map, low_z, high_z);
 
@@ -275,9 +289,9 @@ bool CameraCaptureGui::setShowImages(cv::Mat brightness, cv::Mat depth)
 }
 
 
-void CameraCaptureGui::setSettingData(ProcessingDataStruct& settings_data_)
+void CameraCaptureGui::setGuiSettingData(GuiConfigDataStruct& settings_data_)
 {
-	processing_settings_data_ = settings_data_;
+	processing_gui_settings_data_ = settings_data_;
 }
 
 
@@ -292,9 +306,9 @@ void CameraCaptureGui::undateSystemConfigUiData()
 
 void CameraCaptureGui::setUiData()
 {
-	ui.spinBox_min_z->setValue(processing_settings_data_.Instance().low_z_value);
-	ui.spinBox_max_z->setValue(processing_settings_data_.Instance().high_z_value);
-	ui.lineEdit_ip->setText(processing_settings_data_.Instance().ip);
+	ui.spinBox_min_z->setValue(processing_gui_settings_data_.Instance().low_z_value);
+	ui.spinBox_max_z->setValue(processing_gui_settings_data_.Instance().high_z_value);
+	ui.lineEdit_ip->setText(processing_gui_settings_data_.Instance().ip);
 
 	//ui.spinBox_exposure_num->setDisabled(true);
 	//ui.spinBox_led->setDisabled(true);
@@ -357,7 +371,7 @@ void CameraCaptureGui::add_exposure_item(int row, int col, int val)
 
 void CameraCaptureGui::do_spin_min_z_changed(int val)
 {
-	processing_settings_data_.Instance().low_z_value = val;
+	processing_gui_settings_data_.Instance().low_z_value = val;
 
 	renderHeightImage(height_map_);
 	showImage();
@@ -370,35 +384,60 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 
 
 void CameraCaptureGui::do_spin_led_current_changed(int val)
-{
+{  
+	if (camera_setting_flag_)
+	{ 
+		return;
+	}
+	
+	//设置参数时加锁
+	camera_setting_flag_ = true;
 	if (connected_flag_)
 	{
+
 		system_config_param_.led_current = val;
 
-		//int ret_code = DfSetSystemConfigParam(system_config_param_);
-		//if (0 != ret_code)
-		//{
-		//	qDebug() << "Get Param Error;";
-		//	return;
-		//}
-
-		int ret_code = DfSetParamLedCurrent(system_config_param_.led_current);
-		if (0 != ret_code)
+		int ret_code = -1;
+		//如果连续采集在用、先暂停
+		if (start_timer_flag_)
 		{
-			qDebug() << "Set Led Curretn Error;";
-			return;
+  
+			stopCapturingOneFrameBaseThread();
+			 
+			
+			int ret_code = DfSetSystemConfigParam(system_config_param_);
+			if (0 == ret_code)
+			{ 
+				ui.spinBox_led->setValue(system_config_param_.led_current);
+				QString str = QString::fromLocal8Bit("设置投影亮度: ") + QString::number(system_config_param_.led_current);
+				addLogMessage(str);
+			} 
+
+			do_pushButton_capture_continuous();
+		 
 		}
+		else
+		{
+			ret_code = DfSetSystemConfigParam(system_config_param_);
 
-		QString str = QString::fromLocal8Bit("设置投影亮度: ") + QString::number(val);
+			if (0 == ret_code)
+			{
+				ui.spinBox_led->setValue(system_config_param_.led_current);
+				QString str = QString::fromLocal8Bit("设置投影亮度: ") + QString::number(system_config_param_.led_current);
+				addLogMessage(str);
+			}
 
-		addLogMessage(str);
-	}
+		}
+		  
+	}  
+
+	camera_setting_flag_ = false;
 }
 
 void CameraCaptureGui::do_spin_max_z_changed(int val)
 {
 
-	processing_settings_data_.Instance().high_z_value = val;
+	processing_gui_settings_data_.Instance().high_z_value = val;
 
 
 	renderHeightImage(height_map_);
@@ -408,7 +447,7 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 }
 
 
-bool CameraCaptureGui::many_exposure_param_has_changed()
+bool CameraCaptureGui::manyExposureParamHasChanged()
 {
 	if (system_config_param_.exposure_num != ui.spinBox_exposure_num->value())
 	{
@@ -426,8 +465,79 @@ bool CameraCaptureGui::many_exposure_param_has_changed()
 	return false;
 }
 
+bool CameraCaptureGui::setCameraConfigParam()
+{
+	int ret_code = DfSetParamLedCurrent(system_config_param_.led_current);
+	if (0 != ret_code)
+	{
+		qDebug() << "Set Led Curretn Error;";
+		return false;
+	}
+
+
+	ret_code = DfSetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
+
+	if (0 != ret_code)
+	{
+		qDebug() << "Set HDR Param Error;";
+		return false;
+	}
+
+	ret_code = DfSetParamStandardPlaneExternal(&system_config_param_.standard_plane_external_param[0],
+		&system_config_param_.standard_plane_external_param[9]);
+
+	if (0 != ret_code)
+	{
+		qDebug() << "Set Standard Plane Param Error;";
+		return false;
+	}
+
+	return true;
+}
+
+bool CameraCaptureGui::getCameraConfigParam()
+{
+
+	int ret_code = DfGetParamLedCurrent(system_config_param_.led_current);
+	if (0 != ret_code)
+	{
+		qDebug() << "Get Led Curretn Error;";
+		return false;
+	}
+
+
+	ret_code = DfGetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
+
+	if (0 != ret_code)
+	{
+		qDebug() << "Get HDR Param Error;";
+		return false;
+	}
+
+	ret_code = DfGetParamStandardPlaneExternal(&system_config_param_.standard_plane_external_param[0],
+		&system_config_param_.standard_plane_external_param[9]);
+
+	if (0 != ret_code)
+	{
+		qDebug() << "Get Standard Plane Param Error;";
+		return false;
+	}
+
+
+	return true;
+}
+
+void CameraCaptureGui::sleep(int sectime)
+{
+	QTime dieTime = QTime::currentTime().addMSecs(sectime);
+
+	while (QTime::currentTime() < dieTime) {
+		QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+	}
+}
+
 //更新多曝光参数
-void CameraCaptureGui::update_many_exposure_param()
+void CameraCaptureGui::updateManyExposureParam()
 {
 	for (int i = 0; i < exposure_time_list_.size(); i++)
 	{
@@ -437,21 +547,21 @@ void CameraCaptureGui::update_many_exposure_param()
 	system_config_param_.exposure_num = exposure_time_list_.size();
 
 
-	//int ret_code = DfSetSystemConfigParam(system_config_param_);
-	//if (0 != ret_code)
-	//{
-	//	qDebug() << "Get Param Error;";
-	//	return;
-	//}
-
-
-	int ret_code = DfSetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
-
+	int ret_code = DfSetSystemConfigParam(system_config_param_);
 	if (0 != ret_code)
 	{
-		qDebug() << "Set HDR Param Error;";
+		qDebug() << "Get Param Error;";
 		return;
 	}
+
+
+	//int ret_code = DfSetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
+
+	//if (0 != ret_code)
+	//{
+	//	qDebug() << "Set HDR Param Error;";
+	//	return;
+	//}
 
 	QString str = QString::fromLocal8Bit("同步多曝光参数 ");
 	addLogMessage(str);
@@ -521,7 +631,7 @@ bool CameraCaptureGui::connectCamera(QString ip)
 }
 
 
-bool CameraCaptureGui::capture_brightness()
+bool CameraCaptureGui::captureBrightness()
 {
 	if (!connected_flag_)
 	{
@@ -551,7 +661,104 @@ bool CameraCaptureGui::capture_brightness()
 	return false;
 }
 
-bool CameraCaptureGui::capture_one_frame_data()
+
+bool CameraCaptureGui::stopCapturingOneFrameBaseThread()
+{
+	do_pushButton_capture_continuous();
+
+	for (int i = 0; i < 1000; i++)
+	{
+		sleep(10);
+		if (!capturing_flag_)
+		{
+			//qDebug() << "capturing_flag_: " << capturing_flag_;
+			return true;
+		}
+
+	}
+
+	return false;
+}
+
+void CameraCaptureGui::captureOneFrameBaseThread(bool hdr)
+{
+
+	if (!connected_flag_)
+	{
+		return ;
+	}
+
+
+	if (capturing_flag_)
+	{
+		return;
+	}
+	capturing_flag_ = true;
+
+	int width = camera_width_;
+	int height = camera_height_; 
+
+	int image_size = width * height;
+
+	cv::Mat brightness(height, width, CV_8U, cv::Scalar(0));
+	cv::Mat depth(height, width, CV_32F, cv::Scalar(0.));
+	cv::Mat point_cloud(height, width, CV_32FC3, cv::Scalar(0.));
+
+	int depth_buf_size = image_size * 1 * 4;
+	int brightness_bug_size = image_size;
+
+	int ret_code = -1;
+
+	if (hdr)
+	{
+		ret_code = DfGetFrameHdr((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+	}
+	else
+	{
+		ret_code = DfGetFrame03((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+	}
+	 
+
+	/***************************************************************************/
+	if (0 == ret_code)
+	{
+
+		float temperature = 0;
+		ret_code = DfGetDeviceTemperature(temperature);
+		std::cout << "temperature: " << temperature << std::endl;
+		emit send_temperature_update(temperature);
+
+		//capture_m_mutex_.lock();
+
+		brightness_map_ = brightness.clone();
+		depth_map_ = depth.clone();
+
+		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);
+		transformPointcloud((float*)point_cloud.data, (float*)point_cloud.data, system_config_param_.standard_plane_external_param, &system_config_param_.standard_plane_external_param[9]);
+
+		std::vector<cv::Mat> channels;
+		cv::split(point_cloud, channels);
+		height_map_ = channels[2].clone();
+		 
+		//capture_m_mutex_.unlock();
+
+
+		capture_show_flag_ = true;
+
+
+		emit send_images_update();
+
+		  
+	} 
+	else
+	{
+		start_timer_flag_ = false;
+	}
+	 
+	capturing_flag_ = false;
+}
+
+bool CameraCaptureGui::captureOneFrameData()
 {
 
 	if (!connected_flag_)
@@ -580,11 +787,11 @@ bool CameraCaptureGui::capture_one_frame_data()
 	{ 
 		if (connected_flag_)
 		{
-			bool changed = many_exposure_param_has_changed();
+			bool changed = manyExposureParamHasChanged();
 
 			if (changed)
 			{
-				update_many_exposure_param();
+				updateManyExposureParam();
 			}
 		}
 
@@ -602,7 +809,7 @@ bool CameraCaptureGui::capture_one_frame_data()
 		depth_map_ = depth.clone();
 		 
 		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);  
-		transformPointcloud((float*)point_cloud.data,(float*)point_cloud.data, system_config_param_.external_param, &system_config_param_.external_param[9]);
+		transformPointcloud((float*)point_cloud.data,(float*)point_cloud.data, system_config_param_.standard_plane_external_param, &system_config_param_.standard_plane_external_param[9]);
 	 
 		std::vector<cv::Mat> channels;
 		cv::split(point_cloud, channels);
@@ -626,6 +833,10 @@ bool CameraCaptureGui::capture_one_frame_data()
 }
  
 
+bool CameraCaptureGui::isConnect()
+{
+	return connected_flag_;
+}
 
 
 void  CameraCaptureGui::do_pushButton_connect()
@@ -657,17 +868,25 @@ void  CameraCaptureGui::do_pushButton_connect()
 				qDebug() << "Connect Error!;";
 				return;
 			}
+			//获取相机标定参数
 			DfGetCalibrationParam(camera_calibration_param_);
 	 
 
 			addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
 			//保存ip配置
-			processing_settings_data_.Instance().ip = camera_ip_;
+			processing_gui_settings_data_.Instance().ip = camera_ip_;
 
-			ret_code = DfGetSystemConfigParam(system_config_param_);
+			//ret_code = DfGetSystemConfigParam(system_config_param_);
+			//if (0 != ret_code)
+			//{
+			//	qDebug() << "Get Param Error;";
+			//	//return;
+			//}
+
+			ret_code = DfSetSystemConfigParam(system_config_param_);
 			if (0 != ret_code)
 			{
-				qDebug() << "Get Param Error;";
+				qDebug() << "Set Param Error;";
 				//return;
 			}
 
@@ -731,7 +950,6 @@ void  CameraCaptureGui::do_pushButton_connect()
 		//断开相机
 		do_pushButton_disconnect();
 
-		ui.pushButton_connect->setIcon(QIcon(":/dexforce_camera_gui/image/connect.png"));
 	}
 
 
@@ -743,9 +961,16 @@ void  CameraCaptureGui::do_pushButton_disconnect()
 	
 	if (connected_flag_)
 	{
+		if (start_timer_flag_)
+		{
+			stopCapturingOneFrameBaseThread();
+		}
+
 		DfDisconnect(camera_ip_.toStdString().c_str());
 		addLogMessage(QString::fromLocal8Bit("断开相机！")); 
 		connected_flag_ = false;
+
+		ui.pushButton_connect->setIcon(QIcon(":/dexforce_camera_gui/image/connect.png"));
 	}
 
 
@@ -847,18 +1072,18 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		cv::Mat height_map = channels[2].clone(); 
 
 		height_map_ = height_map.clone();
-		renderDepthImage(height_map);
+		renderHeightImage(height_map);
 		showImage();
 
 		for (int i = 0; i < 9; i++)
 		{
-			system_config_param_.external_param[i] = r.ptr<float>(0)[i];
+			system_config_param_.standard_plane_external_param[i] = r.ptr<float>(0)[i];
 			//qDebug() << system_config_param_.external_param[i];
 		}
 
 		for (int i = 0; i < 3; i++)
 		{
-			system_config_param_.external_param[9 + i] = t.ptr<float>(0)[i];
+			system_config_param_.standard_plane_external_param[9 + i] = t.ptr<float>(0)[i];
 			//qDebug() << translation_mat.ptr<float>(0)[i];
 		} 
 		if (connected_flag_)
@@ -1224,9 +1449,9 @@ void CameraCaptureGui::do_pushButton_save_as()
 }
 
 
-bool CameraCaptureGui::capture_one_frame_and_render()
+bool CameraCaptureGui::captureOneFrameAndRender()
 {
-	bool ret = capture_one_frame_data(); 
+	bool ret = captureOneFrameData(); 
 
 
 	if (ret)
@@ -1261,46 +1486,86 @@ void  CameraCaptureGui::do_pushButton_capture_one_frame()
 {
 	if (!connected_flag_)
 	{
+		do_pushButton_connect();
+		captureOneFrameAndRender();
+		do_pushButton_disconnect();
 		return;
 	}
 
  
 
-	capture_one_frame_and_render();
+	captureOneFrameAndRender();
 	 
 
 
 
 
 }
-
- 
  
 
-void  CameraCaptureGui::do_timeout_slot()
+void CameraCaptureGui::do_undate_show_slot()
 {
 
-	std::cout << "timeout"<<std::endl;
+	//capture_m_mutex_.lock();
+
+	if (!capture_show_flag_)
+	{
+		return;
+	}
+
+	renderBrightnessImage(brightness_map_);
+	renderDepthImage(depth_map_);
+	renderHeightImage(height_map_);
+
+	showImage(); 
+
+	capture_show_flag_ = false;
+
+	//capture_m_mutex_.unlock();
+	if (ui.checkBox_auto_save->isChecked())
+	{
+		QString StrCurrentTime = "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
+		QString path_name = sys_path_ + StrCurrentTime;
+		//saveOneFrameData(path_name);
+
+		std::thread t_s(&CameraCaptureGui::saveOneFrameData, this, path_name);
+		t_s.detach();
+		addLogMessage(QString::fromLocal8Bit("保存路径：") + path_name);
+	}
+
+  
+}
+
+
+void  CameraCaptureGui::do_timeout_capture_slot()
+{
+
+	std::cout << "capture timeout"<<std::endl;
 
 	capture_timer_.stop();
 
-	if (start_timer_flag_)
-	{ 
- 
+	if (start_timer_flag_ && connected_flag_)
+	{  
+			//bool ret = captureOneFrameAndRender();  
+			//if (!ret)
+			//{
+			//	//停止连续采集
+			//	do_pushButton_capture_continuous();
+			//} 
+			//else
+			//{
+			//	capture_timer_.start();
+			//}
 
-			bool ret = capture_one_frame_and_render();
-			//do_pushButton_test_accuracy();
+			std::thread t_s(&CameraCaptureGui::captureOneFrameBaseThread, this, ui.checkBox_hdr->isChecked());
+			t_s.detach();  
+			capture_timer_.start();
+	}
+	else
+	{	
+		//	//停止连续采集
+			do_pushButton_capture_continuous();
 
-			if (!ret)
-			{
-				//停止连续采集
-				do_pushButton_capture_continuous();
-			} 
-			else
-			{
-				capture_timer_.start();
-			}
- 
 	}
 
 }
@@ -1317,15 +1582,20 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 	if (start_timer_flag_)
 	{
 		start_timer_flag_ = false;
+		capture_timer_.stop(); 
 
 		ui.pushButton_capture_continuous->setIcon(QIcon(":/dexforce_camera_gui/image/video_start.png"));
 	}
 	else
 	{
-		start_timer_flag_ = true;
-		capture_timer_.start();
-
-		ui.pushButton_capture_continuous->setIcon(QIcon(":/dexforce_camera_gui/image/video_stop.png"));
+		if (connected_flag_)
+		{
+			start_timer_flag_ = true;
+			capturing_flag_ = false;
+			capture_timer_.start();
+			ui.pushButton_capture_continuous->setIcon(QIcon(":/dexforce_camera_gui/image/video_stop.png"));
+		}
+		 
 	}
 
 	//capture_thread_ = new QThread(this);
@@ -1355,11 +1625,22 @@ void CameraCaptureGui::do_checkBox_toggled_hdr(bool state)
 		if (state)
 		{
 
-			bool changed = many_exposure_param_has_changed();
+			bool changed = manyExposureParamHasChanged();
 
 			if (changed)
 			{
-				update_many_exposure_param();
+				if (start_timer_flag_)
+				{
+					stopCapturingOneFrameBaseThread();
+					updateManyExposureParam();
+					do_pushButton_capture_continuous();
+				}
+				else
+				{
+
+					updateManyExposureParam();
+				}
+
 			}
 		}
 

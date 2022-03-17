@@ -61,16 +61,35 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>26</height>
+     <height>23</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu">
+   <widget class="QMenu" name="menu_help">
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
     <property name="title">
      <string>帮助</string>
     </property>
     <addaction name="actionAbout"/>
    </widget>
-   <addaction name="menu"/>
+   <widget class="QMenu" name="menu_file">
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="action_load_camera_config"/>
+    <addaction name="action_save_camera_config"/>
+    <addaction name="action_exit"/>
+   </widget>
+   <addaction name="menu_file"/>
+   <addaction name="menu_help"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -91,6 +110,43 @@
   <action name="actionAbout">
    <property name="text">
     <string>关于</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+     <pointsize>9</pointsize>
+    </font>
+   </property>
+  </action>
+  <action name="action_load_camera_config">
+   <property name="text">
+    <string>加载相机配置</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+     <pointsize>9</pointsize>
+    </font>
+   </property>
+  </action>
+  <action name="action_save_camera_config">
+   <property name="text">
+    <string>保存相机配置</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+    </font>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string>退出</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+    </font>
    </property>
   </action>
  </widget>

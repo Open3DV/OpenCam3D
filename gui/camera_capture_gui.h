@@ -5,7 +5,7 @@
 #include "settings_file_function.h"
 #include <opencv2/core.hpp>
 #include "../sdk/open_cam3d.h"
-#include "../firmware/system_config_settings.h"
+//#include "../firmware/system_config_settings.h"
 #include "../firmware/protocol.h"
 #include <QThread>
 #include <QDebug>
@@ -25,37 +25,49 @@ public:
 	 
 	bool setShowImages(cv::Mat brightness, cv::Mat depth);
 
-	void setSettingData(ProcessingDataStruct& settings_data_);
+	void setGuiSettingData(GuiConfigDataStruct& settings_data_);
 
 	bool saveSettingData(QString path);
+
+	bool loadSettingData(QString path);
 
 	void setUiData(); 
 
 	bool connectCamera(QString ip);
+	
+	bool stopCapturingOneFrameBaseThread();
 
-	bool capture_one_frame_data();
+	void captureOneFrameBaseThread(bool hdr);
 
-	bool capture_one_frame_and_render();
+	bool captureOneFrameData();
 
-	bool capture_brightness();
+	bool captureOneFrameAndRender();
+
+	bool captureBrightness();
 
 	bool initializeFunction();
 
-	bool saveOneFrameData(QString path_name);
-
-	void testThread(QString path_name);
+	bool saveOneFrameData(QString path_name); 
 
 	void addLogMessage(QString str); 
 
 	//更新多曝光参数
-	void update_many_exposure_param();
+	void updateManyExposureParam();
 
-	bool many_exposure_param_has_changed();
+	bool manyExposureParamHasChanged();
+
+	bool isConnect();
+	 
+	bool setCameraConfigParam();
+
+	bool getCameraConfigParam();
+
+	void sleep(int sectime);
+
 private:
 	bool showImage();
 
-	bool setImage(cv::Mat img);
-
+	bool setImage(cv::Mat img); 
 
 	bool renderHeightImage(cv::Mat height);
 
@@ -73,11 +85,17 @@ private:
 signals:
 	void send_temperature_update(float val);
 
-public slots:
+	void send_images_update();
 
+public slots: 
 
-	void do_timeout_slot();
+	void do_timeout_capture_slot();
 
+	void do_undate_show_slot();
+
+	void do_pushButton_connect();
+
+	void do_pushButton_disconnect();
 
 private slots:
 	void do_QRadioButton_toggled_brightness(bool state);
@@ -100,11 +118,7 @@ private slots:
 	void do_spin_min_z_changed(int val);
 
 	void do_spin_max_z_changed(int val);
-
-	void do_pushButton_connect();
-
-	void do_pushButton_disconnect();
-
+	  
 	void do_pushButton_capture_one_frame();
 
 	void do_pushButton_capture_many_frame();
@@ -127,7 +141,12 @@ private slots:
 private:
 	Ui::CameraCaptureGui ui;
 
-	ProcessingDataStruct processing_settings_data_;
+	bool capture_show_flag_;
+
+
+	//std::mutex	capture_m_mutex_;
+	bool capturing_flag_;
+	bool camera_setting_flag_;
 
 	//6个exposure输入框
 	std::vector<QSpinBox*> exposure_time_list_;
@@ -150,6 +169,10 @@ private:
 	bool connected_flag_;
 	int camera_width_;
 	int camera_height_;
+
+
+	GuiConfigDataStruct processing_gui_settings_data_;
+	SettingsFileFunction config_system_param_machine_;
 
 	//相机系统配置参数
 	struct SystemConfigParam system_config_param_;

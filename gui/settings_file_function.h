@@ -1,11 +1,11 @@
 #pragma once
 
 #include <QObject>
+#include "../firmware/system_config_settings.h"
 
-
-struct  ProcessingDataStruct
+struct  GuiConfigDataStruct
 {
-	ProcessingDataStruct();
+	GuiConfigDataStruct();
 
 	int low_z_value;
 	int high_z_value;
@@ -15,14 +15,14 @@ struct  ProcessingDataStruct
   
 	bool loadFromSettings(const QString& f);
 	bool saveToSettings(const QString& f);
- 
-	static ProcessingDataStruct& Instance()
+
+	static GuiConfigDataStruct& Instance()
 	{
 		return instance_;
 	}
 
 private:
-	static ProcessingDataStruct instance_;
+	static GuiConfigDataStruct instance_;
 };
 
 class SettingsFileFunction : public QObject
@@ -30,10 +30,22 @@ class SettingsFileFunction : public QObject
 	Q_OBJECT
 
 public:
-	SettingsFileFunction(QObject *parent);
+	SettingsFileFunction();
 	~SettingsFileFunction();
+
+	void setFirmwareConfigData(struct SystemConfigParam param);
+
+	void getFirmwareConfigData(struct SystemConfigParam& param);
+
+	void setGuiConfigData(struct GuiConfigDataStruct param);
+
+	void getGuiConfigData(struct GuiConfigDataStruct& param);
 
 	bool loadProcessingSettingsFile(QString path);
 
 	bool saveProcessingSettingsFile(QString path);
+
+private:
+	struct SystemConfigDataStruct camera_config_;
+	struct  GuiConfigDataStruct gui_config_;
 };

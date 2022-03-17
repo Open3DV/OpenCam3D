@@ -649,7 +649,7 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 	}
 
 	//memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
-	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
+	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, system_config_param.standard_plane_external_param, &system_config_param.standard_plane_external_param[9]);
 	 
 
 	int nr = camera_height_;
@@ -1477,7 +1477,7 @@ DF_SDK_API int DfGetDeviceTemperature(float& temperature)
 	}
 	else if (command == DF_CMD_REJECT)
 	{
-		close_socket(g_sock);
+		close_socket(g_sock); 
 		return DF_FAILED;
 	}
 
@@ -1826,6 +1826,108 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 
 /*****************************************************************************************************/
 
+	//函数名： DfSetParamStandardPlaneExternal
+	//功能： 设置基准平面的外参
+	//输入参数：R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamStandardPlaneExternal(float* R, float* T)
+{
+
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+   
+		float plane_param[12];
+		 
+		memcpy(plane_param, R, 9 * sizeof(float));
+		memcpy(plane_param + 9,T, 3 * sizeof(float));
+
+		ret = send_buffer((char*)(plane_param), sizeof(float)*12, g_sock);
+	 
+
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock); 
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+
+
+}
+
+//函数名： DfGetParamStandardPlaneExternal
+//功能： 获取基准平面的外参
+//输入参数：无
+//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		//int param_buf_size = 12 * sizeof(float);
+		//float* plane_param = new float[param_buf_size];
+		float plane_param[12];
+
+		ret = recv_buffer((char*)(plane_param), sizeof(float) * 12, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);  
+			return DF_FAILED;
+		}
+
+		memcpy(R, plane_param, 9 * sizeof(float));
+		memcpy(T, plane_param + 9, 3 * sizeof(float));
+		   
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
 
 //函数名： DfSetParamHdr
 //功能： 设置多曝光参数（最大曝光次数为6次）
@@ -1851,7 +1953,7 @@ DF_SDK_API int DfSetParamHdr(int num, int exposure_param[6])
 
 		memcpy(param+1, exposure_param, sizeof(int)*6);
 
-		ret = send_buffer((char*)(&param), sizeof(int) * 7, g_sock);
+		ret = send_buffer((char*)(param), sizeof(int) * 7, g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -1862,6 +1964,11 @@ DF_SDK_API int DfSetParamHdr(int num, int exposure_param[6])
 	{
 		close_socket(g_sock);
 		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
 	}
 
 	close_socket(g_sock);
@@ -1891,7 +1998,7 @@ DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 		int param[7];
 		param[0] = num;
 		 
-		ret = recv_buffer((char*)(&param), sizeof(int) * 7, g_sock);
+		ret = recv_buffer((char*)(param), sizeof(int) * 7, g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -1907,6 +2014,11 @@ DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 	{
 		close_socket(g_sock);
 		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
 	}
 
 	close_socket(g_sock);
@@ -1945,6 +2057,11 @@ DF_SDK_API int DfSetParamLedCurrent(int led)
 		close_socket(g_sock);
 		return DF_FAILED;
 	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
 
 	close_socket(g_sock);
 	return DF_SUCCESS;
@@ -1981,6 +2098,11 @@ DF_SDK_API int DfGetParamLedCurrent(int& led)
 	{
 		close_socket(g_sock);
 		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
 	}
 
 	close_socket(g_sock);

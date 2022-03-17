@@ -1233,7 +1233,7 @@ bool FileIoFunction::SaveBinPointsToPly(cv::Mat deep_mat, QString path, cv::Mat 
 
 			/*********************************************************************************************************/
 			//以二进行制保存
-			std::ofstream outFile(path.toStdString(), std::ios::app | std::ios::binary);
+			std::ofstream outFile(path.toLocal8Bit().toStdString(), std::ios::app | std::ios::binary);
 			 
 
 			for (int i = 0; i < points_list.size(); i++)

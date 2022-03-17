@@ -24,7 +24,7 @@ struct SystemConfigParam
 	//外参标识:0-相机、1-光机、2-外部标定板。
 	int external_param_flag;
 	//相机外参:前9个为R、后3个为T。
-	float external_param[12];
+	float standard_plane_external_param[12];
 	//基准平面
 	float standard_plane[4];
 

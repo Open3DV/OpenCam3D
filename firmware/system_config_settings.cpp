@@ -21,21 +21,21 @@ SystemConfigDataStruct::SystemConfigDataStruct()
     instance_.config_param_.camera_gain = 0;
     instance_.config_param_.external_param_flag = 0;
     
-    instance_.config_param_.external_param[0] = 1;
-    instance_.config_param_.external_param[1] = 0;
-    instance_.config_param_.external_param[2] = 0;
+    instance_.config_param_.standard_plane_external_param[0] = 1;
+    instance_.config_param_.standard_plane_external_param[1] = 0;
+    instance_.config_param_.standard_plane_external_param[2] = 0;
 
-    instance_.config_param_.external_param[3] = 0;
-    instance_.config_param_.external_param[4] = 1;
-    instance_.config_param_.external_param[5] = 0;
+    instance_.config_param_.standard_plane_external_param[3] = 0;
+    instance_.config_param_.standard_plane_external_param[4] = 1;
+    instance_.config_param_.standard_plane_external_param[5] = 0;
 
-    instance_.config_param_.external_param[6] = 0;
-    instance_.config_param_.external_param[7] = 0;
-    instance_.config_param_.external_param[8] = 1;
+    instance_.config_param_.standard_plane_external_param[6] = 0;
+    instance_.config_param_.standard_plane_external_param[7] = 0;
+    instance_.config_param_.standard_plane_external_param[8] = 1;
 
-    instance_.config_param_.external_param[9] = 0;
-    instance_.config_param_.external_param[10] = 0;
-    instance_.config_param_.external_param[11] = 0;
+    instance_.config_param_.standard_plane_external_param[9] = 0;
+    instance_.config_param_.standard_plane_external_param[10] = 0;
+    instance_.config_param_.standard_plane_external_param[11] = 0;
 
     instance_.config_param_.standard_plane[0] = 0;
     instance_.config_param_.standard_plane[1] = 0;
@@ -117,7 +117,7 @@ bool SystemConfigDataStruct::loadFromSettings(const std::string& f)
                 {
                     for(int i = 0;i< 12;i++)
                     {
-                        instance_.config_param_.external_param[i] = atof(external_param_list[i].c_str());
+                        instance_.config_param_.standard_plane_external_param[i] = atof(external_param_list[i].c_str());
                     }
                 }
             }
@@ -176,10 +176,10 @@ bool SystemConfigDataStruct::saveToSettings(const std::string& f)
     std::string external_param_str = ""; 
     for(int i = 0;i< 11;i++)
     {
-        external_param_str += std::to_string(instance_.config_param_.external_param[i]);
+        external_param_str += std::to_string(instance_.config_param_.standard_plane_external_param[i]);
         external_param_str +=",";
     }
-    external_param_str += std::to_string(instance_.config_param_.external_param[11]); 
+    external_param_str += std::to_string(instance_.config_param_.standard_plane_external_param[11]);
     ofile << "external_param: " << external_param_str << std::endl; 
 
     //
