@@ -4,14 +4,15 @@
 #include <iostream>
 #include <thread>
 #include "utils.h"
-#include "../../firmware/easylogging++.h"
-#include "../../firmware/protocol.h"
-#include "../../firmware/system_config_settings.h"
-#include "../../test/triangulation.h"
 #include<chrono>
 #include<ctime>
 #include <time.h>
 #include <stddef.h> 
+#include "../../firmware/easylogging++.h"
+#include "../../firmware/protocol.h"
+#include "../../firmware/system_config_settings.h"
+#include "../../test/triangulation.h"
+
 using namespace std;
 using namespace std::chrono;
 
@@ -49,6 +50,7 @@ int depth_buf_size_ = 0;
 int pointcloud_buf_size_ = 0;
 int brightness_bug_size_ = 0;
 float* point_cloud_buf_ = NULL;
+float* trans_point_cloud_buf_ = NULL;
 bool transform_pointcloud_flag_ = false;
 float* depth_buf_ = NULL;
 unsigned char* brightness_buf_ = NULL;
@@ -166,7 +168,7 @@ bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* transl
 	return true;
 }
 
- bool transformPointcloud(float* point_cloud_map, float* rotate, float* translation)
+ bool transformPointcloud(float* org_point_cloud_map, float* transform_point_cloud_map, float* rotate, float* translation)
 {
 
 
@@ -184,15 +186,15 @@ bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* transl
  
 			 int offset = r * camera_width_ + c;
 
-			 float x = point_cloud_map[3 * offset + 0];
-			 float y = point_cloud_map[3 * offset + 1];
-			 float z = point_cloud_map[3 * offset + 2];
+			 float x = org_point_cloud_map[3 * offset + 0];
+			 float y = org_point_cloud_map[3 * offset + 1];
+			 float z = org_point_cloud_map[3 * offset + 2];
 			  
 			 //if (z > 0)
 			 //{
-				 point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z + translation[0];
-				 point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z + translation[1];
-				 point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z + translation[2];
+				 transform_point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z + translation[0];
+				 transform_point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z + translation[1];
+				 transform_point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z + translation[2];
 				  
 			 //}
 			 //else
@@ -254,11 +256,11 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 
 		for (int c = 0; c < nc; c++)
 		{
-			double undistort_x = 0;
-			double undistort_y = 0;
+			double undistort_x = c;
+			double undistort_y = r;
 
-			undistortPoint(c, r, camera_fx, camera_fy,
-				camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+			//undistortPoint(c, r, camera_fx, camera_fy,
+			//	camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
 
 			int offset = r * camera_width_ + c;
 			if (depth_map[offset] > 0)
@@ -344,6 +346,8 @@ DF_SDK_API int DfConnect(const char* camera_id)
 
 	pointcloud_buf_size_ = depth_buf_size_ * 3;
 	point_cloud_buf_ = (float*)(new char[pointcloud_buf_size_]);
+
+	trans_point_cloud_buf_ = (float*)(new char[pointcloud_buf_size_]);
 
 	brightness_bug_size_ = image_size;
 	brightness_buf_ = new unsigned char[brightness_bug_size_];
@@ -500,6 +504,121 @@ DF_SDK_API int DfGetBrightnessData(unsigned char* brightness)
 	return 0;
 }
 
+//函数名： DfGetStandardPlaneParam
+//功能： 获取基准平面参数
+//输入参数：无
+//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetStandardPlaneParam(float* R, float* T)
+{
+
+	LOG(INFO) << "DfGetStandardPlaneParam";
+ 
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	int param_buf_size = 12 * 4;
+	float* plane_param = new float[param_buf_size];
+
+	ret = send_command(DF_CMD_GET_STANDARD_PLANE_PARAM, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		LOG(INFO) << "token checked ok";
+		LOG(INFO) << "receiving buffer, param_buf_size=" << param_buf_size;
+		ret = recv_buffer((char*)plane_param, param_buf_size, g_sock);
+		LOG(INFO) << "plane param received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		} 
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get frame rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	LOG(INFO) << "Get plane param success";
+	close_socket(g_sock);
+
+
+	memcpy(R, plane_param, 9*4);
+	memcpy(T, plane_param+9, 3 * 4);
+
+	delete [] plane_param;
+
+	return DF_SUCCESS;
+	  
+}
+
+//函数名： DfGetHeightMapDataBaseParam
+//功能： 获取校正到基准平面的高度映射图
+//输入参数：R(旋转矩阵)、T(平移矩阵)
+//输出参数： height_map(高度映射图)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetHeightMapDataBaseParam(float* R, float* T , float* height_map)
+{
+	if (!connected_flag_)
+	{
+		return -1;
+	} 
+	//struct SystemConfigParam system_config_param;
+	//int ret_code = DfGetSystemConfigParam(system_config_param);
+	//if (0 != ret_code)
+	//{
+	//	std::cout << "Get Param Error;";
+	//	return -1;
+	//}
+
+	LOG(INFO) << "Transform Pointcloud:";
+
+	if (!transform_pointcloud_flag_)
+	{
+		depthTransformPointcloud((float*)depth_buf_, (float*)point_cloud_buf_);
+		transform_pointcloud_flag_ = true;
+	}
+
+	//memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
+	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, R, T);
+
+
+	int nr = camera_height_;
+	int nc = camera_width_;
+	#pragma omp parallel for
+	for (int r = 0; r < nr; r++)
+	{
+		for (int c = 0; c < nc; c++)
+		{
+			int offset = r * camera_width_ + c;
+			if (depth_buf_[offset] > 0)
+			{
+				height_map[offset] = trans_point_cloud_buf_[offset * 3 + 2];
+			}
+			else
+			{
+				height_map[offset] = NULL;
+			}
+
+		}
+
+
+	}
+
+
+	LOG(INFO) << "Get Height Map!";
+
+	return 0;
+}
+
 //函数名： DfGetHeightMapData
 //功能： 采集点云数据并阻塞至返回结果
 //输入参数：无
@@ -525,11 +644,13 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 
 	if (!transform_pointcloud_flag_)
 	{
-		depthTransformPointcloud(depth_buf_, point_cloud_buf_);
+		depthTransformPointcloud((float*)depth_buf_, (float*)point_cloud_buf_);
 		transform_pointcloud_flag_ = true;
 	}
- 
-	transformPointcloud(point_cloud_buf_, system_config_param.external_param, &system_config_param.external_param[9]);
+
+	//memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
+	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, system_config_param.standard_plane_external_param, &system_config_param.standard_plane_external_param[9]);
+	 
 
 	int nr = camera_height_;
 	int nc = camera_width_; 
@@ -541,7 +662,7 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 			int offset = r * camera_width_ + c; 
 			if (depth_buf_[offset] > 0)
 			{
-				height_map[offset] = point_cloud_buf_[offset*3];
+				height_map[offset] = trans_point_cloud_buf_[offset*3+2];
 			}
 			else
 			{
@@ -604,6 +725,8 @@ DF_SDK_API int DfDisconnect(const char* camera_id)
 
 	delete[] depth_buf_;
 	delete[] brightness_buf_;
+	delete[] point_cloud_buf_;
+	delete[] trans_point_cloud_buf_;
 
 	connected_flag_ = false;
 
@@ -1354,7 +1477,7 @@ DF_SDK_API int DfGetDeviceTemperature(float& temperature)
 	}
 	else if (command == DF_CMD_REJECT)
 	{
-		close_socket(g_sock);
+		close_socket(g_sock); 
 		return DF_FAILED;
 	}
 
@@ -1426,7 +1549,151 @@ DF_SDK_API int DfDisableCheckerboard(float& temperature)
 	return DF_SUCCESS;
 }
 // --------------------------------------------------------------
+DF_SDK_API int DfLoadPatternData(int buildDataSize, char *LoadBuffer)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_LOAD_PATTERN_DATA, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = send_buffer((char*)(&buildDataSize), sizeof(buildDataSize), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
 
+		ret = recv_buffer(LoadBuffer, buildDataSize, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+DF_SDK_API int DfProgramPatternData(char *org_buffer, char *back_buffer, unsigned int pattern_size)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_PROGRAM_PATTERN_DATA, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = send_buffer((char*)(&pattern_size), sizeof(pattern_size), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		ret = send_buffer(org_buffer, pattern_size, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		ret = recv_buffer(back_buffer, pattern_size, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+// --------------------------------------------------------------
+DF_SDK_API int DfGetNetworkBandwidth(int& speed)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_NETWORK_BANDWIDTH, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer((char*)(&speed), sizeof(speed), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+// --------------------------------------------------------------
+DF_SDK_API int DfGetFirmwareVersion(char* pVersion, int length)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_FIRMWARE_VERSION, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer(pVersion, length, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+// --------------------------------------------------------------
 DF_SDK_API int DfGetSystemConfigParam(struct SystemConfigParam& config_param)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -1556,3 +1823,291 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 	p_OnDropped = p_function;
 	return 0;
 }
+
+/*****************************************************************************************************/
+
+	//函数名： DfSetParamStandardPlaneExternal
+	//功能： 设置基准平面的外参
+	//输入参数：R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamStandardPlaneExternal(float* R, float* T)
+{
+
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+   
+		float plane_param[12];
+		 
+		memcpy(plane_param, R, 9 * sizeof(float));
+		memcpy(plane_param + 9,T, 3 * sizeof(float));
+
+		ret = send_buffer((char*)(plane_param), sizeof(float)*12, g_sock);
+	 
+
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock); 
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+
+
+}
+
+//函数名： DfGetParamStandardPlaneExternal
+//功能： 获取基准平面的外参
+//输入参数：无
+//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		//int param_buf_size = 12 * sizeof(float);
+		//float* plane_param = new float[param_buf_size];
+		float plane_param[12];
+
+		ret = recv_buffer((char*)(plane_param), sizeof(float) * 12, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);  
+			return DF_FAILED;
+		}
+
+		memcpy(R, plane_param, 9 * sizeof(float));
+		memcpy(T, plane_param + 9, 3 * sizeof(float));
+		   
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfSetParamHdr
+//功能： 设置多曝光参数（最大曝光次数为6次）
+//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfSetParamHdr(int num, int exposure_param[6])
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_HDR, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		int param[7];
+		param[0] = num;
+
+		memcpy(param+1, exposure_param, sizeof(int)*6);
+
+		ret = send_buffer((char*)(param), sizeof(int) * 7, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
+//函数名： DfGetParamHdr
+//功能： 设置多曝光参数（最大曝光次数为6次）
+//输入参数： 无
+//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_HDR, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		int param[7];
+		param[0] = num;
+		 
+		ret = recv_buffer((char*)(param), sizeof(int) * 7, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+
+		memcpy(exposure_param, param+1, sizeof(int) * 6);
+		num = param[0];
+
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
+	//函数名： DfSetParamLedCurrent
+	//功能： 设置LED电流
+	//输入参数： led（电流值）
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfSetParamLedCurrent(int led)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_LED_CURRENT, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = send_buffer((char*)(&led), sizeof(led), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
+	//函数名： DfGetParamLedCurrent
+	//功能： 设置LED电流
+	//输入参数： 无
+	//输出参数： led（电流值）
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfGetParamLedCurrent(int& led)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_CAMERA_PARAMETERS, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer((char*)(&led), sizeof(led), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
+/*********************************************************************************************************/

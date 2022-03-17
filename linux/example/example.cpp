@@ -9,8 +9,8 @@ int main()
 {
     /*****************************************************************************************************/
 
-
-    int ret_code = DfConnect("192.168.88.141");
+    //连接相机
+    int ret_code = DfConnect("192.168.88.106");
 
     int width = 0, height = 0;
 
@@ -26,7 +26,7 @@ int main()
         return -1;
     }
 
-
+    //获取相机的标定参数
     CalibrationParam calib_param;
     ret_code = DfGetCalibrationParam(&calib_param);
 
@@ -88,19 +88,52 @@ int main()
 
     if (0 == ret_code)
     {
+        //采集单曝光数据
+        if (false)
+        {
+            //设置光机投影亮度参数
+            ret_code = DfSetParamLedCurrent(500);
+            if (0 != ret_code)
+            {
+                std::cout << "Set LED Current Error!" << std::endl;
+            } 
 
-        ret_code = DfCaptureData(1, timestamp_data);
+            //采集一帧单次曝光的数据
+            ret_code = DfCaptureData(1, timestamp_data);
+            std::cout << "Capture Single Exposure Data" << std::endl;
+            std::cout << "timestamp: " << timestamp_data << std::endl;
+        }
+		else
+		{
+			//采集HDR模式数据 
+            int num = 3;
+            int param[6] = { 100,300,600,700,800,900 };
 
-        std::cout << "timestamp: " << timestamp_data << std::endl;
+            //设置多曝光参数
+			ret_code = DfSetParamHdr(num, param);
+
+			if (0 != ret_code)
+			{
+                std::cout << "Set HDR Param Error;" << std::endl; 
+			}
+
+            //采集一帧多曝光的数据
+            ret_code = DfCaptureData(num, timestamp_data);
+            std::cout << "Capture HDR Data" << std::endl;
+            std::cout << "timestamp: " << timestamp_data << std::endl;
+		}
+          
 
         if (0 == ret_code)
         {
+            //获取亮度图数据
             ret_code = DfGetBrightnessData(brightness_data);
             if (0 == ret_code)
             {
                 std::cout << "Get Brightness!" << std::endl;
             }
 
+            //获取深度图数据
             ret_code = DfGetDepthData(depth_data);
 
             if (0 == ret_code)
@@ -108,6 +141,7 @@ int main()
                 std::cout << "Get Depth!" << std::endl;
             } 
 
+            //获取高度映射图数据
             ret_code = DfGetHeightMapData(height_map_data);
 
             if (0 == ret_code)
@@ -115,10 +149,22 @@ int main()
                 std::cout << "Get Height Map!" << std::endl;
             }
 
+            //获取点云数据
             ret_code = DfGetPointcloudData(point_cloud_data);
             if (0 == ret_code)
             {
                 std::cout << "Get Pointcloud!" << std::endl;
+            }
+
+            //动态获取基准平面高度映射图
+            float plane_R[9] = { 1,0,0,0,1,0,0,0,1 };
+            float plane_T[3] = { 0,0,0};
+
+            //动态获取高度映射图数据
+            ret_code = DfGetHeightMapDataBaseParam(plane_R, plane_T, height_map_data);
+            if (0 == ret_code)
+            {
+                std::cout << "Get Height Map Base Param!" << std::endl;
             }
 
             capture_num++;
@@ -140,7 +186,7 @@ int main()
     free(height_map_data);
     free(timestamp_data);
 
-    DfDisconnect("192.168.88.141");
+    DfDisconnect("192.168.88.106");
 }
 
  

@@ -8,7 +8,6 @@
 #endif
 /***************************************************************************************/
 
-/***************************************************************************************/
 
 extern "C"
 {
@@ -51,7 +50,7 @@ extern "C"
 	DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp);
 
 	//函数名： DfGetDepthData
-	//功能： 采集点云数据并阻塞至返回结果
+	//功能： 获取深度图
 	//输入参数：无
 	//输出参数： depth(深度图)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
@@ -59,21 +58,35 @@ extern "C"
 
 
 	//函数名： DfGetBrightnessData
-	//功能： 采集点云数据并阻塞至返回结果
+	//功能： 获取亮度图
 	//输入参数：无
 	//输出参数： brightness(亮度图)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetBrightnessData(unsigned char* brightness);
 
 	//函数名： DfGetHeightMapData
-	//功能： 采集点云数据并阻塞至返回结果
+	//功能： 获取校正到基准平面的高度映射图
 	//输入参数：无
 	//输出参数： height_map(高度映射图)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetHeightMapData(float* height_map);
 
+	//函数名： DfGetStandardPlaneParam
+	//功能： 获取基准平面参数
+	//输入参数：无
+	//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetStandardPlaneParam(float* R, float* T);
+
+	//函数名： DfGetHeightMapDataBaseParam
+	//功能： 获取校正到基准平面的高度映射图
+	//输入参数：R(旋转矩阵)、T(平移矩阵)
+	//输出参数： height_map(高度映射图)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetHeightMapDataBaseParam(float* R, float* T, float* height_map);
+
 	//函数名： DfGetPointcloudData
-	//功能： 采集点云数据并阻塞至返回结果
+	//功能： 获取点云
 	//输入参数：无
 	//输出参数： point_cloud(点云)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
@@ -95,7 +108,50 @@ extern "C"
 
 
 	/***************************************************************************************************************************************************************/
+	//参数设置
 
 
+	//函数名： DfSetParamLedCurrent
+	//功能： 设置LED电流
+	//输入参数： led（电流值）
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfSetParamLedCurrent(int led);
+
+
+	//函数名： DfGetParamLedCurrent
+	//功能： 设置LED电流
+	//输入参数： 无
+	//输出参数： led（电流值）
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfGetParamLedCurrent(int& led);
+
+	//函数名： DfSetParamHdr
+	//功能： 设置多曝光参数（最大曝光次数为6次）
+	//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfSetParamHdr(int num, int exposure_param[6]);
+
+
+	//函数名： DfGetParamHdr
+	//功能： 设置多曝光参数（最大曝光次数为6次）
+	//输入参数： 无
+	//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6]);
+
+	//函数名： DfSetParamStandardPlaneExternal
+	//功能： 设置基准平面的外参
+	//输入参数：R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamStandardPlaneExternal(float* R, float* T);
+
+	//函数名： DfGetParamStandardPlaneExternal
+	//功能： 获取基准平面的外参
+	//输入参数：无
+	//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T);
 }
-
