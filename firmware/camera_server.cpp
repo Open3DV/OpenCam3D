@@ -323,6 +323,31 @@ int handle_cmd_connect(int client_sock)
     }
 }
 
+int handle_cmd_unknown(int client_sock)
+{
+    long long token = 0;
+    int ret = recv_buffer(client_sock, (char*)&token, sizeof(token));
+    //std::cout<<"token ret = "<<ret<<std::endl;
+    //std::cout<<"checking token:"<<token<<std::endl;
+    if(ret == DF_FAILED)
+    {
+    	return DF_FAILED;
+    }
+
+    if(token == current_token)
+    {
+	//std::cout<<"ok"<<std::endl;
+        ret = send_command(client_sock, DF_CMD_UNKNOWN);
+        return DF_SUCCESS;
+    }
+    else
+    {
+        std::cout<<"reject"<<std::endl;
+        ret = send_command(client_sock, DF_CMD_REJECT);
+        return DF_FAILED;
+    }
+}
+
 int check_token(int client_sock)
 {
     long long token = 0;
@@ -1307,7 +1332,7 @@ bool set_system_config(SystemConfigParam &rect_config_param)
  
     //set external param
     
-    std::memcpy(system_config_settings_machine_.Instance().config_param_.external_param , rect_config_param.external_param,sizeof(rect_config_param.external_param));
+    std::memcpy(system_config_settings_machine_.Instance().config_param_.standard_plane_external_param , rect_config_param.standard_plane_external_param,sizeof(rect_config_param.standard_plane_external_param));
 
     return true;
 }
@@ -1343,6 +1368,53 @@ int handle_set_system_config_parameters(int client_sock)
 }
 
 /**********************************************************************************************************************/
+//设置基准平面外参
+int handle_cmd_set_param_standard_param_external(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+    float plane_param[12]; 
+
+    int ret = recv_buffer(client_sock, (char*)(plane_param), sizeof(float)*12);
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+
+	memcpy(system_config_settings_machine_.Instance().config_param_.standard_plane_external_param, plane_param, sizeof(float)*12);
+ 
+ 
+    return DF_SUCCESS;
+ 
+}
+
+
+//获取基准平面外参
+int handle_cmd_get_param_standard_param_external(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+   
+	
+    int ret = send_buffer(client_sock, (char*)(system_config_settings_machine_.Instance().config_param_.standard_plane_external_param), sizeof(float)*12);
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	return DF_FAILED;
+    }
+    return DF_SUCCESS;
+ 
+       
+}
+
+
 //设置多曝光参数
 int handle_cmd_set_param_hdr(int client_sock)
 {
@@ -2100,8 +2172,17 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_HDR";   
     	handle_cmd_set_param_hdr(client_sock);  
 	    break;
+    case DF_CMD_GET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM";   
+    	handle_cmd_get_param_standard_param_external(client_sock);  
+	    break;
+	case DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM";   
+    	handle_cmd_set_param_standard_param_external(client_sock);  
+	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
+        handle_cmd_unknown(client_sock);
 	    break;
     }
 
