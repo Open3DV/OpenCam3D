@@ -55,7 +55,9 @@ bool GuiConfigDataStruct::saveToSettings(const QString& f)
 
 SettingsFileFunction::SettingsFileFunction()
 {
- 
+	gui_config_.Instance().ip = "";
+	gui_config_.Instance().low_z_value = 300;
+	gui_config_.Instance().high_z_value = 1200;
 }
 
 SettingsFileFunction::~SettingsFileFunction()

@@ -814,7 +814,7 @@ bool CameraCaptureGui::captureOneFrameData()
 		std::vector<cv::Mat> channels;
 		cv::split(point_cloud, channels);
 		height_map_ = channels[2].clone();
-
+		
 
 		addLogMessage(QString::fromLocal8Bit("采集完成！"));
   
@@ -1074,6 +1074,9 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		height_map_ = height_map.clone();
 		renderHeightImage(height_map);
 		showImage();
+
+		ui.spinBox_min_z->setValue(-10);
+		ui.spinBox_max_z->setValue(10);
 
 		for (int i = 0; i < 9; i++)
 		{
