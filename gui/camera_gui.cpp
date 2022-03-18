@@ -32,6 +32,7 @@ camera_gui::camera_gui(QWidget *parent)
     connect(ui.action_load_camera_config, SIGNAL(triggered()), this, SLOT(do_action_load_camera_config()));
     connect(ui.action_save_camera_config, SIGNAL(triggered()), this, SLOT(do_action_save_camera_config()));
     connect(ui.action_exit, SIGNAL(triggered()), this, SLOT(do_action_exit()));
+    connect(ui.action_get_calibration_param, SIGNAL(triggered()), this, SLOT(do_action_show_calibration_param()));
 
 }
 
@@ -93,6 +94,27 @@ void camera_gui::do_action_save_camera_config()
         QString log = QString::fromLocal8Bit("保存配置文件失败： ") + path;
         ui.tab_capture->addLogMessage(log);
     }
+}
+
+
+void camera_gui::do_action_show_calibration_param()
+{
+    struct SystemConfigParam config_param;
+    struct CameraCalibParam calibration_param;
+
+    bool ret = ui.tab_capture->getShowCalibrationMessage(config_param, calibration_param);
+
+    if (ret)
+    {
+        show_calib_param_gui_.setShowCalibrationMessage(config_param, calibration_param);
+        show_calib_param_gui_.exec();
+    }
+    else
+    { 
+        ui.tab_capture->addLogMessage(QString::fromLocal8Bit("请连接相机"));
+    }
+
+
 }
 
 void camera_gui::do_action_exit()

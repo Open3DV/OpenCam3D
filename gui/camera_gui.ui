@@ -74,6 +74,7 @@
      <string>帮助</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="action_get_calibration_param"/>
    </widget>
    <widget class="QMenu" name="menu_file">
     <property name="font">
@@ -147,6 +148,11 @@
     <font>
      <family>微软雅黑</family>
     </font>
+   </property>
+  </action>
+  <action name="action_get_calibration_param">
+   <property name="text">
+    <string>标定参数</string>
    </property>
   </action>
  </widget>

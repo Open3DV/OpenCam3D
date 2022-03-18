@@ -117,6 +117,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
   <ItemGroup>
     <ClCompile Include="..\calibration\calibrate_function.cpp" />
     <ClCompile Include="..\firmware\system_config_settings.cpp" />
+    <ClCompile Include="calibration_param_gui.cpp" />
     <ClCompile Include="camera_capture_gui.cpp" />
     <ClCompile Include="camera_gui.cpp" />
     <ClCompile Include="file_io_function.cpp" />
@@ -125,6 +126,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
     <ClCompile Include="settings_file_function.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtUic Include="calibration_param_gui.ui" />
     <QtUic Include="camera_capture_gui.ui" />
     <QtUic Include="camera_gui.ui" />
   </ItemGroup>
@@ -132,6 +134,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
     <QtMoc Include="camera_gui.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="calibration_param_gui.h" />
     <ClInclude Include="PrecisionTest.h" />
     <ClInclude Include="resource.h" />
     <QtMoc Include="camera_capture_gui.h" />
