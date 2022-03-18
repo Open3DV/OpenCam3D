@@ -536,6 +536,20 @@ void CameraCaptureGui::sleep(int sectime)
 	}
 }
 
+
+bool CameraCaptureGui::getShowCalibrationMessage(struct SystemConfigParam& config_param, struct CameraCalibParam& calibration_param)
+{
+	if (!isConnect())
+	{
+		return false;
+	}
+
+	config_param = system_config_param_;
+	calibration_param = camera_calibration_param_;
+
+	return true;
+}
+
 //更新多曝光参数
 void CameraCaptureGui::updateManyExposureParam()
 {

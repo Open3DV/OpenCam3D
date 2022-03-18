@@ -47,6 +47,9 @@
     <ClCompile Include="..\firmware\system_config_settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="calibration_param_gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="camera_gui.h">
@@ -58,12 +61,18 @@
     <QtMoc Include="camera_capture_gui.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="calibration_param_gui.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="camera_gui.ui">
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="camera_capture_gui.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="calibration_param_gui.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

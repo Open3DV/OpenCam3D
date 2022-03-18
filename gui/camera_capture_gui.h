@@ -64,6 +64,8 @@ public:
 
 	void sleep(int sectime);
 
+	bool getShowCalibrationMessage(struct SystemConfigParam &config_param, struct CameraCalibParam &calibration_param);
+
 private:
 	bool showImage();
 
