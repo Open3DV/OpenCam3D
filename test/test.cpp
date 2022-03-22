@@ -6,6 +6,7 @@
 #include "../Firmware/camera_param.h"
 #include "../cmd/getopt.h"
 
+
 const char* help_info =
 "Examples:\n\
 \n\
@@ -14,6 +15,9 @@ test.exe --capture --ip 192.168.x.x --patterns ./patterns_data --calib ./param.t
 \n\
 2.Read:\n\
 test.exe --read --patterns ./patterns_data  --calib ./param.txt --pointcloud ./pointcloud_data\n\
+\n\
+3.Read:\n\
+test.exe --reconstruct --use look-table --patterns ./patterns_data  --calib ./param.txt --pointcloud ./pointcloud_data\n\
 \n\
 ";
 
@@ -25,6 +29,8 @@ enum opt_set
 	IP,
 	CAPTURE,
 	READ,
+	RECONSTRUCT,
+	USE,
 	PATTERNS,
 	CALIB,
 	POINTCLOUD,
@@ -36,21 +42,25 @@ static struct option long_options[] =
 	{"ip",required_argument,NULL,IP},
 	{"capture",no_argument,NULL,CAPTURE},
 	{"read",no_argument,NULL,READ},
+	{"reconstruct",no_argument,NULL,RECONSTRUCT},
+	{"use", required_argument, NULL, USE},
 	{"patterns", required_argument, NULL, PATTERNS},
 	{"calib", required_argument, NULL, CALIB},
-	{"pointcloud", required_argument, NULL, POINTCLOUD}, 
+	{"pointcloud", required_argument, NULL, POINTCLOUD},
 	{"help",no_argument,NULL,HELP},
 };
 
 const char* camera_ip;
-const char* patterns_path; 
+const char* patterns_path;
 const char* calib_path;
 const char* pointcloud_path;
+const char* use_type;
 int command = HELP;
 
 
-void capture(); 
+void capture();
 void read();
+void reconstruct_base_looktable();
 
 const char* camera_id;
 const char* path;
@@ -58,7 +68,7 @@ const char* path;
 int main(int argc, char* argv[])
 {
 	int c = 0;
-	 
+
 
 	while (EOF != (c = getopt_long(argc, argv, "i:h", long_options, NULL)))
 	{
@@ -76,6 +86,9 @@ int main(int argc, char* argv[])
 		case POINTCLOUD:
 			pointcloud_path = optarg;
 			break;
+		case USE:
+			use_type = optarg;
+			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
 			break;
@@ -90,12 +103,23 @@ int main(int argc, char* argv[])
 	case HELP:
 		printf(help_info);
 		break;
-	case CAPTURE:
+	case  CAPTURE:
 		capture();
 		break;
 	case READ:
 		read();
 		break;
+	case RECONSTRUCT:
+	{
+		std::string cmd(use_type);
+		if ("look-table" == cmd)
+		{
+			reconstruct_base_looktable();
+		}
+
+
+	}
+	break;
 	default:
 		break;
 	}
@@ -106,7 +130,7 @@ int main(int argc, char* argv[])
 
 
 void capture()
-{ 
+{
 
 	struct CameraCalibParam calibration_param_;
 	DfSolution solution_machine_;
@@ -122,7 +146,7 @@ void capture()
 	ret = solution_machine_.getCameraCalibData(camera_ip, calibration_param_);
 
 	if (ret)
-	{ 
+	{
 		solution_machine_.saveCameraCalibData(calib_path, calibration_param_);
 	}
 	else
@@ -131,8 +155,34 @@ void capture()
 	}
 
 
-
 	solution_machine_.reconstructMixedVariableWavelengthPatternsBaseXYSR(patterns_, calibration_param_, pointcloud_path);
+}
+
+void reconstruct_base_looktable()
+{
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+
+	bool ret = solution_machine_.readImages(patterns_path, patterns_);
+
+	if (!ret)
+	{
+		std::cout << "Read Image Error!";
+	}
+
+	ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
+
+	if (!ret)
+	{
+		std::cout << "Read Calib Param Error!" << std::endl;
+	}
+
+
+
+
+
+	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseTable(patterns_, calibration_param_, pointcloud_path);
 }
 
 void read()
@@ -146,7 +196,7 @@ void read()
 	if (!ret)
 	{
 		std::cout << "Read Image Error!";
-	} 
+	}
 
 	ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
 
@@ -156,5 +206,6 @@ void read()
 	}
 
 
-	solution_machine_.reconstructMixedVariableWavelengthPatternsBaseXYSR(patterns_, calibration_param_,pointcloud_path);
+
+	solution_machine_.reconstructMixedVariableWavelengthPatternsBaseXYSR(patterns_, calibration_param_, pointcloud_path);
 }
