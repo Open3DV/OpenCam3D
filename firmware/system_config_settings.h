@@ -1,3 +1,5 @@
+#ifndef SYSTEM_SETTING_PARAM_H
+#define SYSTEM_SETTING_PARAM_H
 
 #include <iostream>
 #include <string>
@@ -48,3 +50,4 @@ private:
 	static SystemConfigDataStruct instance_;
 };
 
+#endif

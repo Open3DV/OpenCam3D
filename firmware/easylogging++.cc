@@ -372,7 +372,7 @@ void Configurations::setToDefault(void) {
   setGlobally(ConfigurationType::ToStandardOutput, std::string("true"), true);
   setGlobally(ConfigurationType::SubsecondPrecision, std::string("3"), true);
   setGlobally(ConfigurationType::PerformanceTracking, std::string("true"), true);
-  setGlobally(ConfigurationType::MaxLogFileSize, std::string("0"), true);
+  setGlobally(ConfigurationType::MaxLogFileSize, std::string("104857600"), true);
   setGlobally(ConfigurationType::LogFlushThreshold, std::string("0"), true);
 
   setGlobally(ConfigurationType::Format, std::string("%datetime %level [%logger] %msg"), true);
@@ -396,7 +396,7 @@ void Configurations::setRemainingToDefault(void) {
   unsafeSetIfNotExist(Level::Global, ConfigurationType::ToStandardOutput, std::string("true"));
   unsafeSetIfNotExist(Level::Global, ConfigurationType::SubsecondPrecision, std::string("3"));
   unsafeSetIfNotExist(Level::Global, ConfigurationType::PerformanceTracking, std::string("true"));
-  unsafeSetIfNotExist(Level::Global, ConfigurationType::MaxLogFileSize, std::string("0"));
+  unsafeSetIfNotExist(Level::Global, ConfigurationType::MaxLogFileSize, std::string("104857600"));
   unsafeSetIfNotExist(Level::Global, ConfigurationType::Format, std::string("%datetime %level [%logger] %msg"));
   unsafeSetIfNotExist(Level::Debug, ConfigurationType::Format,
                       std::string("%datetime %level [%logger] [%user@%host] [%func] [%loc] %msg"));
