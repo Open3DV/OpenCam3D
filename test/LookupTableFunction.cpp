@@ -184,7 +184,7 @@ std::cout<<nc<<std::endl;
  
 			if (m_r >= table_rows || m_r< 0)
 			{
-				std::cout << "error m_r: " << m_r << std::endl;
+				// std::cout << "error m_r: " << m_r << std::endl;
 			}
 			else
 			{ 
@@ -193,8 +193,7 @@ std::cout<<nc<<std::endl;
 
 		}
 	}
-
-std::cout<<"talbe generate!"<<std::endl;
+ 
 	//��ֵ
 
 	for (int r = 1; r < interpolation_map.rows - 1; r++)
@@ -231,7 +230,7 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 	cv::stereoRectify(camera_intrinsic_, camera_distortion_, project_intrinsic_, projector_distortion_,
 		image_size_, rotation_matrix_, translation_matrix_,
 		R1, R2, P1, P2, Q);
-std::cout<<"stereoRectify finished!"<<std::endl;
+		
 	int nr = image_size_.height;
 	int nc = image_size_.width;
 
@@ -247,7 +246,7 @@ std::cout<<"stereoRectify finished!"<<std::endl;
 	generateRotateTable(camera_intrinsic_, camera_distortion_, R1, image_size_, xL_undistort_map_x, xL_undistort_map_y);
 	generateRotateTable(project_intrinsic_, projector_distortion_, R2, cv::Size(1920, 1200), xR_undistort_map_x, xR_undistort_map_y);
 
-std::cout<<"generateRotateTable finished!"<<std::endl;
+
 	cv::Mat mapping;
 	generateGridMapping(xR_undistort_map_x, xR_undistort_map_y, mapping);
 
@@ -328,6 +327,21 @@ bool LookupTableFunction::readTable(std::string dir_path, int rows, int cols)
 
 }
 
+
+bool LookupTableFunction::getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping)
+{
+	if (!single_pattern_mapping_.data || !xL_rotate_x_.data || !xL_rotate_y_.data)
+	{
+		return false;
+	}
+
+	xL_rotate_x = xL_rotate_x_.clone();
+	xL_rotate_y = xL_rotate_y_.clone();
+	rectify_R1 = R_1_.clone();
+	pattern_mapping = single_pattern_mapping_.clone();
+
+	return true;
+}
 
 void LookupTableFunction::setCalibData(struct CameraCalibParam calib_param)
 {

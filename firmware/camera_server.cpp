@@ -21,7 +21,7 @@
 #include "system_config_settings.h"
 #include "version.h"
 #include "configure_standard_plane.h"
-#include "../test/LookupTableFunction.h"
+#include "../test/LookupTableFunction.h" 
 
 INITIALIZE_EASYLOGGINGPP 
 
@@ -2214,29 +2214,57 @@ int init()
 	LookupTableFunction lookup_table_machine_; 
 	lookup_table_machine_.setCalibData(param);
 
-	cv::Mat xL_rotate_x;
-	cv::Mat xL_rotate_y;
-	cv::Mat R1;
-	cv::Mat pattern_mapping;
-
-    if(DF_SUCCESS == ret)
-    { 
-        LOG(INFO)<<"start generate table:";
-        lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
-        LOG(INFO)<<"generate table finished!";
-    }
-    else
-    {
-         LOG(INFO)<<"Read Calib File Error!";
-    }
+	// cv::Mat xL_rotate_x;
+	// cv::Mat xL_rotate_y;
+	// cv::Mat R1;
+	// cv::Mat pattern_mapping;
+    LOG(INFO)<<"start read table:";
+    lookup_table_machine_.readTable("./", 1200, 1920);
+    LOG(INFO)<<"read table finished!";
 
 
+
+
+    // if(DF_SUCCESS == ret)
+    // { 
+    //     LOG(INFO)<<"start generate table:";
+    //     lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+    //     LOG(INFO)<<"generate table finished!";
+    // }
+    // else
+    // {
+    //      LOG(INFO)<<"Read Calib File Error!";
+    // }
+
+
+        LOG(INFO)<<"start copy param:";
     cuda_copy_calib_data(param.camera_intrinsic, 
 		         param.projector_intrinsic, 
 			 param.camera_distortion,
 	                 param.projector_distortion, 
 			 param.rotation_matrix, 
 			 param.translation_matrix);
+LOG(INFO)<<"copy param finished!";
+
+    cv::Mat xL_rotate_x;
+    cv::Mat xL_rotate_y;
+    cv::Mat rectify_R1;
+    cv::Mat pattern_mapping;
+    bool ok = lookup_table_machine_.getLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
+
+    if(ok)
+    {
+        xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
+        xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
+        rectify_R1.convertTo(rectify_R1, CV_32F);
+        pattern_mapping.convertTo(pattern_mapping, CV_32F);
+
+        LOG(INFO)<<"start copy table:";
+        reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)rectify_R1.data);
+        LOG(INFO)<<"copy finished!";
+    }
+
+
 
     float temperature_val = read_temperature(0); 
     LOG(INFO)<<"temperature: "<<temperature_val<<" deg";

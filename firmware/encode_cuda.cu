@@ -73,6 +73,24 @@ bool load_calib_data_flag_ = false;
 #define DF_PI 3.1415926535
 /*********************************************************************************/
 
+
+__device__ float d_baseline_ = 0;
+ 
+
+__device__ float* d_single_pattern_mapping_;
+__device__ float* d_xL_rotate_x_;
+__device__ float* d_xL_rotate_y_; 
+__device__ float* d_R_1_;
+
+
+__device__ float* d_reconstruct_depth_map_;
+__device__ float* d_reconstruct_pointcloud_map_;
+__device__ float* d_reconstruct_phase_x_;
+
+
+/*********************************************************************************************/
+
+
 dim3 threadsPerBlock(8, 8);
 dim3 blocksPerGrid((image_width_ + threadsPerBlock.x - 1) / threadsPerBlock.x,
 (image_height_ + threadsPerBlock.y - 1) / threadsPerBlock.y);
@@ -1011,6 +1029,8 @@ bool cuda_malloc_memory()
 	}
  
 	
+	
+	reconstruct_cuda_malloc_memory();
 
 	cudaDeviceSynchronize();
 
@@ -1091,6 +1111,7 @@ bool cuda_free_memory()
 		cudaFree(d_repetition_merge_patterns_list_[i]);  
 	}
  
+	reconstruct_cuda_free_memory();
 
 	return true;
 }
@@ -1956,3 +1977,179 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 	}
 }
+
+
+
+
+/***************************************************************************************************/
+
+
+
+
+ 
+
+
+bool generate_pointcloud_base_table(float* phase,float* pointcloud,float* depth)
+{
+    reconstruct_copy_phase_to_cuda_memory(phase);
+	reconstruct_pointcloud_base_table << <blocksPerGrid, threadsPerBlock >> > (d_xL_rotate_x_ , d_xL_rotate_y_, 
+                                                d_single_pattern_mapping_, d_R_1_,d_reconstruct_phase_x_, d_reconstruct_pointcloud_map_, depth);
+
+}
+ 
+
+__device__ float bilinear_interpolation(float x, float y, float *mapping)
+{
+
+	int x1 = floor(x);
+	int y1 = floor(y);
+	int x2 = x1 + 1;
+	int y2 = y1 + 1;
+
+	//row-y,col-x
+
+	if (x1 == 1919) {
+		float out = mapping[y1 *d_image_width_ + x1];
+		return out;
+	}
+	else {
+		float fq11 = mapping[y1 *d_image_width_ + x1];
+		float fq21 = mapping[y1 *d_image_width_ + x2];
+		float fq12 = mapping[y2 *d_image_width_ + x1];
+		float fq22 = mapping[y2 *d_image_width_ + x2];
+
+		float out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
+
+		return out;
+	}
+	 
+
+}
+
+
+__global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,float * const xL_rotate_y,float * const single_pattern_mapping,float * const R_1,
+                                                        float * const phase_x, float * const pointcloud,float * const depth)
+{
+    const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+
+
+	const unsigned int serial_id = idy * d_image_width_ + idx;
+
+	if (idx < d_image_width_ && idy < d_image_height_)
+	{
+		/****************************************************************************/
+		//phase to position
+		float Xp = phase_x[idy * d_image_width_ + idx] * d_dlp_width_ / d_max_phase_; 
+
+
+    	float Xcr = bilinear_interpolation(idx, idy, xL_rotate_x);
+        float Ycr = bilinear_interpolation(idx, idy, xL_rotate_y);
+        float Xpr = bilinear_interpolation(Xp, (Ycr + 1) * 2000, single_pattern_mapping);
+        float delta_X = std::abs(Xcr - Xpr);
+        float Z = d_baseline_ / delta_X;
+     
+		float X_L = Z * Xcr * R_1[0] + Z * Ycr * R_1[1] + Z * R_1[2];
+		float Y_L = Z * Xcr * R_1[3] + Z * Ycr * R_1[4] + Z * R_1[5];
+		float Z_L = Z * Xcr * R_1[6] + Z * Ycr * R_1[7] + Z * R_1[8];
+   
+		if(Z_L > 100 && Z_L< 2000)
+		{
+		    pointcloud[3 * serial_id + 0] = X_L;
+		    pointcloud[3 * serial_id + 1] = Y_L;
+		    pointcloud[3 * serial_id + 2] = Z_L; 
+			
+		    depth[3 * serial_id] = Z_L; 
+		}
+		else
+		{
+		    pointcloud[3 * serial_id + 0] = 0;
+		    pointcloud[3 * serial_id + 1] = 0;
+		    pointcloud[3 * serial_id + 2] = 0; 
+			
+		    depth[3 * serial_id] = 0; 
+		}
+  
+		/******************************************************************/
+ 
+
+	}
+}
+
+
+void reconstruct_copy_talbe_to_cuda_memory(float* mapping,float* rotate_x,float* rotate_y,float* r_1)
+{
+   
+	CHECK(cudaMemcpyAsync(d_R_1_, r_1, 3*3 * sizeof(float), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpyAsync(d_single_pattern_mapping_, mapping, 4000*2000 * sizeof(float), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpyAsync(d_xL_rotate_x_, rotate_x, image_height_*image_width_ * sizeof(float), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpyAsync(d_xL_rotate_y_, rotate_y, image_height_*image_width_ * sizeof(float), cudaMemcpyHostToDevice));
+
+}
+
+
+void reconstruct_set_baseline(float b)
+{
+    d_baseline_ = b;
+}
+
+void reconstruct_copy_pointcloud_from_cuda_memory(float* pointcloud)
+{ 
+	CHECK(cudaMemcpy(pointcloud, d_reconstruct_pointcloud_map_, 3 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+}
+
+void reconstruct_copy_depth_from_cuda_memory(float* depth)
+{
+	CHECK(cudaMemcpy(depth, d_reconstruct_depth_map_, 3 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost)); 
+}
+
+void reconstruct_copy_phase_to_cuda_memory(float* phase)
+{ 
+	CHECK(cudaMemcpy(d_reconstruct_phase_x_, phase, image_height_*image_width_ * sizeof(float), cudaMemcpyHostToDevice));
+}
+
+ 
+
+void reconstruct_cuda_malloc_memory()
+{
+
+	cudaMalloc((void**)&d_single_pattern_mapping_, 4000*2000 * sizeof(float)); 
+	cudaMalloc((void**)&d_xL_rotate_x_, image_height_*image_width_ * sizeof(float)); 
+	cudaMalloc((void**)&d_xL_rotate_y_, image_height_*image_width_ * sizeof(float)); 
+	cudaMalloc((void**)&d_R_1_, 3*3 * sizeof(float)); 
+
+	cudaMalloc((void**)&d_reconstruct_phase_x_, image_height_*image_width_ * sizeof(float)); 
+	cudaMalloc((void**)&d_reconstruct_depth_map_, image_height_*image_width_ * sizeof(float)); 
+	cudaMalloc((void**)&d_reconstruct_pointcloud_map_, 3*image_height_*image_width_ * sizeof(float)); 
+
+}
+
+
+
+void reconstruct_cuda_free_memory()
+{
+    cudaFree(d_single_pattern_mapping_);
+    cudaFree(d_xL_rotate_x_);
+    cudaFree(d_xL_rotate_y_);
+    cudaFree(d_R_1_);
+
+    cudaFree(d_reconstruct_phase_x_);
+    cudaFree(d_reconstruct_depth_map_);
+    cudaFree(d_reconstruct_pointcloud_map_); 
+	 
+}
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+/****************************************************************************************************/

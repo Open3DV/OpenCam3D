@@ -55,6 +55,8 @@ public:
 
 	void setCalibData(struct CameraCalibParam calib_param);
 
+	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+
 private:
 	void normalizePoint(
 		double x, double y,
