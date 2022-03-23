@@ -162,7 +162,10 @@ bool LookupTableFunction::generateRotateTable(cv::Mat camera_intrinsic_, cv::Mat
 
 bool LookupTableFunction::generateGridMapping(cv::Mat rotate_x, cv::Mat rotate_y, cv::Mat& map)
 {
-	cv::Mat interpolation_map(4000, 2000, CV_64FC1, cv::Scalar(-2));
+	int table_rows = 4000;
+	int table_cols = 2000;
+
+	cv::Mat interpolation_map(table_rows, table_cols, CV_64FC1, cv::Scalar(-2));
 
 	int nr = rotate_x.rows;
 	int nc = rotate_x.cols;
@@ -176,7 +179,15 @@ bool LookupTableFunction::generateGridMapping(cv::Mat rotate_x, cv::Mat rotate_y
 		{
 			int m_r = 2000 * (ptr_y[c] + 1);
 
-			interpolation_map.at<double>(m_r, c) = ptr_x[c];
+			if (m_r >= table_rows || m_r< 0)
+			{
+				std::cout << "error m_r: " << m_r << std::endl;
+			}
+			else
+			{ 
+				interpolation_map.at<double>(m_r, c) = ptr_x[c];
+			}
+
 		}
 	}
 
