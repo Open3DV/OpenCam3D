@@ -21,6 +21,7 @@
 #include "system_config_settings.h"
 #include "version.h"
 #include "configure_standard_plane.h"
+#include "../test/LookupTableFunction.h"
 
 INITIALIZE_EASYLOGGINGPP 
 
@@ -1259,7 +1260,14 @@ int handle_get_temperature(int client_sock)
 int read_calib_param()
 {
     std::ifstream ifile;
+
     ifile.open("calib_param.txt");
+
+    if(!ifile.is_open())
+    {
+        return DF_FAILED;
+    }
+
     int n_params = sizeof(param)/sizeof(float);
     for(int i=0; i<n_params; i++)
     {
@@ -2200,8 +2208,29 @@ int init()
     camera.warmupCamera();
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
     cuda_malloc_memory();
-    read_calib_param();
-       
+    int ret = read_calib_param();
+
+  
+	LookupTableFunction lookup_table_machine_; 
+	lookup_table_machine_.setCalibData(param);
+
+	cv::Mat xL_rotate_x;
+	cv::Mat xL_rotate_y;
+	cv::Mat R1;
+	cv::Mat pattern_mapping;
+
+    if(DF_SUCCESS == ret)
+    { 
+        LOG(INFO)<<"start generate table:";
+        lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+        LOG(INFO)<<"generate table finished!";
+    }
+    else
+    {
+         LOG(INFO)<<"Read Calib File Error!";
+    }
+
+
     cuda_copy_calib_data(param.camera_intrinsic, 
 		         param.projector_intrinsic, 
 			 param.camera_distortion,

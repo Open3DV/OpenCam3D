@@ -125,7 +125,7 @@ bool LookupTableFunction::generateRotateTable(cv::Mat camera_intrinsic_, cv::Mat
 	/*********************************************************************************/
 
 
-	//»û±äÐ£Õý
+	//ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½
 	std::vector<cv::Point2d> correct_camera_points;
 	undistortedPoints(camera_points, camera_intrinsic_, camera_distortion_, correct_camera_points);
 
@@ -164,8 +164,11 @@ bool LookupTableFunction::generateGridMapping(cv::Mat rotate_x, cv::Mat rotate_y
 {
 	cv::Mat interpolation_map(4000, 2000, CV_64FC1, cv::Scalar(-2));
 
+std::cout<<"interpolation_map!"<<std::endl;
 	int nr = rotate_x.rows;
 	int nc = rotate_x.cols;
+std::cout<<nr<<std::endl;
+std::cout<<nc<<std::endl;
 
 	for (int r = 0; r < nr; r++)
 	{
@@ -174,14 +177,22 @@ bool LookupTableFunction::generateGridMapping(cv::Mat rotate_x, cv::Mat rotate_y
 
 		for (int c = 0; c < nc; c++)
 		{
-			int m_r = 2000 * (ptr_y[c] + 1);
+			int m_r = 2000 * (ptr_y[c] + 1); 
 
-			interpolation_map.at<double>(m_r, c) = ptr_x[c];
+			if(m_r< 4000)
+			{ 
+				interpolation_map.at<double>(m_r, c) = ptr_x[c];
+			}
+			else
+			{
+				std::cout<<"m_r error: "<<m_r<<std::endl;
+			}
+
 		}
 	}
 
-
-	//²åÖµ
+std::cout<<"talbe generate!"<<std::endl;
+	//ï¿½ï¿½Öµ
 
 	for (int r = 1; r < interpolation_map.rows - 1; r++)
 	{
@@ -217,7 +228,7 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 	cv::stereoRectify(camera_intrinsic_, camera_distortion_, project_intrinsic_, projector_distortion_,
 		image_size_, rotation_matrix_, translation_matrix_,
 		R1, R2, P1, P2, Q);
-
+std::cout<<"stereoRectify finished!"<<std::endl;
 	int nr = image_size_.height;
 	int nc = image_size_.width;
 
@@ -233,6 +244,7 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 	generateRotateTable(camera_intrinsic_, camera_distortion_, R1, image_size_, xL_undistort_map_x, xL_undistort_map_y);
 	generateRotateTable(project_intrinsic_, projector_distortion_, R2, cv::Size(1920, 1200), xR_undistort_map_x, xR_undistort_map_y);
 
+std::cout<<"generateRotateTable finished!"<<std::endl;
 	cv::Mat mapping;
 	generateGridMapping(xR_undistort_map_x, xR_undistort_map_y, mapping);
 
@@ -355,7 +367,7 @@ bool LookupTableFunction::readCalibData(std::string path)
 
 	double I[40] = { 0 };
 
-	//´Ódata1ÎÄ¼þÖÐ¶ÁÈëintÊý¾Ý
+	//ï¿½ï¿½data1ï¿½Ä¼ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½intï¿½ï¿½ï¿½ï¿½
 	for (int i = 0; i < 40; i++)
 	{
 
@@ -494,13 +506,13 @@ bool LookupTableFunction::TestReadBinMapping(int rows, int cols, std::string map
 {
 	cv::Mat map(rows, cols, CV_64F, cv::Scalar(0));
 
-	std::ifstream inFile(mapping_file, std::ios::in | std::ios::binary); //¶þ½øÖÆ¶Á·½Ê½´ò¿ª
+	std::ifstream inFile(mapping_file, std::ios::in | std::ios::binary); //ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½ï¿½ï¿½Ê½ï¿½ï¿½
 	if (!inFile) {
 		std::cout << "error" << std::endl;
 		return false;
 	}
-	while (inFile.read((char*)map.data, sizeof(double)* rows*cols)) { //Ò»Ö±¶Áµ½ÎÄ¼þ½áÊø
-		int readedBytes = inFile.gcount(); //¿´¸Õ²Å¶ÁÁË¶àÉÙ×Ö½Ú
+	while (inFile.read((char*)map.data, sizeof(double)* rows*cols)) { //Ò»Ö±ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½
+		int readedBytes = inFile.gcount(); //ï¿½ï¿½ï¿½Õ²Å¶ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½ï¿½Ö½ï¿½
 		std::cout << readedBytes  << std::endl;
 	}
 	inFile.close();
@@ -539,13 +551,13 @@ bool LookupTableFunction::readBinMapping(int rows, int cols, std::string mapping
 	//return true;
 
 	cv::Mat map(rows, cols, CV_64F, cv::Scalar(0)); 
-	std::ifstream inFile(mapping_file, std::ios::in | std::ios::binary); //¶þ½øÖÆ¶Á·½Ê½´ò¿ª
+	std::ifstream inFile(mapping_file, std::ios::in | std::ios::binary); //ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½ï¿½ï¿½Ê½ï¿½ï¿½
 	if (!inFile) {
 		std::cout << "error" << std::endl;
 		return false;
 	}
-	while (inFile.read((char*)map.data, sizeof(double) * rows * cols)) { //Ò»Ö±¶Áµ½ÎÄ¼þ½áÊø
-		int readedBytes = inFile.gcount(); //¿´¸Õ²Å¶ÁÁË¶àÉÙ×Ö½Ú
+	while (inFile.read((char*)map.data, sizeof(double) * rows * cols)) { //Ò»Ö±ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½
+		int readedBytes = inFile.gcount(); //ï¿½ï¿½ï¿½Õ²Å¶ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½ï¿½Ö½ï¿½
 		//std::cout << readedBytes << std::endl;
 	}
 	inFile.close();
@@ -719,12 +731,12 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 	double b = value_b_;
 
 
-	//³õÊ¼»¯£¬ÓÃÓÚÇó½âDMD_PointsµÄ¾ßÌåÖµ
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½DMD_Pointsï¿½Ä¾ï¿½ï¿½ï¿½Öµ
 	double phase_max = 2 * CV_PI * pow(2.0, group_num - 1);
 	int nr = unwrap_map_x.rows;
 	int nc = unwrap_map_x.cols;
 
-	//³õÊ¼»¯Éî¶ÈÍ¼
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½Í¼
 	cv::Mat all_deep_map = cv::Mat(nr, nc, CV_64F, cv::Scalar(0));
 	deep_map = all_deep_map.clone();
 
@@ -736,11 +748,11 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 		uchar* ptr_m = mask.ptr<uchar>(Yc);
 
 		for (int Xc = 0; Xc < nc; Xc++) {
-			//¼ÆËãXp¾ßÌå×ø±ê
+			//ï¿½ï¿½ï¿½ï¿½Xpï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			double Xp = 1280 * ptr_x[Xc] / phase_max;
-			//ÐèÒªÓÐmaskÀ´¿ØÖÆÕâ¸öµãÊÇ·ñÐèÒª
+			//ï¿½ï¿½Òªï¿½ï¿½maskï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Òª
 			if (ptr_m[Xc] == 255) {
-				//¼ÆËãÉî¶È£¬ÐèÒªÓÃµÄÏà»úµÄµãµÄ×ø±ê£¬½âÏàÎ»µÃµ½µÄXp×ø±ê£¬Èý¸öÓÃÓÚ×ö²åÖµ²é±íµÄ¾ØÕó£¬ÊÓ²î¼ÆËãÓÃµ½µÄb
+				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È£ï¿½ï¿½ï¿½Òªï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½ï¿½ï¿½ï¿½ï¿½ê£¬ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ãµï¿½ï¿½ï¿½Xpï¿½ï¿½ï¿½ê£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½ï¿½Ó²ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½b
 				ptr_d[Xc] = depth_per_point_6patterns_combine(Xc, Yc, Xp, xL_rotate_x, xL_rotate_y, single_pattern_mapping, b);
 			}
 			else {
