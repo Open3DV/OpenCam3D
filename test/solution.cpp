@@ -749,8 +749,11 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	cv::Mat xL_rotate_y;
 	cv::Mat R1;
 	cv::Mat pattern_mapping;
-	lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+	//lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+	 
+	lookup_table_machine_.readTable("../", 1200, 1920);
 
+	 
 	endTime = clock();//¼ÆÊ±½áÊø
 	std::cout << "The run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
