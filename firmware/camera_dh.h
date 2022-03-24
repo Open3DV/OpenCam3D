@@ -31,6 +31,8 @@ public:
 	/********************************************************************/
 	//gpu parallel
 	bool captureFrame03ToGpu();
+	
+	bool captureFrame04ToGpu();
 
 	bool captureFrame03RepetitionToGpu(int repetition_count);
 

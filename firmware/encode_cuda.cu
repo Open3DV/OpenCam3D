@@ -1983,17 +1983,13 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 /***************************************************************************************************/
 
-
-
-
  
 
-
-bool generate_pointcloud_base_table(float* phase,float* pointcloud,float* depth)
+bool generate_pointcloud_base_table()
 {
-    reconstruct_copy_phase_to_cuda_memory(phase);
+    // reconstruct_copy_phase_to_cuda_memory(phase);
 	reconstruct_pointcloud_base_table << <blocksPerGrid, threadsPerBlock >> > (d_xL_rotate_x_ , d_xL_rotate_y_, 
-                                                d_single_pattern_mapping_, d_R_1_,d_reconstruct_phase_x_, d_reconstruct_pointcloud_map_, depth);
+                                                d_single_pattern_mapping_, d_R_1_,d_unwrap_map_list[0], d_point_cloud_map_,d_depth_map_);
 
 }
  
@@ -2101,6 +2097,11 @@ void reconstruct_copy_pointcloud_from_cuda_memory(float* pointcloud)
 void reconstruct_copy_depth_from_cuda_memory(float* depth)
 {
 	CHECK(cudaMemcpy(depth, d_reconstruct_depth_map_, 3 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost)); 
+} 
+
+void reconstruct_copy_brightness_from_cuda_memory(unsigned char* brightness)
+{
+	CHECK(cudaMemcpy(brightness, d_patterns_list[18], image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost)); 
 }
 
 void reconstruct_copy_phase_to_cuda_memory(float* phase)

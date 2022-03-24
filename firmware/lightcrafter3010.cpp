@@ -347,8 +347,8 @@ void LightCrafter3010::pattern_mode03_repetition(int repetition_count)
 
 void LightCrafter3010::pattern_mode04()
 {
-    // unsigned char pattern_index[] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
-    // write_pattern_table(pattern_index, 18);
+    unsigned char pattern_index[] = {0,1,2,6};
+    write_pattern_table(pattern_index, 4);
 }
 
 

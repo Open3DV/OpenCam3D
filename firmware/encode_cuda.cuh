@@ -11,7 +11,7 @@
 
 /***************************************************************************************/
 //用于查找表
-bool generate_pointcloud_base_table(float* phase,float* pointcloud,float* depth);
+bool generate_pointcloud_base_table();
 
 void reconstruct_cuda_malloc_memory();
 void reconstruct_cuda_free_memory();
@@ -20,6 +20,7 @@ void reconstruct_copy_talbe_to_cuda_memory(float* mapping,float* rotate_x,float*
 void reconstruct_copy_phase_to_cuda_memory(float* phase);
 void reconstruct_copy_pointcloud_from_cuda_memory(float* pointcloud);
 void reconstruct_copy_depth_from_cuda_memory(float* depth);
+void reconstruct_copy_brightness_from_cuda_memory(unsigned char* brightness);
 
 __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,float * const xL_rotate_y,float * const single_pattern_mapping,float * const R_1,
                                                         float * const phase_x, float * const pointcloud,float * const depth);

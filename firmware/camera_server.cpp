@@ -999,6 +999,73 @@ int handle_cmd_get_standard_plane_param_parallel(int client_sock)
     return DF_SUCCESS;
      
 }
+
+
+
+int handle_cmd_get_frame_04_parallel(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int depth_buf_size = 1920*1200*4;
+    float* depth_map = new float[depth_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+
+
+    lc3010.pattern_mode04(); 
+    camera.captureFrame04ToGpu();
+  
+
+    reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
+    reconstruct_copy_brightness_from_cuda_memory(brightness);
+ 
+ 
+    
+    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    
+    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+    printf("brightness ret=%d\n", ret);
+
+    LOG(INFO)<<"Send Frame04";
+
+    float temperature = read_temperature(0);
+    
+    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    printf("frame sent!\n");
+    // delete [] buffer;
+    delete [] depth_map;
+    delete [] brightness;
+    return DF_SUCCESS;
+    
+
+}
    
 
 int handle_cmd_get_frame_03_parallel(int client_sock)
@@ -2092,6 +2159,10 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_03";   
         handle_cmd_get_frame_03_repetition_parallel(client_sock);
 	    break; 
+	case DF_CMD_GET_FRAME_04:
+	    LOG(INFO)<<"DF_CMD_GET_FRAME_0s";   
+    	handle_cmd_get_frame_04_parallel(client_sock); 
+	    break;
 	case DF_CMD_GET_POINTCLOUD:
 	    LOG(INFO)<<"DF_CMD_GET_POINTCLOUD";
   //  	    camera.warmupCamera();
