@@ -1019,11 +1019,18 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
     lc3010.pattern_mode04(); 
     camera.captureFrame04ToGpu();
   
-
+    reconstruct_copy_brightness_from_cuda_memory(brightness); 
     reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
-    reconstruct_copy_brightness_from_cuda_memory(brightness);
  
+    LOG(INFO)<<"Reconstruct Frame04 Finished!";
+
  
+    // cv::Mat pointcloud_map(1200,1920,CV_32FC3,cv::Scalar(-2));
+    // reconstruct_copy_pointcloud_from_cuda_memory((float*)pointcloud_map.data);  
+    // cv::Mat depth_mat(1200,1920,CV_32FC1,depth_map);
+
+    // cv::imwrite("./depth_map.tiff",depth_mat);
+    // cv::imwrite("./pointcloud_map.tiff",pointcloud_map);
     
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
     int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
@@ -1088,6 +1095,7 @@ int handle_cmd_get_frame_03_parallel(int client_sock)
     int ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
 
     
+    LOG(INFO) << "Reconstruct Frame03 Finished!";   
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
     ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
     printf("depth ret=%d\n", ret);
@@ -2160,7 +2168,7 @@ int handle_commands(int client_sock)
         handle_cmd_get_frame_03_repetition_parallel(client_sock);
 	    break; 
 	case DF_CMD_GET_FRAME_04:
-	    LOG(INFO)<<"DF_CMD_GET_FRAME_0s";   
+	    LOG(INFO)<<"DF_CMD_GET_FRAME_04";   
     	handle_cmd_get_frame_04_parallel(client_sock); 
 	    break;
 	case DF_CMD_GET_POINTCLOUD:
@@ -2315,7 +2323,7 @@ int init()
 	                 param.projector_distortion, 
 			 param.rotation_matrix, 
 			 param.translation_matrix);
-LOG(INFO)<<"copy param finished!";
+    LOG(INFO)<<"copy param finished!";
 
     cv::Mat xL_rotate_x;
     cv::Mat xL_rotate_y;
@@ -2324,15 +2332,19 @@ LOG(INFO)<<"copy param finished!";
     bool ok = lookup_table_machine_.getLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
 
     if(ok)
-    {
+    {  
+	    cv::Mat R1_t = rectify_R1.t();
         xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
         xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
-        rectify_R1.convertTo(rectify_R1, CV_32F);
+        R1_t.convertTo(R1_t, CV_32F);
         pattern_mapping.convertTo(pattern_mapping, CV_32F);
 
         LOG(INFO)<<"start copy table:";
-        reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)rectify_R1.data);
+        reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
         LOG(INFO)<<"copy finished!";
+
+        float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
+        reconstruct_set_baseline(b);
     }
 
 
