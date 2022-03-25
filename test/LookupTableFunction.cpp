@@ -273,6 +273,46 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 
 /******************************************************************************************************/
 
+bool LookupTableFunction::readTableFloat(std::string dir_path,cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping)
+{
+
+	/****************************************************************************************************************************/
+
+	if (!readBinMappingFloat(3, 3, dir_path + "/R1.bin", R_1_))
+	{
+		return false;
+	}
+
+	if(!readBinMappingFloat(4000, 2000, dir_path + "/single_pattern_mapping.bin", single_pattern_mapping_))
+	{
+		return false;
+	}
+
+	if (!readBinMappingFloat(1200, 1920, dir_path + "/combine_xL_rotate_x_cam1_iter.bin", xL_rotate_x_))
+	{
+		return false;
+	}
+
+	if (!readBinMappingFloat(1200, 1920, dir_path + "/combine_xL_rotate_y_cam1_iter.bin", xL_rotate_y_))
+	{
+		return false;
+	}
+	/****************************************************************************************************************************/
+
+ 
+
+	if (!single_pattern_mapping_.data || !xL_rotate_x_.data || !xL_rotate_y_.data)
+	{
+		return false;
+	}
+
+	xL_rotate_x = xL_rotate_x_.clone();
+	xL_rotate_y = xL_rotate_y_.clone();
+	rectify_R1 = R_1_.clone(); 
+	pattern_mapping = single_pattern_mapping_.clone();
+ 
+	return true;
+}
 
 bool LookupTableFunction::readTable(std::string dir_path, int rows, int cols)
 {
@@ -548,6 +588,17 @@ bool LookupTableFunction::TestReadBinMapping(int rows, int cols, std::string map
 	return true;
 }
 
+
+bool LookupTableFunction::saveBinMappingFloat(std::string mapping_file, cv::Mat out_map)
+{
+	std::ofstream outFile(mapping_file, std::ios::out | std::ios::binary);
+	 
+	outFile.write((char*)out_map.data, sizeof(float)* out_map.rows* out_map.cols);
+	outFile.close();
+	return 0;
+}
+
+
 bool LookupTableFunction::saveBinMapping(std::string mapping_file, cv::Mat out_map)
 { 
 	std::ofstream outFile(mapping_file, std::ios::out | std::ios::binary);
@@ -555,6 +606,25 @@ bool LookupTableFunction::saveBinMapping(std::string mapping_file, cv::Mat out_m
 	outFile.write((char*)out_map.data, sizeof(double)* out_map.rows* out_map.cols);
 	outFile.close();
 	return 0;
+}
+
+
+bool LookupTableFunction::readBinMappingFloat(int rows, int cols, std::string mapping_file, cv::Mat& out_map)
+{
+	cv::Mat map(rows, cols, CV_32F, cv::Scalar(0)); 
+	std::ifstream inFile(mapping_file, std::ios::in | std::ios::binary); //�����ƶ���ʽ��
+	if (!inFile) {
+		std::cout << "error" << std::endl;
+		return false;
+	}
+	while (inFile.read((char*)map.data, sizeof(float) * rows * cols)) { //һֱ�����ļ�����
+		int readedBytes = inFile.gcount(); //���ղŶ��˶����ֽ�
+		//std::cout << readedBytes << std::endl;
+	}
+	inFile.close();
+
+	out_map = map.clone();
+	return true;
 }
 
 bool LookupTableFunction::readBinMapping(int rows, int cols, std::string mapping_file, cv::Mat& out_map)

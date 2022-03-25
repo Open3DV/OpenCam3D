@@ -26,10 +26,14 @@ public:
 	cv::Mat readmapping(int rows, int cols, std::string mapping_file); 
 
 	bool readBinMapping(int rows, int cols, std::string mapping_file, cv::Mat& out_map); 
+	
+	bool readBinMappingFloat(int rows, int cols, std::string mapping_file, cv::Mat& out_map); 
 
 	bool TestReadBinMapping(int rows, int cols, std::string mapping_file, cv::Mat& out_map);
 
 	bool saveBinMapping(std::string mapping_file, cv::Mat out_map);
+	
+	bool saveBinMappingFloat(std::string mapping_file, cv::Mat out_map);
 
 	bool getRebuildValueB(double &b);
 
@@ -55,8 +59,9 @@ public:
 
 	void setCalibData(struct CameraCalibParam calib_param);
 
-	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping); 
 
+	bool readTableFloat(std::string dir_path,cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 private:
 	void normalizePoint(
 		double x, double y,
