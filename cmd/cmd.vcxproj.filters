@@ -45,6 +45,9 @@
     <ClCompile Include="..\test\triangulation.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\test\LookupTableFunction.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="getopt.h">

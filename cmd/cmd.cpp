@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string.h>
 #include "getopt.h" 
+#include "../test/LookupTableFunction.h"
 
 
 const char* help_info =
@@ -70,6 +71,8 @@ open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
 19.Test camera calibration parameters: \n\
 open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\n\
 \n\
+20.Set calibration lookTable: \n\
+open_cam3d.exe--set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
 ";
 
 void help_with_version(const char* help);
@@ -90,6 +93,7 @@ int get_raw_02(const char* ip, const char* raw_image_dir);
 int get_raw_03(const char* ip, const char* raw_image_dir);
 int get_calib_param(const char* ip, const char* calib_param_path);
 int set_calib_param(const char* ip, const char* calib_param_path);
+int set_calib_looktable(const char* ip, const char* calib_param_path);
 int test_calib_param(const char* ip, const char* result_path);
 int get_temperature(const char* ip);
 int enable_checkerboard(const char* ip);
@@ -110,6 +114,7 @@ enum opt_set
 	GET_TEMPERATURE,
 	GET_CALIB_PARAM,
 	SET_CALIB_PARAM,
+	SET_CALIB_LOOKTABLE,
 	TEST_CALIB_PARAM,
 	USE,
 	GET_RAW_01,
@@ -139,6 +144,7 @@ static struct option long_options[] =
 	{"get-temperature",no_argument,NULL,GET_TEMPERATURE},
 	{"get-calib-param",no_argument,NULL,GET_CALIB_PARAM},
 	{"set-calib-param",no_argument,NULL,SET_CALIB_PARAM},
+	{"set-calib-looktable",no_argument,NULL,SET_CALIB_LOOKTABLE},
 	{"test-calib-param",no_argument,NULL,TEST_CALIB_PARAM},
 	{"get-raw-01",no_argument,NULL,GET_RAW_01},
 	{"get-raw-02",no_argument,NULL,GET_RAW_02},
@@ -210,6 +216,9 @@ int main(int argc, char* argv[])
 		break;
 	case SET_CALIB_PARAM:
 		set_calib_param(camera_id, path);
+		break;
+	case SET_CALIB_LOOKTABLE:
+		set_calib_looktable(camera_id, path);
 		break;
 	case TEST_CALIB_PARAM:
 		test_calib_param(camera_id, path);
@@ -800,6 +809,47 @@ int get_calib_param(const char* ip, const char* calib_param_path)
 		ofile << ((float*)(&calibration_param))[i] << std::endl;
 	}
 	ofile.close();
+
+	DfDisconnectNet();
+	return 1;
+}
+
+
+int set_calib_looktable(const char* ip, const char* calib_param_path)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	struct CameraCalibParam calibration_param;
+	std::ifstream ifile;
+	ifile.open(calib_param_path);
+	for (int i = 0; i < sizeof(calibration_param) / sizeof(float); i++)
+	{
+		ifile >> ((float*)(&calibration_param))[i];
+	}
+	ifile.close();
+
+	LookupTableFunction looktable_machine;
+	looktable_machine.setCalibData(calibration_param);
+	cv::Mat xL_rotate_x;
+	cv::Mat xL_rotate_y;
+	cv::Mat rectify_R1;
+	cv::Mat pattern_mapping;
+
+
+	looktable_machine.generateLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
+
+	xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
+	xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
+	rectify_R1.convertTo(rectify_R1, CV_32F);
+	pattern_mapping.convertTo(pattern_mapping, CV_32F);
+
+	DfSetCalibrationLookTable(calibration_param, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)rectify_R1.data, (float*)pattern_mapping.data);
 
 	DfDisconnectNet();
 	return 1;

@@ -66,7 +66,7 @@ bool CalibrationParamGui::setShowCalibrationMessage(struct SystemConfigParam con
 		for (int c = 0; c < 3; c++)
 		{
 			plane_str += QString::number(config_param.standard_plane_external_param[r * 3 + c]);
-			plane_str += "\t";
+			plane_str += " \t";
 		}
 		plane_str += QString::number(config_param.standard_plane_external_param[9 + r]);
 		plane_str += "\r\n";
