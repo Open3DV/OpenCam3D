@@ -225,6 +225,12 @@ std::cout<<nc<<std::endl;
 bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping)
 {
 
+	if (!camera_intrinsic_.data || !camera_distortion_.data || !project_intrinsic_.data ||
+		!projector_distortion_.data || !rotation_matrix_.data || !translation_matrix_.data)
+	{
+		return false;
+	}
+
 	cv::Mat R1, R2, P1, P2, Q, V1, V2;
 
 	cv::stereoRectify(camera_intrinsic_, camera_distortion_, project_intrinsic_, projector_distortion_,
@@ -249,14 +255,18 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 
 	cv::Mat mapping;
 	generateGridMapping(xR_undistort_map_x, xR_undistort_map_y, mapping);
-
+ 
 
 	single_pattern_mapping_ = mapping.clone();
 	xL_rotate_x_ = xL_undistort_map_x.clone();
 	xL_rotate_y_ = xL_undistort_map_y.clone();
 	R_1_ = R1.clone();
 
-	 
+	xL_rotate_x = xL_undistort_map_x.clone();
+	xL_rotate_y = xL_undistort_map_y.clone();
+	rectify_R1 = R1.clone(); 
+	pattern_mapping = mapping.clone();
+
 
 	return true;
 }
@@ -392,7 +402,7 @@ void LookupTableFunction::setCalibData(struct CameraCalibParam calib_param)
 	cv::Mat projector_distortion = cv::Mat(1, 5, CV_32F, calib_param.projector_distortion);
 
 	cv::Mat rotation_matrix = cv::Mat(3, 3, CV_32F, calib_param.rotation_matrix);
-	cv::Mat translation_matrix = cv::Mat(3, 1, CV_32F, calib_param.translation_matrix);
+	cv::Mat translation_matrix = cv::Mat(3, 1, CV_32F, calib_param.translation_matrix); 
 
 	camera_intrinsic.convertTo(camera_intrinsic, CV_64F);
 	camera_distortion.convertTo(camera_distortion, CV_64F);
