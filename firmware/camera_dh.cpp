@@ -220,8 +220,7 @@ bool CameraDh::captureFrame04ToGpu()
                 case 18:
                 {  
                     parallel_cuda_compute_phase(3);
-                    parallel_cuda_unwrap_phase(3);
-                    
+                    parallel_cuda_unwrap_phase(3); 
                      // cudaDeviceSynchronize();
                 	generate_pointcloud_base_table();
                 }
