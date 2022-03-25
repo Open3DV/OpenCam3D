@@ -817,6 +817,39 @@ int get_calib_param(const char* ip, const char* calib_param_path)
 
 int set_calib_looktable(const char* ip, const char* calib_param_path)
 {
+	/*************************************************************************************************/
+  
+	struct CameraCalibParam calibration_param;
+	std::ifstream ifile;
+	ifile.open(calib_param_path);
+	for (int i = 0; i < sizeof(calibration_param) / sizeof(float); i++)
+	{
+		ifile >> ((float*)(&calibration_param))[i];
+		std::cout << ((float*)(&calibration_param))[i] << std::endl;
+	}
+	ifile.close();
+	std::cout << "Read Param"<<std::endl;
+	LookupTableFunction looktable_machine;
+	looktable_machine.setCalibData(calibration_param);
+	//looktable_machine.readCalibData(calib_param_path);
+	cv::Mat xL_rotate_x;
+	cv::Mat xL_rotate_y;
+	cv::Mat rectify_R1;
+	cv::Mat pattern_mapping;
+
+
+	std::cout << "Start Generate LookTable Param" << std::endl;
+	bool ok = looktable_machine.generateLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
+
+	std::cout << "Finished Generate LookTable Param: "<< ok << std::endl;
+
+	xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
+	xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
+	rectify_R1.convertTo(rectify_R1, CV_32F);
+	pattern_mapping.convertTo(pattern_mapping, CV_32F);
+ 
+	/**************************************************************************************************/
+
 	DfRegisterOnDropped(on_dropped);
 
 	int ret = DfConnectNet(ip);
@@ -825,31 +858,11 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 		return 0;
 	}
 
-	struct CameraCalibParam calibration_param;
-	std::ifstream ifile;
-	ifile.open(calib_param_path);
-	for (int i = 0; i < sizeof(calibration_param) / sizeof(float); i++)
-	{
-		ifile >> ((float*)(&calibration_param))[i];
-	}
-	ifile.close();
 
-	LookupTableFunction looktable_machine;
-	looktable_machine.setCalibData(calibration_param);
-	cv::Mat xL_rotate_x;
-	cv::Mat xL_rotate_y;
-	cv::Mat rectify_R1;
-	cv::Mat pattern_mapping;
-
-
-	looktable_machine.generateLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
-
-	xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
-	xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
-	rectify_R1.convertTo(rectify_R1, CV_32F);
-	pattern_mapping.convertTo(pattern_mapping, CV_32F);
 
 	DfSetCalibrationLookTable(calibration_param, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)rectify_R1.data, (float*)pattern_mapping.data);
+
+	 
 
 	DfDisconnectNet();
 	return 1;
@@ -871,6 +884,7 @@ int set_calib_param(const char* ip, const char* calib_param_path)
 	for (int i = 0; i < sizeof(calibration_param) / sizeof(float); i++)
 	{
 		ifile >> ((float*)(&calibration_param))[i];
+		std::cout << ((float*)(&calibration_param))[i] << std::endl;
 	}
 	ifile.close();
 

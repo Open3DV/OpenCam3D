@@ -3,6 +3,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>..\x64\Release</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--test-calib-param --use plane --ip 192.168.88.106 --path .\capture</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--set-calib-looktable --ip 192.168.88.106 --path .\capture\param_106.txt</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>--set-calib-param --ip 192.168.88.106 --path .\capture\param_106.txt</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

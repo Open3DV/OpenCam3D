@@ -1862,20 +1862,24 @@ DF_SDK_API int DfSetCalibrationLookTable(const struct CameraCalibParam& calibrat
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
+		LOG(INFO) << "start send_buffer: calibration_param";
 		ret = send_buffer((char*)(&calibration_param), sizeof(calibration_param), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
 			return DF_FAILED;
 		}
+		 
+		/*****************************************************************/
 
+		LOG(INFO) << "start send_buffer rotate_x size: "<< 1920 * 1200 * sizeof(float);
 		ret = send_buffer((char*)(rotate_x), 1920*1200*sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
 			return DF_FAILED;
 		}
-
+		LOG(INFO) << "start send_buffer: rotate_y";
 		ret = send_buffer((char*)(rotate_y), 1920 * 1200 * sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
@@ -1883,13 +1887,14 @@ DF_SDK_API int DfSetCalibrationLookTable(const struct CameraCalibParam& calibrat
 			return DF_FAILED;
 		}
 
+		LOG(INFO) << "start send_buffer: rectify_r1";
 		ret = send_buffer((char*)(rectify_r1), 3 * 3 * sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
 			return DF_FAILED;
 		}
-
+		LOG(INFO) << "start send_buffer: mapping";
 		ret = send_buffer((char*)(mapping), 4000 * 2000 * sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
