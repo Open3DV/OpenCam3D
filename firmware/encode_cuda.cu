@@ -736,7 +736,7 @@ __global__ void parallel_cuda_merge_hdr_2(const float*  depth_map_0,const float*
 
 
 	
-bool parallel_cuda_copy_result_to_hdr(int serial_flag)
+bool parallel_cuda_copy_result_to_hdr(int serial_flag,int brigntness_serial)
 {
 	if(!load_calib_data_flag_)
 	{
@@ -745,7 +745,7 @@ bool parallel_cuda_copy_result_to_hdr(int serial_flag)
  
 
 	CHECK(cudaMemcpyAsync(d_hdr_depth_map_list_[serial_flag], d_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToDevice)); 
-	CHECK(cudaMemcpyAsync(d_hdr_brightness_list_[serial_flag], d_patterns_list[30], 1 * image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToDevice));
+	CHECK(cudaMemcpyAsync(d_hdr_brightness_list_[serial_flag], d_patterns_list[brigntness_serial], 1 * image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToDevice));
  
  
 	LOG(INFO)<<"parallel_cuda_copy_result_to_hdr: "<<serial_flag;
