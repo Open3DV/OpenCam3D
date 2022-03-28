@@ -24,6 +24,7 @@
     <ClCompile Include="..\gui\PrecisionTest.cpp" />
     <ClCompile Include="AnalyseError.cpp" />
     <ClCompile Include="encode.cpp" />
+    <ClCompile Include="LookupTableFunction.cpp" />
     <ClCompile Include="reconstruct.cpp" />
     <ClCompile Include="solution.cpp" />
     <ClCompile Include="support_function.cpp" />
@@ -34,6 +35,7 @@
     <ClInclude Include="..\cmd\getopt.h" />
     <ClInclude Include="AnalyseError.h" />
     <ClInclude Include="encode.h" />
+    <ClInclude Include="LookupTableFunction.h" />
     <ClInclude Include="reconstruct.h" />
     <ClInclude Include="solution.h" />
     <ClInclude Include="support_function.h" />

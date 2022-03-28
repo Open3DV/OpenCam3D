@@ -45,6 +45,9 @@
     <ClCompile Include="..\gui\PrecisionTest.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="LookupTableFunction.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="triangulation.h">
@@ -66,6 +69,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="AnalyseError.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LookupTableFunction.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

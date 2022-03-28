@@ -729,7 +729,7 @@ void CameraCaptureGui::captureOneFrameBaseThread(bool hdr)
 	}
 	else
 	{
-		ret_code = DfGetFrame03((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+		ret_code = DfGetFrame04((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
 	}
 	 
 
@@ -813,7 +813,7 @@ bool CameraCaptureGui::captureOneFrameData()
 	}
 	else
 	{ 
-		ret_code = DfGetFrame03((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+		ret_code = DfGetFrame04((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
 	}
 	  
 	/***************************************************************************/ 

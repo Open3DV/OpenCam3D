@@ -21,6 +21,7 @@
 #include "system_config_settings.h"
 #include "version.h"
 #include "configure_standard_plane.h"
+#include "../test/LookupTableFunction.h" 
 
 INITIALIZE_EASYLOGGINGPP 
 
@@ -998,6 +999,80 @@ int handle_cmd_get_standard_plane_param_parallel(int client_sock)
     return DF_SUCCESS;
      
 }
+
+
+
+int handle_cmd_get_frame_04_parallel(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int depth_buf_size = 1920*1200*4;
+    float* depth_map = new float[depth_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+
+
+    lc3010.pattern_mode04(); 
+    camera.captureFrame04ToGpu();
+  
+    reconstruct_copy_brightness_from_cuda_memory(brightness); 
+    reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
+ 
+    LOG(INFO)<<"Reconstruct Frame04 Finished!";
+
+ 
+    // cv::Mat pointcloud_map(1200,1920,CV_32FC3,cv::Scalar(-2));
+    // reconstruct_copy_pointcloud_from_cuda_memory((float*)pointcloud_map.data);  
+    // cv::Mat depth_mat(1200,1920,CV_32FC1,depth_map);
+
+    // cv::imwrite("./depth_map.tiff",depth_mat);
+    // cv::imwrite("./pointcloud_map.tiff",pointcloud_map);
+    
+    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    
+    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+    printf("brightness ret=%d\n", ret);
+
+    LOG(INFO)<<"Send Frame04";
+
+    float temperature = read_temperature(0);
+    
+    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	// delete [] buffer;
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    printf("frame sent!\n");
+    // delete [] buffer;
+    delete [] depth_map;
+    delete [] brightness;
+    return DF_SUCCESS;
+    
+
+}
    
 
 int handle_cmd_get_frame_03_parallel(int client_sock)
@@ -1020,6 +1095,7 @@ int handle_cmd_get_frame_03_parallel(int client_sock)
     int ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
 
     
+    LOG(INFO) << "Reconstruct Frame03 Finished!";   
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
     ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
     printf("depth ret=%d\n", ret);
@@ -1259,7 +1335,14 @@ int handle_get_temperature(int client_sock)
 int read_calib_param()
 {
     std::ifstream ifile;
+
     ifile.open("calib_param.txt");
+
+    if(!ifile.is_open())
+    {
+        return DF_FAILED;
+    }
+
     int n_params = sizeof(param)/sizeof(float);
     for(int i=0; i<n_params; i++)
     {
@@ -1539,6 +1622,90 @@ int write_calib_param()
     return DF_SUCCESS;
 }
     
+    
+int handle_set_camera_looktable(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	return DF_FAILED;
+    }
+	
+    int ret = -1;
+
+    ret = recv_buffer(client_sock, (char*)(&param), sizeof(param));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+
+     LOG(INFO)<<"recv param\n";
+    /**************************************************************************************/
+    cv::Mat xL_rotate_x(1200,1920,CV_32FC1,cv::Scalar(-2));
+    cv::Mat xL_rotate_y(1200,1920,CV_32FC1,cv::Scalar(-2));
+    cv::Mat rectify_R1(3,3,CV_32FC1,cv::Scalar(-2));
+    cv::Mat pattern_mapping(4000,2000,CV_32FC1,cv::Scalar(-2));
+
+     ret = recv_buffer(client_sock, (char*)(xL_rotate_x.data), 1200*1920 *sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    LOG(INFO)<<"recv xL_rotate_x\n";
+
+     ret = recv_buffer(client_sock, (char*)(xL_rotate_y.data), 1200*1920 *sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    LOG(INFO)<<"recv xL_rotate_y\n";
+
+     ret = recv_buffer(client_sock, (char*)(rectify_R1.data), 3*3 *sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    LOG(INFO)<<"recv rectify_R1\n";
+
+     ret = recv_buffer(client_sock, (char*)(pattern_mapping.data), 4000*2000 *sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    LOG(INFO)<<"recv pattern_mapping\n";
+
+  
+	    cv::Mat R1_t = rectify_R1.t(); 
+
+        LOG(INFO)<<"start copy table:";
+        reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
+        LOG(INFO)<<"copy finished!";
+
+        float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
+        reconstruct_set_baseline(b);
+ 
+    LOG(INFO)<<"copy looktable\n"; 
+    
+    write_calib_param();
+ 
+	LookupTableFunction lookup_table_machine_; 
+    lookup_table_machine_.saveBinMappingFloat("./combine_xL_rotate_x_cam1_iter.bin",xL_rotate_x);
+    lookup_table_machine_.saveBinMappingFloat("./combine_xL_rotate_y_cam1_iter.bin",xL_rotate_y);
+    lookup_table_machine_.saveBinMappingFloat("./R1.bin",rectify_R1);
+    lookup_table_machine_.saveBinMappingFloat("./single_pattern_mapping.bin",pattern_mapping);
+
+    LOG(INFO)<<"save looktable\n";
+
+    /***************************************************************************************/
+
+    return DF_SUCCESS;
+
+}
+
 int handle_set_camera_parameters(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -2084,6 +2251,10 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_03";   
         handle_cmd_get_frame_03_repetition_parallel(client_sock);
 	    break; 
+	case DF_CMD_GET_FRAME_04:
+	    LOG(INFO)<<"DF_CMD_GET_FRAME_04";   
+    	handle_cmd_get_frame_04_parallel(client_sock); 
+	    break;
 	case DF_CMD_GET_POINTCLOUD:
 	    LOG(INFO)<<"DF_CMD_GET_POINTCLOUD";
   //  	    camera.warmupCamera();
@@ -2112,7 +2283,17 @@ int handle_commands(int client_sock)
 			 param.rotation_matrix, 
 			 param.translation_matrix);
 	    break;
-
+	case DF_CMD_SET_CAMERA_LOOKTABLE:
+	    LOG(INFO)<<"DF_CMD_SET_CAMERA_LOOKTABLE";
+	    handle_set_camera_looktable(client_sock);
+        read_calib_param();
+        cuda_copy_calib_data(param.camera_intrinsic, 
+		         param.projector_intrinsic, 
+			 param.camera_distortion,
+	                 param.projector_distortion, 
+			 param.rotation_matrix, 
+			 param.translation_matrix);
+	    break;
 	case DF_CMD_ENABLE_CHECKER_BOARD:
 	    LOG(INFO)<<"DF_CMD_ENABLE_CHECKER_BOARD";
 	    handle_enable_checkerboard(client_sock);
@@ -2200,14 +2381,50 @@ int init()
     camera.warmupCamera();
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
     cuda_malloc_memory();
-    read_calib_param();
-       
+    int ret = read_calib_param();
+
     cuda_copy_calib_data(param.camera_intrinsic, 
 		         param.projector_intrinsic, 
 			 param.camera_distortion,
 	                 param.projector_distortion, 
 			 param.rotation_matrix, 
-			 param.translation_matrix);
+			 param.translation_matrix); 
+
+  
+	LookupTableFunction lookup_table_machine_; 
+	lookup_table_machine_.setCalibData(param);
+
+	// cv::Mat xL_rotate_x;
+	// cv::Mat xL_rotate_y;
+	// cv::Mat R1;
+	// cv::Mat pattern_mapping;
+    LOG(INFO)<<"start read table:";
+    
+    cv::Mat xL_rotate_x;
+    cv::Mat xL_rotate_y;
+    cv::Mat rectify_R1;
+    cv::Mat pattern_mapping;
+    bool ok = lookup_table_machine_.readTableFloat("./",xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
+ 
+    LOG(INFO)<<"read table finished!";
+ 
+    if(ok)
+    {  
+	    cv::Mat R1_t = rectify_R1.t();
+        xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
+        xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
+        R1_t.convertTo(R1_t, CV_32F);
+        pattern_mapping.convertTo(pattern_mapping, CV_32F);
+
+        LOG(INFO)<<"start copy table:";
+        reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
+        LOG(INFO)<<"copy finished!";
+
+        float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
+        reconstruct_set_baseline(b);
+    }
+
+
 
     float temperature_val = read_temperature(0); 
     LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
