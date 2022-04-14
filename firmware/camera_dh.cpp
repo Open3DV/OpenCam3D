@@ -9,6 +9,8 @@ CameraDh::CameraDh()
 {
     camera_opened_state_ = false;
     hDevice_ = NULL;
+
+    scan_camera_exposure_ = 12000;
 }
 
 
@@ -366,16 +368,23 @@ bool CameraDh::closeCamera()
 }
 
 
-bool CameraDh::setExpose(double value)
+bool CameraDh::setExpose(float value)
 {
 
     GX_STATUS status = GX_STATUS_SUCCESS;
     //�� �� �� �� ֵ
-    status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, 25000);
-	return true;
+    status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, value);
+
+
+    if(status == GX_STATUS_SUCCESS)
+    {
+        return true;
+    }
+
+	return false;
 }
 
-bool CameraDh::getExpose(double &value)
+bool CameraDh::getExpose(float &value)
 {
 
     return true;
@@ -452,7 +461,7 @@ bool CameraDh::openCamera()
 
         /***********************************************************************************************/
         //�� �� �� �� ֵ
-        status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, 12000);
+        status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, scan_camera_exposure_);
         //�� �� �� �� �� �� �� ��
         status = GXSetEnum(hDevice_, GX_ENUM_EXPOSURE_AUTO, GX_EXPOSURE_AUTO_OFF);
 
@@ -486,6 +495,35 @@ bool CameraDh::openCamera()
     return true;
 }
 
+
+bool CameraDh::captureSingleExposureImage(float exposure,char* buffer)
+{
+
+    bool ret = setExpose(exposure);
+
+    if(!ret)
+    {
+        LOG(INFO)<<"setExpose Error!";
+        return false;
+    }
+
+    ret = captureSingleImage(buffer);
+    if(!ret)
+    {
+        LOG(INFO)<<"captureSingleImage Error!";
+        return false;
+    }
+
+
+    ret = setExpose(scan_camera_exposure_);
+    if(!ret)
+    {
+        LOG(INFO)<<"setExpose Error!";
+        return false;
+    }
+
+    return ret;
+}
 
 bool CameraDh::captureSingleImage(char* buffer)
 {

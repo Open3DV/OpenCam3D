@@ -37,6 +37,8 @@ LightCrafter3010 lc3010;
 struct CameraCalibParam param;
 
 int brightness_current = 100;
+float brightness_exposure_time = 12000;
+int generate_brightness_flag = 1;
  
 SystemConfigDataStruct system_config_settings_machine_;
 
@@ -1589,7 +1591,39 @@ int handle_cmd_get_param_standard_param_external(int client_sock)
        
 }
 
+//设置生成亮度参数
+int handle_cmd_set_param_generate_brightness(int client_sock)
+{
+ if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+    int flag = 1 ; 
 
+    int ret = recv_buffer(client_sock, (char*)(&flag), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    float exposure = 0;
+
+    ret = recv_buffer(client_sock, (char*)(&exposure), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    generate_brightness_flag = flag;
+    brightness_exposure_time = exposure;
+  
+    return DF_SUCCESS;
+}
+
+  
 //设置多曝光参数
 int handle_cmd_set_param_hdr(int client_sock)
 {
@@ -2453,6 +2487,10 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM";   
     	handle_cmd_set_param_standard_param_external(client_sock);  
 	    break;
+	case DF_CMD_SET_PARAM_GENERATE_BRIGHTNESS:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_GENERATE_BRIGHTNESS";   
+    	handle_cmd_set_param_generate_brightness(client_sock);  
+	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
         handle_cmd_unknown(client_sock);
@@ -2529,6 +2567,18 @@ int main()
     LOG(INFO)<<"server started";
     init();
     LOG(INFO)<<"inited";
+
+    // //test
+    // int buffer_size = 1920*1200;
+    // char* buffer = new char[buffer_size];
+    // LOG(INFO)<<"capture single image";
+    // bool capture_one_ret = camera.captureSingleExposureImage(12000*50,buffer);
+    
+    // cv::Mat image_mat(1200,1920,CV_8UC1,buffer);
+    // cv::imwrite("./image.bmp",image_mat);
+    // LOG(INFO)<<"capture_one_ret: "<<capture_one_ret;
+
+    
 
     int server_sock;
     do

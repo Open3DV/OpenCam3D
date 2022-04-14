@@ -16,6 +16,8 @@ public:
 
 	bool captureSingleImage(char* buffer);
 
+	bool captureSingleExposureImage(float exposure,char* buffer);
+
 	bool captureRawPhaseImages(char* buffer);
 
 	bool captureRawTest(int num,char* buffer);
@@ -24,9 +26,9 @@ public:
 
 	bool switchToScanMode();
 
-	bool getExpose(double &value);
+	bool getExpose(float &value);
 
-	bool setExpose(double value);
+	bool setExpose(float value);
 
 	/********************************************************************/
 	//gpu parallel
@@ -38,11 +40,13 @@ public:
 
 private:
 
-
     GX_DEV_HANDLE hDevice_;
 
 	bool camera_opened_state_;
 
 	int image_shift_num_;
+
+	//条纹扫描时，相机曝光值
+	float scan_camera_exposure_;
 };
 
