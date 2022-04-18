@@ -381,6 +381,8 @@ bool CameraDh::setExpose(float value)
         return true;
     }
 
+
+    LOG(INFO)<<"Error Status: "<<status;
 	return false;
 }
 
@@ -537,16 +539,16 @@ bool CameraDh::captureSingleImage(char* buffer)
     if (status == GX_STATUS_SUCCESS)
     {
 	status = GXSendCommand(hDevice_, GX_COMMAND_TRIGGER_SOFTWARE);
-        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+        status = GXDQBuf(hDevice_, &pFrameBuffer, 10000);
         if (status == GX_STATUS_SUCCESS)
         {
             if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
             {
                 int img_rows = pFrameBuffer->nHeight;
                 int img_cols = pFrameBuffer->nWidth;
-		int img_size = img_rows*img_cols;
-                LOG(TRACE)<<"H:" <<img_rows<<" W: "<<img_cols<<std::endl;
-		memcpy(buffer, pFrameBuffer->pImgBuf, img_size);
+		        int img_size = img_rows*img_cols;
+                // LOG(TRACE)<<"H:" <<img_rows<<" W: "<<img_cols<<std::endl;
+	        	memcpy(buffer, pFrameBuffer->pImgBuf, img_size);
 	    }
             status = GXQBuf(hDevice_, pFrameBuffer);
         }

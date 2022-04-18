@@ -58,6 +58,9 @@ public:
 	void enable_checkerboard();
 	void disable_checkerboard();
 
+	void enable_solid_field();
+	void disable_solid_field();
+
 	void set_internal_pattern_stop();
 	void set_flash_data_type();
 	bool set_flash_build_data_size(unsigned int data_size);

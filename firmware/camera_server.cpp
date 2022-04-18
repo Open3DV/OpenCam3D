@@ -38,7 +38,7 @@ struct CameraCalibParam param;
 
 int brightness_current = 100;
 float brightness_exposure_time = 12000;
-int generate_brightness_flag = 1;
+int generate_brightness_model = 1;
  
 SystemConfigDataStruct system_config_settings_machine_;
 
@@ -415,19 +415,42 @@ int handle_cmd_get_brightness(int client_sock)
     {
         return DF_FAILED;	
     }
+    LOG(INFO)<<"capture single image";
 
-    lc3010.pattern_mode_brightness();
-
-    int image_num= 1;
-
-    int buffer_size = 1920*1200*image_num;
+    int buffer_size = 1920*1200;
     char* buffer = new char[buffer_size];
-   
-     LOG(TRACE)<<"capture single image";
-    
-    camera.captureRawTest(image_num,buffer);
 
+    switch (generate_brightness_model)
+    {
+        case 1:
+            {
+                //同步扫描曝光
+                lc3010.pattern_mode_brightness();
+                int image_num= 1;  
+                camera.captureRawTest(image_num,buffer);
+            }
+        break;
+        case 2:
+            {
+                //发光，自定义曝光时间 
+                lc3010.enable_solid_field();
+                bool capture_one_ret = camera.captureSingleExposureImage(brightness_exposure_time,buffer);
+                lc3010.disable_solid_field();
+            }
+        break;
+        case 3:
+            {
+                //不发光，自定义曝光时间 
+                    // 
+                bool capture_one_ret = camera.captureSingleExposureImage(brightness_exposure_time,buffer);
+            }
+        break;
+        
+        default:
+            break;
+    }
 
+ 
 
     //int buffer_size = 1920*1200;
     //char* buffer = new char[buffer_size];
@@ -1617,8 +1640,13 @@ int handle_cmd_set_param_generate_brightness(int client_sock)
     	return DF_FAILED;
     }
 
-    generate_brightness_flag = flag;
+    generate_brightness_model = flag;
     brightness_exposure_time = exposure;
+
+
+    LOG(INFO)<<"generate_brightness_model: "<<generate_brightness_model<<"\n";
+    LOG(INFO)<<"brightness_exposure_time: "<<brightness_exposure_time<<"\n";
+
   
     return DF_SUCCESS;
 }
@@ -1686,8 +1714,7 @@ int handle_cmd_set_param_led_current(int client_sock)
     {
 	    return DF_FAILED;
     }
-	 
- 
+	  
 
     int led= -1;
 
@@ -2567,18 +2594,6 @@ int main()
     LOG(INFO)<<"server started";
     init();
     LOG(INFO)<<"inited";
-
-    // //test
-    // int buffer_size = 1920*1200;
-    // char* buffer = new char[buffer_size];
-    // LOG(INFO)<<"capture single image";
-    // bool capture_one_ret = camera.captureSingleExposureImage(12000*50,buffer);
-    
-    // cv::Mat image_mat(1200,1920,CV_8UC1,buffer);
-    // cv::imwrite("./image.bmp",image_mat);
-    // LOG(INFO)<<"capture_one_ret: "<<capture_one_ret;
-
-    
 
     int server_sock;
     do
