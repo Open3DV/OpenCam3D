@@ -72,7 +72,9 @@ open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
 open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\n\
 \n\
 20.Set calibration lookTable: \n\
-open_cam3d.exe--set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
+open_cam3d.exe --set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
+21.Set Set Generate Brightness Param: \n\
+open_cam3d.exe --set-generate-brigntness-param --ip 192.168.x.x --model 1 --exposure 12000\n\
 ";
 
 void help_with_version(const char* help);
@@ -93,6 +95,7 @@ int get_raw_02(const char* ip, const char* raw_image_dir);
 int get_raw_03(const char* ip, const char* raw_image_dir);
 int get_calib_param(const char* ip, const char* calib_param_path);
 int set_calib_param(const char* ip, const char* calib_param_path);
+int set_generate_brightness_param(const char* ip, int model, float exposure);
 int set_calib_looktable(const char* ip, const char* calib_param_path);
 int test_calib_param(const char* ip, const char* result_path);
 int get_temperature(const char* ip);
@@ -132,7 +135,10 @@ enum opt_set
 	LOAD_PATTERN_DATA,
 	PROGRAM_PATTERN_DATA,
 	GET_NETWORK_BANDWIDTH,
-	GET_FIRMWARE_VERSION
+	GET_FIRMWARE_VERSION,
+	SET_GENERATE_BRIGHTNESS,
+	MODEL,
+	EXPOSURE,
 };
 
 static struct option long_options[] =
@@ -141,6 +147,8 @@ static struct option long_options[] =
 	{"path", required_argument, NULL, PATH},
 	{"count", required_argument, NULL, COUNT},
 	{"use", required_argument, NULL, USE},
+	{"model", required_argument, NULL, MODEL},
+	{"exposure", required_argument, NULL, EXPOSURE},
 	{"get-temperature",no_argument,NULL,GET_TEMPERATURE},
 	{"get-calib-param",no_argument,NULL,GET_CALIB_PARAM},
 	{"set-calib-param",no_argument,NULL,SET_CALIB_PARAM},
@@ -162,6 +170,7 @@ static struct option long_options[] =
 	{"program-pattern-data",no_argument,NULL,PROGRAM_PATTERN_DATA},
 	{"get-network-bandwidth",no_argument,NULL,GET_NETWORK_BANDWIDTH},
 	{"get-firmware-version",no_argument,NULL,GET_FIRMWARE_VERSION},
+	{"set-generate-brightness-param",no_argument,NULL,SET_GENERATE_BRIGHTNESS},
 };
 
 
@@ -169,6 +178,8 @@ const char* camera_id;
 const char* path;
 const char* repetition_count;
 const char* use_command;
+const char* c_model;
+const char* c_exposure;
 int command = HELP;
 
 struct CameraCalibParam calibration_param_;
@@ -193,6 +204,12 @@ int main(int argc, char* argv[])
 			break;
 		case USE:
 			use_command = optarg;
+			break;
+		case MODEL:
+			c_model = optarg;
+			break;
+		case EXPOSURE:
+			c_exposure = optarg;
 			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
@@ -270,6 +287,13 @@ int main(int argc, char* argv[])
 		break;
 	case GET_FIRMWARE_VERSION:
 		get_firmware_version(camera_id);
+		break;
+	case SET_GENERATE_BRIGHTNESS:
+	{
+		int model = std::atoi(c_model);
+		float exposure = std::atof(c_exposure);
+		set_generate_brightness_param(camera_id, model, exposure);
+	} 
 		break;
 	default:
 		break;
@@ -863,6 +887,24 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 	DfSetCalibrationLookTable(calibration_param, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)rectify_R1.data, (float*)pattern_mapping.data);
 
 	 
+
+	DfDisconnectNet();
+	return 1;
+}
+
+
+int set_generate_brightness_param(const char* ip, int model, float exposure)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	DfSetParamGenerateBrightness(model, exposure);
+  
 
 	DfDisconnectNet();
 	return 1;
