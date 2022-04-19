@@ -39,6 +39,8 @@ public:
 	void start_pattern_sequence();
 	
 	void write_pattern_table(unsigned char* pattern_index, int len);
+	
+	void write_pattern_table(unsigned char* pattern_index, int len,float camera_exposure);
 
 	void pattern_mode01();
 	void pattern_mode02();
@@ -70,5 +72,11 @@ public:
 	int write_data_into_the_flash(unsigned char writeFlashCmd, char *TxBuffer, unsigned short dataLen);
 	void read_data_from_the_flash(unsigned char readFlashCmd, char *RxBuffer, unsigned short dataLen);
 	void reload_pattern_order_table_from_flash();
+
+	void set_camera_exposure(float exposure){
+		camera_exposure_ = exposure;
+	}
+private:
+	float camera_exposure_;
 };
 
