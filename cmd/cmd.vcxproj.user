@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>..\x64\Release</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--set-calib-looktable --ip 192.168.88.106 --path .\capture\param_106.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--set-generate-brightness-param --model 1 --exposure 12000 --ip 192.168.0.121</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>--set-calib-param --ip 192.168.88.106 --path .\capture\param_106.txt</LocalDebuggerCommandArguments>
