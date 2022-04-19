@@ -73,8 +73,14 @@ open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\
 \n\
 20.Set calibration lookTable: \n\
 open_cam3d.exe --set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
-21.Set Set Generate Brightness Param: \n\
+21.Set Generate Brightness Param: \n\
 open_cam3d.exe --set-generate-brigntness-param --ip 192.168.x.x --model 1 --exposure 12000\n\
+22.Get Generate Brightness Param: \n\
+open_cam3d.exe --get-generate-brigntness-param --ip 192.168.x.x\n\
+23.Set Camera Exposure Param: \n\
+open_cam3d.exe --set-camera-exposure-param --ip 192.168.x.x --exposure 12000\n\
+24.Get Camera Exposure Param: \n\
+open_cam3d.exe --get-camera-exposure-param --ip 192.168.x.x\n\
 ";
 
 void help_with_version(const char* help);
@@ -96,6 +102,9 @@ int get_raw_03(const char* ip, const char* raw_image_dir);
 int get_calib_param(const char* ip, const char* calib_param_path);
 int set_calib_param(const char* ip, const char* calib_param_path);
 int set_generate_brightness_param(const char* ip, int model, float exposure);
+int get_generate_brightness_param(const char* ip, int &model, float &exposure);
+int set_camera_exposure_param(const char* ip, float exposure);
+int get_camera_exposure_param(const char* ip, float &exposure);
 int set_calib_looktable(const char* ip, const char* calib_param_path);
 int test_calib_param(const char* ip, const char* result_path);
 int get_temperature(const char* ip);
@@ -137,8 +146,11 @@ enum opt_set
 	GET_NETWORK_BANDWIDTH,
 	GET_FIRMWARE_VERSION,
 	SET_GENERATE_BRIGHTNESS,
+	GET_GENERATE_BRIGHTNESS,
 	MODEL,
 	EXPOSURE,
+	SET_CAMERA_EXPOSURE,
+	GET_CAMERA_EXPOSURE,
 };
 
 static struct option long_options[] =
@@ -171,6 +183,9 @@ static struct option long_options[] =
 	{"get-network-bandwidth",no_argument,NULL,GET_NETWORK_BANDWIDTH},
 	{"get-firmware-version",no_argument,NULL,GET_FIRMWARE_VERSION},
 	{"set-generate-brightness-param",no_argument,NULL,SET_GENERATE_BRIGHTNESS},
+	{"get-generate-brightness-param",no_argument,NULL,GET_GENERATE_BRIGHTNESS},
+	{"set-camera-exposure-param",no_argument,NULL,SET_CAMERA_EXPOSURE},
+	{"get-camera-exposure-param",no_argument,NULL,GET_CAMERA_EXPOSURE},
 };
 
 
@@ -295,6 +310,25 @@ int main(int argc, char* argv[])
 		set_generate_brightness_param(camera_id, model, exposure);
 	} 
 		break;
+	case GET_GENERATE_BRIGHTNESS:
+	{
+		int model = 0;
+		float exposure = 0;
+		get_generate_brightness_param(camera_id, model, exposure);
+	}
+	break;
+	case SET_CAMERA_EXPOSURE:
+	{
+		float exposure = std::atof(c_exposure);
+		set_camera_exposure_param(camera_id, exposure);
+	}
+	break;
+	case GET_CAMERA_EXPOSURE:
+	{
+		float exposure = 0;
+		get_camera_exposure_param(camera_id, exposure);
+	}
+	break;
 	default:
 		break;
 	}
@@ -893,8 +927,85 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 }
 
 
+int get_camera_exposure_param(const char* ip, float& exposure)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+
+	DfGetParamCameraExposure(exposure);
+
+
+	DfDisconnectNet();
+
+
+	std::cout << "camera exposure: " << exposure << std::endl;
+}
+
+int set_camera_exposure_param(const char* ip, float exposure)
+{
+	if (exposure < 20 || exposure> 1000000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return 0;
+	}
+
+
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+	
+
+	DfSetParamCameraExposure(exposure);
+
+
+	DfDisconnectNet();
+
+
+	std::cout << "camera exposure: " << exposure << std::endl;
+
+	return 1;
+}
+
+
+int get_generate_brightness_param(const char* ip, int& model, float& exposure)
+{
+
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	DfGetParamGenerateBrightness(model, exposure); 
+
+	DfDisconnectNet();
+
+
+	std::cout << "model: " << model << std::endl;
+	std::cout << "exposure: " << exposure << std::endl;
+	return 1;
+}
+
 int set_generate_brightness_param(const char* ip, int model, float exposure)
 {
+	if (exposure < 20 || exposure> 1000000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return 0;
+	}
+
 	DfRegisterOnDropped(on_dropped);
 
 	int ret = DfConnectNet(ip);
@@ -906,7 +1017,10 @@ int set_generate_brightness_param(const char* ip, int model, float exposure)
 	DfSetParamGenerateBrightness(model, exposure);
   
 
-	DfDisconnectNet();
+	DfDisconnectNet(); 
+
+	std::cout << "model: " << model << std::endl;
+	std::cout << "exposure: " << exposure << std::endl;
 	return 1;
 }
 

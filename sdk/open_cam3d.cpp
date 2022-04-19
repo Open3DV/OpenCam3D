@@ -1950,6 +1950,96 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 }
 
 /*****************************************************************************************************/
+	//函数名： DfSetParamCameraExposure
+	//功能： 设置相机曝光时间
+	//输入参数：exposure(相机曝光时间)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamCameraExposure(float exposure)
+{
+
+	if (exposure < 20 || exposure> 1000000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return DF_FAILED;
+	}
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_CAMERA_EXPOSURE_TIME, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+  
+		ret = send_buffer((char*)(&exposure), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamCameraExposure
+//功能： 获取相机曝光时间
+//输入参数： 无
+//输出参数：exposure(相机曝光时间)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamCameraExposure(float& exposure)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_CAMERA_EXPOSURE_TIME, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		 
+		ret = recv_buffer((char*)(&exposure), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		} 
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
 
 	//函数名： DfSetParamGenerateBrightness
 	//功能： 设置生成亮度图参数
@@ -1958,7 +2048,12 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 DF_SDK_API int DfSetParamGenerateBrightness(int model, float exposure)
 {
-	
+	if (exposure < 20 || exposure> 1000000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return DF_FAILED;
+	}
+
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
