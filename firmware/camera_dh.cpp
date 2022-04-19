@@ -183,7 +183,7 @@ bool CameraDh::captureFrame04ToGpu()
         for (int i = 0; i < 19; i++)
         {
             LOG(INFO) << "receiving " << i << "th image";
-            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000000);
             LOG(INFO) << "status=" << status;
             if (status == GX_STATUS_SUCCESS)
             {
@@ -368,7 +368,20 @@ bool CameraDh::closeCamera()
 }
 
 
-bool CameraDh::setExpose(float value)
+bool CameraDh::setScanExposure(float value)
+{
+
+    bool ret = setExposure(value);
+
+    if(ret)
+    { 
+      scan_camera_exposure_ = value;
+    }
+
+    return ret;
+}
+
+bool CameraDh::setExposure(float value)
 {
 
     GX_STATUS status = GX_STATUS_SUCCESS;
@@ -386,10 +399,25 @@ bool CameraDh::setExpose(float value)
 	return false;
 }
 
-bool CameraDh::getExpose(float &value)
+bool CameraDh::getExposure(float &value)
 {
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    //�� �� �� �� ֵ
+    double exposure = 0;
+    status = GXGetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, &exposure);
 
-    return true;
+
+    if(status == GX_STATUS_SUCCESS)
+    {
+
+        value = exposure;
+        
+        return true;
+    }
+
+
+    LOG(INFO)<<"Error Status: "<<status;
+	return false; 
 }
 
 bool CameraDh::switchToSingleShotMode()
@@ -501,11 +529,11 @@ bool CameraDh::openCamera()
 bool CameraDh::captureSingleExposureImage(float exposure,char* buffer)
 {
 
-    bool ret = setExpose(exposure);
+    bool ret = setExposure(exposure);
 
     if(!ret)
     {
-        LOG(INFO)<<"setExpose Error!";
+        LOG(INFO)<<"setExposure Error!";
         return false;
     }
 
@@ -517,10 +545,10 @@ bool CameraDh::captureSingleExposureImage(float exposure,char* buffer)
     }
 
 
-    ret = setExpose(scan_camera_exposure_);
+    ret = setExposure(scan_camera_exposure_);
     if(!ret)
     {
-        LOG(INFO)<<"setExpose Error!";
+        LOG(INFO)<<"setExposure Error!";
         return false;
     }
 

@@ -37,7 +37,7 @@ LightCrafter3010 lc3010;
 struct CameraCalibParam param;
 
 int brightness_current = 100;
-float brightness_exposure_time = 12000;
+float generate_brightness_exposure_time = 12000;
 int generate_brightness_model = 1;
  
 SystemConfigDataStruct system_config_settings_machine_;
@@ -434,7 +434,7 @@ int handle_cmd_get_brightness(int client_sock)
             {
                 //发光，自定义曝光时间 
                 lc3010.enable_solid_field();
-                bool capture_one_ret = camera.captureSingleExposureImage(brightness_exposure_time,buffer);
+                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,buffer);
                 lc3010.disable_solid_field();
             }
         break;
@@ -442,7 +442,7 @@ int handle_cmd_get_brightness(int client_sock)
             {
                 //不发光，自定义曝光时间 
                     // 
-                bool capture_one_ret = camera.captureSingleExposureImage(brightness_exposure_time,buffer);
+                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,buffer);
             }
         break;
         
@@ -1221,10 +1221,10 @@ int handle_cmd_get_frame_03_parallel(int client_sock)
     {
         printf("send error, close this connection!\n");
 	// delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
-	
-	return DF_FAILED;
+        delete [] depth_map;
+        delete [] brightness;
+        
+        return DF_FAILED;
     }
     
     printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
@@ -1614,6 +1614,92 @@ int handle_cmd_get_param_standard_param_external(int client_sock)
        
 }
 
+//获取相机曝光参数
+int handle_cmd_get_param_camera_exposure(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    } 
+	
+    int ret = send_buffer(client_sock, (char*)(&system_config_settings_machine_.Instance().config_param_.camera_exposure_time), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+ 
+    return DF_SUCCESS;
+  
+}
+
+
+//设置相机曝光参数
+int handle_cmd_set_param_camera_exposure(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+
+    float exposure = 0;
+
+    int ret = recv_buffer(client_sock, (char*)(&exposure), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+ 
+
+    if(exposure>= 20 && exposure<= 1000000)
+    { 
+        system_config_settings_machine_.Instance().config_param_.camera_exposure_time = exposure; 
+
+        LOG(INFO)<<"Set Camera Exposure Time: "<<exposure<<"\n";
+
+        if(camera.setScanExposure(exposure))
+        {
+            lc3010.set_camera_exposure(exposure);
+        } 
+
+    }
+    else
+    {
+        LOG(INFO)<<"Set Camera Exposure Time Error!"<<"\n";
+    }
+ 
+  
+    return DF_SUCCESS;
+}
+
+//获取生成亮度参数
+int handle_cmd_get_param_generate_brightness(int client_sock)
+{
+   if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+   
+	
+    int ret = send_buffer(client_sock, (char*)(&generate_brightness_model), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+
+    ret = send_buffer(client_sock, (char*)(&generate_brightness_exposure_time), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+
+    return DF_SUCCESS;
+}
+
 //设置生成亮度参数
 int handle_cmd_set_param_generate_brightness(int client_sock)
 {
@@ -1641,11 +1727,11 @@ int handle_cmd_set_param_generate_brightness(int client_sock)
     }
 
     generate_brightness_model = flag;
-    brightness_exposure_time = exposure;
+    generate_brightness_exposure_time = exposure;
 
 
     LOG(INFO)<<"generate_brightness_model: "<<generate_brightness_model<<"\n";
-    LOG(INFO)<<"brightness_exposure_time: "<<brightness_exposure_time<<"\n";
+    LOG(INFO)<<"generate_brightness_exposure_time: "<<generate_brightness_exposure_time<<"\n";
 
   
     return DF_SUCCESS;
@@ -2518,6 +2604,19 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_GENERATE_BRIGHTNESS";   
     	handle_cmd_set_param_generate_brightness(client_sock);  
 	    break;
+    case DF_CMD_GET_PARAM_GENERATE_BRIGHTNESS:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_GENERATE_BRIGHTNESS";   
+    	handle_cmd_get_param_generate_brightness(client_sock);  
+	    break;
+	case DF_CMD_SET_PARAM_CAMERA_EXPOSURE_TIME:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_CAMERA_EXPOSURE_TIME";   
+    	handle_cmd_set_param_camera_exposure(client_sock);
+	    break;
+	case DF_CMD_GET_PARAM_CAMERA_EXPOSURE_TIME:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_EXPOSURE_TIME";   
+    	handle_cmd_get_param_camera_exposure(client_sock);
+	    break;
+        
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
         handle_cmd_unknown(client_sock);

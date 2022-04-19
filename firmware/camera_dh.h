@@ -26,9 +26,11 @@ public:
 
 	bool switchToScanMode();
 
-	bool getExpose(float &value);
+	bool getExposure(float &value);
 
-	bool setExpose(float value);
+	bool setExposure(float value);
+
+	bool setScanExposure(float value);
 
 	/********************************************************************/
 	//gpu parallel
