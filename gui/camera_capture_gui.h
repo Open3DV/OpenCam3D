@@ -121,9 +121,7 @@ private slots:
 
 	void do_spin_max_z_changed(int val);
 	  
-	void do_pushButton_capture_one_frame();
-
-	void do_pushButton_capture_many_frame();
+	void do_pushButton_capture_one_frame(); 
 
 	void do_pushButton_test_accuracy();
 
@@ -132,8 +130,8 @@ private slots:
 	void do_pushButton_capture_continuous();
 
 	void do_spin_led_current_changed(int val);
-	  
-
+	   
+	void do_spin_camera_exposure_changed(int val);
 	/******************************************************************************************/
 
 	void do_pushButton_save_as();

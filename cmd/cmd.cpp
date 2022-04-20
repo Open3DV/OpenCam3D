@@ -73,14 +73,19 @@ open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\
 \n\
 20.Set calibration lookTable: \n\
 open_cam3d.exe --set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
+\n\
 21.Set Generate Brightness Param: \n\
 open_cam3d.exe --set-generate-brigntness-param --ip 192.168.x.x --model 1 --exposure 12000\n\
+\n\
 22.Get Generate Brightness Param: \n\
 open_cam3d.exe --get-generate-brigntness-param --ip 192.168.x.x\n\
+\n\
 23.Set Camera Exposure Param: \n\
 open_cam3d.exe --set-camera-exposure-param --ip 192.168.x.x --exposure 12000\n\
+\n\
 24.Get Camera Exposure Param: \n\
 open_cam3d.exe --get-camera-exposure-param --ip 192.168.x.x\n\
+\n\
 ";
 
 void help_with_version(const char* help);

@@ -138,6 +138,14 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			}
 
 		}
+
+		if (firmware_Obj.contains("camera_exposure_time") && firmware_Obj["camera_exposure_time"].isDouble())
+		{
+			qDebug() << "camera_exposure_time is:" << firmware_Obj.value("camera_exposure_time").toInt();
+			camera_config_.Instance().config_param_.camera_exposure_time = firmware_Obj.value("camera_exposure_time").toInt();
+		}
+
+		
 	}
 
 	/******************************************************************************************************************************/
@@ -223,6 +231,9 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	}
 
 	jsonObject_firmware.insert("standard_plane_external_param", standard_plane_external_param_array);
+
+
+	jsonObject_firmware.insert("camera_exposure_time", camera_config_.Instance().config_param_.camera_exposure_time);
 
 	// 使用QJsonDocument设置该json对象
 	QJsonDocument jsonDoc;

@@ -55,10 +55,6 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	//ui.tableWidget_more_exposure->hide();
 	//ui.spinBox_exposure_num->hide();
 	//ui.label_exposure_num->hide();
-	ui.label_confidence->hide();
-	ui.spinBox_confidence->hide();
-	ui.pushButton_capture_many_frame->hide();
-	ui.spinBox_multiframe->hide();
 
 	//ui.radioButton_depth_grey->hide();
 
@@ -82,6 +78,7 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.spinBox_max_z, SIGNAL(valueChanged(int)), this, SLOT(do_spin_max_z_changed(int)));
 
 	connect(ui.spinBox_led, SIGNAL(valueChanged(int)), this, SLOT(do_spin_led_current_changed(int)));
+	connect(ui.spinBox_camera_exposure, SIGNAL(valueChanged(int)), this, SLOT(do_spin_camera_exposure_changed(int)));
 
 	connect(ui.radioButton_brightness, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_brightness(bool)));
 	connect(ui.radioButton_depth_color, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_color_depth(bool)));
@@ -92,8 +89,7 @@ bool CameraCaptureGui::initializeFunction()
 
 	connect(ui.pushButton_connect, SIGNAL(clicked()), this, SLOT(do_pushButton_connect()));
 	connect(ui.pushButton_capture_one_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_one_frame()));
-	connect(ui.pushButton_capture_continuous, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_continuous()));
-	connect(ui.pushButton_capture_many_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_many_frame()));
+	connect(ui.pushButton_capture_continuous, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_continuous())); 
 
 
 	connect(ui.pushButton_save_as, SIGNAL(clicked()), this, SLOT(do_pushButton_save_as()));
@@ -302,6 +298,8 @@ void CameraCaptureGui::undateSystemConfigUiData()
 
 	ui.spinBox_exposure_num->setValue(system_config_param_.exposure_num);
 
+	ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
+
 }
 
 void CameraCaptureGui::setUiData()
@@ -381,8 +379,59 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 
 
 
+void CameraCaptureGui::do_spin_camera_exposure_changed(int val)
+{
+
+	if (camera_setting_flag_)
+	{
+		return;
+	}
 
 
+	//设置参数时加锁
+	camera_setting_flag_ = true;
+	if (connected_flag_)
+	{
+
+		system_config_param_.camera_exposure_time = val;
+
+		int ret_code = -1;
+		//如果连续采集在用、先暂停
+		if (start_timer_flag_)
+		{
+
+			stopCapturingOneFrameBaseThread(); 
+
+			ret_code = DfSetParamCameraExposure(system_config_param_.camera_exposure_time);
+			if (0 == ret_code)
+			{
+				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
+				QString str = QString::fromLocal8Bit("设置相机曝光时间: ") + QString::number(system_config_param_.camera_exposure_time);
+				addLogMessage(str);
+			}
+
+			do_pushButton_capture_continuous();
+
+		}
+		else
+		{
+			ret_code = DfSetParamCameraExposure(system_config_param_.camera_exposure_time);
+
+			if (0 == ret_code)
+			{
+				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
+				QString str = QString::fromLocal8Bit("设置相机曝光时间: ") + QString::number(system_config_param_.camera_exposure_time);
+				addLogMessage(str);
+			}
+
+		}
+
+	}
+
+	camera_setting_flag_ = false;
+}
+
+ 
 void CameraCaptureGui::do_spin_led_current_changed(int val)
 {  
 	if (camera_setting_flag_)
@@ -492,6 +541,13 @@ bool CameraCaptureGui::setCameraConfigParam()
 		return false;
 	}
 
+	ret_code = DfSetParamCameraExposure(system_config_param_.camera_exposure_time);
+	if (0 != ret_code)
+	{
+		qDebug() << "Set Camera Exposure Error;";
+		return false;
+	}
+
 	return true;
 }
 
@@ -523,6 +579,12 @@ bool CameraCaptureGui::getCameraConfigParam()
 		return false;
 	}
 
+	ret_code = DfGetParamCameraExposure(system_config_param_.camera_exposure_time);
+	if (0 != ret_code)
+	{
+		qDebug() << "Get Camera Exposure Time Error;";
+		return false;
+	}
 
 	return true;
 }
@@ -902,6 +964,11 @@ void  CameraCaptureGui::do_pushButton_connect()
 			{
 				qDebug() << "Set Param Error;";
 				//return;
+			}
+
+			if (!setCameraConfigParam())
+			{
+				qDebug() << "Set Signal Param Error;";
 			}
 
 			undateSystemConfigUiData();
@@ -1587,12 +1654,7 @@ void  CameraCaptureGui::do_timeout_capture_slot()
 
 }
 
-void  CameraCaptureGui::do_pushButton_capture_many_frame()
-{
-
-
-}
-
+ 
 void  CameraCaptureGui::do_pushButton_capture_continuous()
 {
 

@@ -13,7 +13,7 @@ const char* help_info =
 "Examples:\n\
 \n\
 1.Calibrate:\n\
-calibration.exe --patterns ./calib --calib ./param.txt \n\
+calibration.exe --calibrate --patterns ./calib --calib ./param.txt \n\
 \n\
 ";
 
