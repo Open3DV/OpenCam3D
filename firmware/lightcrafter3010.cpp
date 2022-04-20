@@ -92,7 +92,7 @@ void LightCrafter3010::SetLedCurrent(unsigned short R, unsigned short G, unsigne
 
 void LightCrafter3010::enable_solid_field()
 {
-unsigned char TxBuffer[8];
+    unsigned char TxBuffer[8];
     
     TxBuffer[0] = 0x01;
     write(Write_Image_Freeze, TxBuffer, 1);
@@ -118,6 +118,7 @@ unsigned char TxBuffer[8];
 void LightCrafter3010::disable_solid_field()
 {
     disable_checkerboard();
+    init();
 }
 
 void LightCrafter3010::enable_checkerboard()
@@ -302,7 +303,7 @@ void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len
 
     // Illumination Time = 11000us
     int illumination_time = camera_exposure - 1000;
- 
+  
 
     std::vector<int> remainder_list;
     for(int i= 0;i< 8;i++)
@@ -310,18 +311,9 @@ void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len
         int remainder = illumination_time%16;
         remainder_list.push_back(remainder);
         illumination_time /=16; 
-        LOG(INFO)<<remainder;
     }
 
-    // char str[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
-
-    // std::string buffer_str_0 = "0x";
-    // buffer_str_0 += str[remainder_list[1]];
-    // buffer_str_0 += str[remainder_list[0]];
-
-    // LOG(INFO)<<"buffer_str_0: "<<buffer_str_0;
-
-    // buffer[12] = 0xf8;
+ 
     buffer[12] = remainder_list[1]*16+remainder_list[0];
     buffer[13] = remainder_list[3]*16+remainder_list[2];
     buffer[14] = remainder_list[5]*16+remainder_list[4];
@@ -345,6 +337,8 @@ void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len
         write(0x98, buffer, 24);
 	    buffer[0] = 0x00;
     }
+
+ 
 
 }
 
@@ -485,6 +479,13 @@ void LightCrafter3010::read_pattern_table(int i)
 void LightCrafter3010::start_pattern_sequence()
 {
 	char buffer[2] = {0x00, 0x00};
+	write(0x9e, buffer, 2);
+}
+
+
+void LightCrafter3010::stop_pattern_sequence()
+{
+	char buffer[2] = {0x01, 0x00};
 	write(0x9e, buffer, 2);
 }
 

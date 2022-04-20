@@ -11,15 +11,28 @@ CameraDh::CameraDh()
     hDevice_ = NULL;
 
     scan_camera_exposure_ = 12000;
+    generate_brigntness_model_ = 1;
+    generate_brightness_exposure_time_ = 12000;
+
+    
+    buffer_size_ = 1920*1200;
+    brightness_buff_ = new char[buffer_size_];
+    memset(brightness_buff_,0,buffer_size_);
 }
 
 
 CameraDh::~CameraDh()
 {
+    delete brightness_buff_;
 }
 
 /******************************************************************************************************/
 
+void CameraDh::setGenerateBrightnessParam(int model,float exposure)
+{
+    generate_brigntness_model_ = model;
+    generate_brightness_exposure_time_ = exposure;
+}
 
 bool CameraDh::captureFrame03RepetitionToGpu(int repetition_count)
 {
@@ -194,6 +207,12 @@ bool CameraDh::captureFrame04ToGpu()
                     int img_size = img_rows * img_cols;
                     // memcpy(buffer + img_size * i, pFrameBuffer->pImgBuf, img_size);
                     parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,i);
+
+                    if(18 == i && 1 == generate_brigntness_model_)
+                    {
+                        memcpy(brightness_buff_, pFrameBuffer->pImgBuf, img_size);
+                        status = GXStreamOff(hDevice_); 
+                    }
                 }
 
                 
@@ -225,6 +244,38 @@ bool CameraDh::captureFrame04ToGpu()
                     parallel_cuda_unwrap_phase(3); 
                      // cudaDeviceSynchronize();
                 	generate_pointcloud_base_table();
+
+                    switch (generate_brigntness_model_)
+                    { 
+                        case 2:
+                        {
+                            
+                            status = GXStreamOff(hDevice_); 
+                            lc3010.stop_pattern_sequence();
+                            lc3010.init();
+                            switchToSingleShotMode();
+                            //发光，自定义曝光时间 
+                            lc3010.enable_solid_field();
+                            bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_,brightness_buff_);
+                            lc3010.disable_solid_field();
+                             
+                        }
+                        break;
+                        case 3:
+                        {
+                            
+                            status = GXStreamOff(hDevice_); 
+                            lc3010.stop_pattern_sequence();
+                            lc3010.init();
+                            switchToSingleShotMode();
+                            //不发光，自定义曝光时间  
+                            bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_,brightness_buff_); 
+                        }
+                        break;
+                    
+                    default:
+                        break;
+                    }
                 }
                 break;
   
@@ -243,7 +294,6 @@ bool CameraDh::captureFrame04ToGpu()
     }
 
  
-    status = GXStreamOff(hDevice_); 
     return true;
 }
 
@@ -553,6 +603,14 @@ bool CameraDh::captureSingleExposureImage(float exposure,char* buffer)
     }
 
     return ret;
+}
+
+
+bool CameraDh::copyBrightness(char* buffer)
+{
+    memcpy(buffer, brightness_buff_, buffer_size_);
+
+    return true;
 }
 
 bool CameraDh::captureSingleImage(char* buffer)

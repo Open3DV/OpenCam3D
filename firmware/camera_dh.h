@@ -14,6 +14,8 @@ public:
 	
 	bool warmupCamera();
 
+	void setGenerateBrightnessParam(int model,float exposure);
+
 	bool captureSingleImage(char* buffer);
 
 	bool captureSingleExposureImage(float exposure,char* buffer);
@@ -32,6 +34,7 @@ public:
 
 	bool setScanExposure(float value);
 
+	bool copyBrightness(char* buffer);
 	/********************************************************************/
 	//gpu parallel
 	bool captureFrame03ToGpu();
@@ -50,5 +53,10 @@ private:
 
 	//条纹扫描时，相机曝光值
 	float scan_camera_exposure_;
+
+	int generate_brigntness_model_;
+	float generate_brightness_exposure_time_;
+	int buffer_size_;
+	char* brightness_buff_;
 };
 

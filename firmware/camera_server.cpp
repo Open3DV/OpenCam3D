@@ -1132,11 +1132,13 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
     int brightness_buf_size = 1920*1200*1;
     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
+    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
 
     lc3010.pattern_mode04(); 
     camera.captureFrame04ToGpu();
   
-    reconstruct_copy_brightness_from_cuda_memory(brightness); 
+    camera.copyBrightness((char*)brightness);
+    // reconstruct_copy_brightness_from_cuda_memory(brightness); 
     reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
  
     LOG(INFO)<<"Reconstruct Frame04 Finished!";

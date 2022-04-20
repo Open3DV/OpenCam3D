@@ -37,6 +37,8 @@ public:
 	void init();
 		
 	void start_pattern_sequence();
+
+	void stop_pattern_sequence();
 	
 	void write_pattern_table(unsigned char* pattern_index, int len);
 	
