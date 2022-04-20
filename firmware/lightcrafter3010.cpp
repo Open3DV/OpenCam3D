@@ -21,6 +21,14 @@ LightCrafter3010::LightCrafter3010()
     _device.addr = 0x1b & 0x3ff;        //0x1b is LC3010 device address
     _device.page_bytes = 256;//32;
     _device.iaddr_bytes = 1;
+
+    // ----- MCP3221 init
+	memset(&_MCP3221, 0, sizeof(_MCP3221));
+	i2c_init_device(&_MCP3221);
+    _MCP3221.bus = fd;
+    _MCP3221.addr = 0x68;
+    _MCP3221.page_bytes = 256;
+    _MCP3221.iaddr_bytes = 1;
 }
 
 size_t LightCrafter3010::read(char inner_addr, void* buffer, size_t buffer_size)
@@ -399,3 +407,23 @@ float LightCrafter3010::get_temperature()
     return temperature;
 }
 
+size_t LightCrafter3010::read_mcp3221(void* buffer, size_t buffer_size)
+{
+	return	i2c_read(&_MCP3221, 0, buffer, buffer_size);
+}
+
+float LightCrafter3010::get_projector_temperature()
+{
+    unsigned char buffer[2];
+    read_mcp3221(buffer, 2);
+
+    short OutputCode;
+    OutputCode = ((buffer[0] << 8) & 0xff00) | buffer[1];
+
+    float fOut = OutputCode;
+    float fMax = 2048.0;
+
+    float voltage = (fOut / fMax) * 2.048;
+
+    return voltage;
+}

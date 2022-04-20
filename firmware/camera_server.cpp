@@ -788,8 +788,8 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
 
         lc3010.pattern_mode03();
     
-        camera.captureFrame03ToGpu();   
-        parallel_cuda_copy_result_to_hdr(i); 
+        camera.captureFrame03ToGpu();
+        parallel_cuda_copy_result_to_hdr(i);
     }
 
     
@@ -2020,6 +2020,35 @@ int handle_get_firmware_version(int client_sock)
     
     return DF_SUCCESS;
 }
+//*****************************************************************************************/
+float get_projector_temperature()
+{
+    float val = 0.0;
+
+    val = lc3010.get_projector_temperature();
+
+    return val;
+}
+
+int handle_get_projector_temperature(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"get projector temperature!";
+
+    float temperature = get_projector_temperature();
+    int ret = send_buffer(client_sock, (char*)(&temperature), sizeof(temperature));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
 /*****************************************************************************************/
 int handle_commands(int client_sock)
 {
@@ -2179,6 +2208,10 @@ int handle_commands(int client_sock)
 	case DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM:
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM";   
     	handle_cmd_set_param_standard_param_external(client_sock);  
+	    break;
+	case DF_CMD_GET_PROJECTOR_TEMPERATURE:
+	    LOG(INFO)<<"DF_CMD_GET_PROJECTOR_TEMPERATURE";
+	    handle_get_projector_temperature(client_sock);
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";

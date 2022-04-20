@@ -55,6 +55,7 @@ open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
 \n\
 14.Get Repetition Frame 03: \n\
 open_cam3d.exe --get-repetition-frame-03 --count 6 --ip 192.168.x.x --path ./frame03_repetition\n\
+\n\
 15.Load pattern data: \n\
 open_cam3d.exe --load-pattern-data --ip 192.168.x.x\n\
 \n\
@@ -69,6 +70,9 @@ open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
 \n\
 19.Test camera calibration parameters: \n\
 open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\n\
+\n\
+20.Get projector temperature: \n\
+open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
 \n\
 ";
 
@@ -98,6 +102,7 @@ int load_pattern_data(const char* ip);
 int program_pattern_data(const char* ip);
 int get_network_bandwidth(const char* ip);
 int get_firmware_version(const char* ip);
+int get_projector_temperature(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -127,7 +132,8 @@ enum opt_set
 	LOAD_PATTERN_DATA,
 	PROGRAM_PATTERN_DATA,
 	GET_NETWORK_BANDWIDTH,
-	GET_FIRMWARE_VERSION
+	GET_FIRMWARE_VERSION,
+	GET_PROJECTOR_TEMPERATURE
 };
 
 static struct option long_options[] =
@@ -156,6 +162,7 @@ static struct option long_options[] =
 	{"program-pattern-data",no_argument,NULL,PROGRAM_PATTERN_DATA},
 	{"get-network-bandwidth",no_argument,NULL,GET_NETWORK_BANDWIDTH},
 	{"get-firmware-version",no_argument,NULL,GET_FIRMWARE_VERSION},
+	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE},
 };
 
 
@@ -262,6 +269,8 @@ int main(int argc, char* argv[])
 	case GET_FIRMWARE_VERSION:
 		get_firmware_version(camera_id);
 		break;
+	case GET_PROJECTOR_TEMPERATURE:
+		get_projector_temperature(camera_id);
 	default:
 		break;
 	}
@@ -993,6 +1002,24 @@ int get_firmware_version(const char* ip)
 	char version[_VERSION_LENGTH_] = { '\0' };
 	DfGetFirmwareVersion(version, _VERSION_LENGTH_);
 	std::cout << "Firmware: " << version << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int get_projector_temperature(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	float temperature = 0;
+	DfGetProjectorTemperature(temperature);
+	std::cout << "Projector temperature: " << temperature << std::endl;
 
 	DfDisconnectNet();
 	return 1;
