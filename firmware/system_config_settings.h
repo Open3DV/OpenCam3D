@@ -32,12 +32,24 @@ struct SystemConfigParam
 
 };
 
+struct FirmwareConfigParam
+{
+	//生成亮度模式
+	int generate_brightness_model;
+	//生成亮度曝光
+	float generate_brightness_exposure;
+ 
+
+};
+
+
 struct SystemConfigDataStruct
 {
 	SystemConfigDataStruct();
 
 	SystemConfigParam config_param_;
-  
+	FirmwareConfigParam firwmare_param_;
+
 	bool loadFromSettings(const std::string& f);
 	bool saveToSettings(const std::string& f);
  

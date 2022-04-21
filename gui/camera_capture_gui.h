@@ -15,6 +15,10 @@
 #define SELECT_HEIGHT_MAP_FLAG_ 2;
 #define SELECT_COLOR_DEPTH_FLAG_ 3;
 
+#define GENERATE_BRIGHTNESS_DEFAULT_ 1;
+#define GENERATE_BRIGHTNESS_ILLUMINATION_ 2;
+#define GENERATE_BRIGHTNESS_DARKNESS_ 3;
+
 class CameraCaptureGui : public QWidget
 {
 	Q_OBJECT
@@ -66,6 +70,9 @@ public:
 
 	bool getShowCalibrationMessage(struct SystemConfigParam &config_param, struct CameraCalibParam &calibration_param);
 
+	//更新生成亮度图参数
+	void updateGenerateBrightnessParam();
+
 private:
 	bool showImage();
 
@@ -106,6 +113,12 @@ private slots:
 
 	void do_QRadioButton_toggled_gray_depth(bool state);
 
+	void do_QRadioButton_toggled_generate_brightness_default(bool state);
+
+	void do_QRadioButton_toggled_generate_brightness_illumination(bool state);
+
+	void do_QRadioButton_toggled_generate_brightness_darkness(bool state);
+
 	void add_exposure_item(int row,int col,int val);
 
 	bool remove_exposure_item(int row);  
@@ -132,6 +145,8 @@ private slots:
 	void do_spin_led_current_changed(int val);
 	   
 	void do_spin_camera_exposure_changed(int val);
+
+	void do_spin_generate_brightness_exposure_changed(int val);
 	/******************************************************************************************/
 
 	void do_pushButton_save_as();
@@ -176,6 +191,7 @@ private:
 
 	//相机系统配置参数
 	struct SystemConfigParam system_config_param_;
+	struct FirmwareConfigParam firmware_config_param_;
 	//相机标定参数
 	struct CameraCalibParam camera_calibration_param_;
 
@@ -192,4 +208,8 @@ private:
 	std::vector<float> rms_list_;
 	std::vector<std::vector<float>> plane_list_;
 	std::vector<std::vector<cv::Point3f>> feature_points_list_;
+
+	//生成亮度图模式
+	int generate_brightness_model_;
+	float generate_brightness_exposure_;
 };

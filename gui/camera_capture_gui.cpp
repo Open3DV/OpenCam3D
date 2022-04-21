@@ -30,7 +30,8 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
   
  
 	config_system_param_machine_.loadProcessingSettingsFile("../camera_config.json");
-	config_system_param_machine_.getFirmwareConfigData(system_config_param_);
+	config_system_param_machine_.getSystemConfigData(system_config_param_);
+	config_system_param_machine_.getFirmwareConfigData(firmware_config_param_);
 	config_system_param_machine_.getGuiConfigData(processing_gui_settings_data_);
 
  
@@ -102,7 +103,12 @@ bool CameraCaptureGui::initializeFunction()
 
 
 	connect(this, SIGNAL(send_images_update()), this, SLOT(do_undate_show_slot()));
- 
+
+	connect(ui.radioButton_generate_brightness_default, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_generate_brightness_default(bool)));
+	connect(ui.radioButton_generate_brightness_illuminsation_define, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_generate_brightness_illumination(bool)));
+	connect(ui.radioButton_generate_brightness_darkness_define, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_generate_brightness_darkness(bool)));
+
+	connect(ui.spinBox_camera_exposure_define, SIGNAL(valueChanged(int)), this, SLOT(do_spin_generate_brightness_exposure_changed(int)));
 
 	min_depth_value_ = 300;
 	max_depth_value_ = 1200;
@@ -110,6 +116,9 @@ bool CameraCaptureGui::initializeFunction()
 	capture_show_flag_ = false;
 	capturing_flag_ = false;
 	camera_setting_flag_ = false;
+
+	generate_brightness_model_ = GENERATE_BRIGHTNESS_DEFAULT_;
+	generate_brightness_exposure_ = 12000;
 	/**********************************************************************************************************************/
 
 
@@ -174,7 +183,8 @@ bool CameraCaptureGui::loadSettingData(QString path)
 		return false;
 	}
 	
-	config_system_param_machine_.getFirmwareConfigData(system_config_param_);
+	config_system_param_machine_.getSystemConfigData(system_config_param_);
+	config_system_param_machine_.getFirmwareConfigData(firmware_config_param_);
 	config_system_param_machine_.getGuiConfigData(processing_gui_settings_data_);
 	   
 	setUiData();
@@ -188,7 +198,8 @@ bool CameraCaptureGui::saveSettingData(QString path)
 
 	//bool ret = processing_settings_data_.saveToSettings(path);
 	
-	config_system_param_machine_.setFirmwareConfigData(system_config_param_);
+	config_system_param_machine_.setSystemConfigData(system_config_param_);
+	config_system_param_machine_.setFirmwareConfigData(firmware_config_param_);
 	config_system_param_machine_.setGuiConfigData(processing_gui_settings_data_);
 
 	bool ok = config_system_param_machine_.saveProcessingSettingsFile(path);
@@ -300,6 +311,30 @@ void CameraCaptureGui::undateSystemConfigUiData()
 
 	ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
 
+	ui.spinBox_camera_exposure_define->setValue(firmware_config_param_.generate_brightness_exposure);
+
+	switch(firmware_config_param_.generate_brightness_model)
+	{
+	case 1:
+	{
+		ui.radioButton_generate_brightness_default->setChecked(true);
+	}
+	break;
+	case 2:
+	{
+		ui.radioButton_generate_brightness_illuminsation_define->setChecked(true);
+	}
+	break;
+	case 3:
+	{
+		ui.radioButton_generate_brightness_darkness_define->setChecked(true);
+	}
+	break;
+	default:
+		break;
+	}
+
+
 }
 
 void CameraCaptureGui::setUiData()
@@ -376,6 +411,7 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 	 
  
 }
+
 
 
 
@@ -548,6 +584,13 @@ bool CameraCaptureGui::setCameraConfigParam()
 		return false;
 	}
 
+	ret_code = DfSetParamGenerateBrightness(firmware_config_param_.generate_brightness_model,firmware_config_param_.generate_brightness_exposure);
+	if (0 != ret_code)
+	{
+		qDebug() << "Set Generate Brightness Param Error;";
+		return false;
+	}
+
 	return true;
 }
 
@@ -610,6 +653,51 @@ bool CameraCaptureGui::getShowCalibrationMessage(struct SystemConfigParam& confi
 	calibration_param = camera_calibration_param_;
 
 	return true;
+}
+
+//更新生成亮度图参数
+void CameraCaptureGui::updateGenerateBrightnessParam()
+{
+	if (camera_setting_flag_)
+	{
+		return;
+	}
+
+	//设置参数时加锁
+	camera_setting_flag_ = true;
+	if (connected_flag_)
+	{
+		  
+		int ret_code = -1;
+		//如果连续采集在用、先暂停
+		if (start_timer_flag_)
+		{
+
+			stopCapturingOneFrameBaseThread();
+
+
+			ret_code = DfSetParamGenerateBrightness(generate_brightness_model_, generate_brightness_exposure_);
+			if (0 == ret_code)
+			{ 
+				QString str = QString::fromLocal8Bit("设置生成亮度图参数 ");
+				addLogMessage(str);
+			} 
+			do_pushButton_capture_continuous(); 
+		}
+		else
+		{
+			ret_code = DfSetParamGenerateBrightness(generate_brightness_model_, generate_brightness_exposure_);
+
+			if (0 == ret_code)
+			{
+				QString str = QString::fromLocal8Bit("设置生成亮度图参数 ");
+				addLogMessage(str);
+			}
+
+		}
+
+	} 
+	camera_setting_flag_ = false;
 }
 
 //更新多曝光参数
@@ -1761,6 +1849,39 @@ void CameraCaptureGui::do_QRadioButton_toggled_gray_depth(bool state)
 }
 
 
+void CameraCaptureGui::do_QRadioButton_toggled_generate_brightness_default(bool state)
+{
+	if (state)
+	{
+		generate_brightness_model_ = GENERATE_BRIGHTNESS_DEFAULT_;
+		updateGenerateBrightnessParam();
+	}
+}
+
+void CameraCaptureGui::do_QRadioButton_toggled_generate_brightness_illumination(bool state)
+{
+	if (state)
+	{
+		generate_brightness_model_ = GENERATE_BRIGHTNESS_ILLUMINATION_;
+		updateGenerateBrightnessParam();
+	}
+}
+
+void CameraCaptureGui::do_QRadioButton_toggled_generate_brightness_darkness(bool state)
+{
+	if (state)
+	{
+		generate_brightness_model_ = GENERATE_BRIGHTNESS_DARKNESS_;
+		updateGenerateBrightnessParam();
+	}
+}
+
+void CameraCaptureGui::do_spin_generate_brightness_exposure_changed(int val)
+{
+	generate_brightness_exposure_ = val;
+
+	updateGenerateBrightnessParam();
+}
 
 bool CameraCaptureGui::showImage()
 {
