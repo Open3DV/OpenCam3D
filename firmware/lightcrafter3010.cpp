@@ -101,7 +101,7 @@ void LightCrafter3010::enable_solid_field()
     write(Write_Operating_Mode_Select, TxBuffer, 1);
  
     TxBuffer[0] = 0x00;
-    TxBuffer[1] = 0x30;
+    TxBuffer[1] = 0x70;
     TxBuffer[2] = 0x0F;
     TxBuffer[3] = 0x00;
     TxBuffer[4] = 0x0F;
@@ -144,7 +144,7 @@ void LightCrafter3010::enable_checkerboard()
     write(Write_Image_Crop, TxBuffer, 8);
 */
     TxBuffer[0] = 0x87;
-    TxBuffer[1] = 0x30;
+    TxBuffer[1] = 0x70;
     TxBuffer[2] = 0x0F;
     TxBuffer[3] = 0x00;
     TxBuffer[4] = 0x0F;
@@ -288,8 +288,8 @@ void LightCrafter3010::write_pattern_table(unsigned char* pattern_index, int len
     buffer[1] = 0x00;  //Pattern Set Index
 
     buffer[2] = 0x06;  //Number of pattern to display
-    //buffer[3] = 0x07;  //RGB
-    buffer[3] = 0x04;  //RGB
+    // buffer[3] = 0x07;  //RGB
+    buffer[3] = 0x04;  //BLUE
 
     // Pattern Invert
     buffer[4] = 0; 

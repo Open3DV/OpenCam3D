@@ -624,8 +624,8 @@ bool CameraDh::captureSingleImage(char* buffer)
     status = GXStreamOn(hDevice_);
     if (status == GX_STATUS_SUCCESS)
     {
-	status = GXSendCommand(hDevice_, GX_COMMAND_TRIGGER_SOFTWARE);
-        status = GXDQBuf(hDevice_, &pFrameBuffer, 10000);
+	    status = GXSendCommand(hDevice_, GX_COMMAND_TRIGGER_SOFTWARE);
+        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000000);
         if (status == GX_STATUS_SUCCESS)
         {
             if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)

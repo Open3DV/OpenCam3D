@@ -441,7 +441,6 @@ int handle_cmd_get_brightness(int client_sock)
         case 3:
             {
                 //不发光，自定义曝光时间 
-                    // 
                 bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,buffer);
             }
         break;
@@ -2631,7 +2630,7 @@ int handle_commands(int client_sock)
 
 int init()
 {
-    readSystemConfig();
+    // readSystemConfig();
 
     brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
 
