@@ -52,6 +52,10 @@ bool parallel_cuda_unwrap_phase(int serial_flag);
 
 bool parallel_cuda_reconstruct();
 
+bool parallel_cuda_copy_unwrap_phase_from_gpu(int serial_flag,float* unwrap_map);
+
+bool parallel_cuda_copy_unwrap_phase_to_gpu(int serial_flag,float* unwrap_map);
+
 bool parallel_cuda_copy_result_from_gpu(float* depth,unsigned char* brightness);
 
 bool parallel_cuda_copy_pointcloud_from_gpu(float* pointcloud,unsigned char* brightness);

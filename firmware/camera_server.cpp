@@ -1634,6 +1634,38 @@ int handle_cmd_get_param_camera_exposure(int client_sock)
   
 }
 
+//设置补偿参数
+int handle_cmd_set_param_offset(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+
+    float offset = 0;
+
+    int ret = recv_buffer(client_sock, (char*)(&offset), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+ 
+
+    if(offset>= 0)
+    {    
+        camera.setOffsetParam(offset);
+        LOG(INFO)<<"Set Offset: "<<offset<<"\n";
+    }
+    else
+    {
+        LOG(INFO)<<"Set Camera Exposure Time Error!"<<"\n";
+    }
+ 
+  
+    return DF_SUCCESS;
+}
 
 //设置相机曝光参数
 int handle_cmd_set_param_camera_exposure(int client_sock)
@@ -2617,7 +2649,10 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_EXPOSURE_TIME";   
     	handle_cmd_get_param_camera_exposure(client_sock);
 	    break;
-        
+	case DF_CMD_SET_PARAM_OFFSET:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_OFFSET";   
+    	handle_cmd_set_param_offset(client_sock);
+	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
         handle_cmd_unknown(client_sock);

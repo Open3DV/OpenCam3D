@@ -404,6 +404,20 @@ bool parallel_cuda_copy_result_from_gpu(float* depth,unsigned char* brightness)
  
 }
 
+bool parallel_cuda_copy_unwrap_phase_from_gpu(int serial_flag,float* unwrap_map)
+{
+
+	CHECK(cudaMemcpy(unwrap_map, d_unwrap_map_list[serial_flag], 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+	return true;
+}
+
+bool parallel_cuda_copy_unwrap_phase_to_gpu(int serial_flag,float* unwrap_map)
+{
+
+	CHECK(cudaMemcpy(d_unwrap_map_list[serial_flag], unwrap_map,  1 * image_height_*image_width_ * sizeof(float), cudaMemcpyHostToDevice));
+	return true;
+}
+
 
 bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* brightness)
 {

@@ -14,6 +14,7 @@ CameraDh::CameraDh()
     generate_brigntness_model_ = 1;
     generate_brightness_exposure_time_ = 12000;
 
+    phase_compensate_value = 12;
     
     buffer_size_ = 1920*1200;
     brightness_buff_ = new char[buffer_size_];
@@ -178,6 +179,48 @@ bool CameraDh::captureFrame03RepetitionToGpu(int repetition_count)
 //gpu parallel
 
 
+bool CameraDh::compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, float offset_value)
+{
+if (normal_phase.empty() || brightness.empty())
+		return false;
+	 
+	int nr = brightness.rows;
+	int nc = brightness.cols;
+
+	cv::Mat sobel_brightness = brightness.clone();
+	cv::Mat sobel_grad_x, scharr_x;
+ 
+
+	Scharr(sobel_brightness, scharr_x, CV_32F, 1, 0, 1, 0, cv::BORDER_DEFAULT);
+	cv::GaussianBlur(scharr_x, scharr_x, cv::Size(5, 5), 3, 3);
+  
+
+	for (int r = 0; r < nr; r++)
+	{
+		float* ptr_sobel = scharr_x.ptr<float>(r); 
+		float* ptr_phase_map = normal_phase.ptr<float>(r);
+
+		for (int c = 0; c < nc; c++)
+		{
+			if (std::abs(ptr_sobel[c]) < 300)
+			{
+				ptr_sobel[c] = 0;
+			}
+			else
+			{
+				if (ptr_phase_map[c] > 0)
+				{
+					ptr_phase_map[c] -= ptr_sobel[c] * 0.0000001 * offset_value;
+				} 
+			}
+		}
+
+	}
+
+
+	return true;
+}
+
 bool CameraDh::captureFrame04ToGpu()
 {
     switchToScanMode();
@@ -242,7 +285,15 @@ bool CameraDh::captureFrame04ToGpu()
                 {  
                     parallel_cuda_compute_phase(3);
                     parallel_cuda_unwrap_phase(3); 
-                     // cudaDeviceSynchronize();
+                    cudaDeviceSynchronize();
+                    LOG(INFO)<<"start offset";
+                    cv::Mat unwrap_map_x(1200,1920,CV_32FC1,cv::Scalar(0));
+                    cv::Mat brightness_map(1200,1920,CV_8UC1,brightness_buff_);
+                    parallel_cuda_copy_unwrap_phase_from_gpu(0,(float*)unwrap_map_x.data);
+                    compensatePhaseBaseScharr(unwrap_map_x,brightness_map,phase_compensate_value*128);
+                    parallel_cuda_copy_unwrap_phase_to_gpu(0,(float*)unwrap_map_x.data);
+                    
+                    LOG(INFO)<<"finished offset";
                 	generate_pointcloud_base_table();
 
                     switch (generate_brigntness_model_)
