@@ -33,9 +33,13 @@ public:
 	SettingsFileFunction();
 	~SettingsFileFunction();
 
-	void setFirmwareConfigData(struct SystemConfigParam param);
+	void setSystemConfigData(struct SystemConfigParam param);
 
-	void getFirmwareConfigData(struct SystemConfigParam& param);
+	void getSystemConfigData(struct SystemConfigParam& param);
+
+	void setFirmwareConfigData(struct FirmwareConfigParam param);
+
+	void getFirmwareConfigData(struct FirmwareConfigParam& param);
 
 	void setGuiConfigData(struct GuiConfigDataStruct param);
 
@@ -46,6 +50,7 @@ public:
 	bool saveProcessingSettingsFile(QString path);
 
 private:
-	struct SystemConfigDataStruct camera_config_;
+	struct SystemConfigDataStruct camera_config_; 
+	struct FirmwareConfigParam firmware_config_param_;
 	struct  GuiConfigDataStruct gui_config_;
 };

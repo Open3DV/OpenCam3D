@@ -43,6 +43,10 @@ SystemConfigDataStruct::SystemConfigDataStruct()
     instance_.config_param_.standard_plane[3] = 0;
 
     instance_.config_param_.camera_exposure_time = 12000;
+
+
+    instance_.firwmare_param_.generate_brightness_exposure = 12000;
+    instance_.firwmare_param_.generate_brightness_model = 1;
 }
 
 bool SystemConfigDataStruct::loadFromSettings(const std::string& f)

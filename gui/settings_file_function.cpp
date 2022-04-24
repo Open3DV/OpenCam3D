@@ -58,6 +58,9 @@ SettingsFileFunction::SettingsFileFunction()
 	gui_config_.Instance().ip = "";
 	gui_config_.Instance().low_z_value = 300;
 	gui_config_.Instance().high_z_value = 1200;
+
+	firmware_config_param_.generate_brightness_exposure = 12000;
+	firmware_config_param_.generate_brightness_model = 1;
 }
 
 SettingsFileFunction::~SettingsFileFunction()
@@ -145,7 +148,17 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			camera_config_.Instance().config_param_.camera_exposure_time = firmware_Obj.value("camera_exposure_time").toInt();
 		}
 
+		if (firmware_Obj.contains("generate_brightness_model") && firmware_Obj["generate_brightness_model"].isDouble())
+		{
+			qDebug() << "generate_brightness_model is:" << firmware_Obj.value("generate_brightness_model").toInt();
+			camera_config_.Instance().firwmare_param_.generate_brightness_model = firmware_Obj.value("generate_brightness_model").toInt();
+		}
 		
+		if (firmware_Obj.contains("generate_brightness_exposure") && firmware_Obj["generate_brightness_exposure"].isDouble())
+		{
+			qDebug() << "generate_brightness_exposure is:" << firmware_Obj.value("generate_brightness_exposure").toInt();
+			camera_config_.Instance().firwmare_param_.generate_brightness_exposure = firmware_Obj.value("generate_brightness_exposure").toInt();
+		}
 	}
 
 	/******************************************************************************************************************************/
@@ -235,6 +248,10 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 
 	jsonObject_firmware.insert("camera_exposure_time", camera_config_.Instance().config_param_.camera_exposure_time);
 
+
+	jsonObject_firmware.insert("generate_brightness_model", camera_config_.Instance().firwmare_param_.generate_brightness_model);
+	jsonObject_firmware.insert("generate_brightness_exposure", camera_config_.Instance().firwmare_param_.generate_brightness_exposure);
+
 	// 使用QJsonDocument设置该json对象
 	QJsonDocument jsonDoc;
 	rootObject.insert("firmware", jsonObject_firmware);
@@ -274,12 +291,22 @@ void SettingsFileFunction::setGuiConfigData(struct GuiConfigDataStruct param)
 }
 
 
-void SettingsFileFunction::getFirmwareConfigData(struct SystemConfigParam& param)
+void SettingsFileFunction::getFirmwareConfigData(struct FirmwareConfigParam& param)
+{
+	param = camera_config_.Instance().firwmare_param_;
+}
+
+void SettingsFileFunction::setFirmwareConfigData(struct FirmwareConfigParam param)
+{
+	camera_config_.Instance().firwmare_param_ = param;
+}
+
+void SettingsFileFunction::getSystemConfigData(struct SystemConfigParam& param)
 {
 	param = camera_config_.Instance().config_param_;
 }
 
-void SettingsFileFunction::setFirmwareConfigData(struct SystemConfigParam param)
+void SettingsFileFunction::setSystemConfigData(struct SystemConfigParam param)
 {
 	camera_config_.Instance().config_param_ = param;
 }

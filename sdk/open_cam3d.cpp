@@ -1958,7 +1958,7 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 DF_SDK_API int DfSetParamCameraExposure(float exposure)
 {
 
-	if (exposure < 20 || exposure> 1000000)
+	if (exposure < 6000 || exposure> 60000)
 	{
 		std::cout << "exposure param out of range!" << std::endl;
 		return DF_FAILED;
