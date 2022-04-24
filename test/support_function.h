@@ -45,4 +45,6 @@ bool renderErrorMap(cv::Mat err_map, cv::Mat& color_map, cv::Mat& gray_map, floa
 
 bool MergeTextureMap(std::vector<cv::Mat> patterns, cv::Mat& texture_map);
 
+bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, int offset_value);
+
 

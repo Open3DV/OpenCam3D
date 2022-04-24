@@ -207,13 +207,27 @@ bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map)
 	}
 	else
 	{
-		//有颜色 
-		for (int i = 0; i < nc * nr; i++)
+		if (1 == texture_map.channels())
 		{
-			if (point_cloud_buffer[i * 3 + 2] > 0.01)
-				ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << " "
-				<< (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << std::endl;
+			//有颜色 
+			for (int i = 0; i < nc * nr; i++)
+			{
+				if (point_cloud_buffer[i * 3 + 2] > 0.01)
+					ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << " "
+					<< (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << std::endl;
+			}
 		}
+		else if (3 == texture_map.channels())
+		{
+			//有颜色 
+			for (int i = 0; i < nc * nr; i++)
+			{
+				if (point_cloud_buffer[i * 3 + 2] > 0.01)
+					ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << " "
+					<< (int)brightness_buffer[i * 3] << " " << (int)brightness_buffer[i*3+1] << " " << (int)brightness_buffer[i*3+2] << std::endl;
+			}
+		}
+
 	}
 
 
@@ -404,6 +418,50 @@ bool MapToColor(cv::Mat deep_map, cv::Mat& color_map, cv::Mat& grey_map, int low
 
 	return true;
 
+}
+
+
+bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, int offset_value)
+{
+	if (normal_phase.empty() || brightness.empty())
+		return false;
+	 
+	int nr = brightness.rows;
+	int nc = brightness.cols;
+
+	cv::Mat sobel_brightness = brightness.clone();
+	cv::Mat sobel_grad_x, scharr_x;
+
+	//cv::Sobel(sobel_brightness, sobel_grad_x, CV_64F, 1, 0, 1);
+
+	Scharr(sobel_brightness, scharr_x, CV_64F, 1, 0, 1, 0, cv::BORDER_DEFAULT);
+	cv::GaussianBlur(scharr_x, scharr_x, cv::Size(5, 5), 3, 3);
+  
+
+	for (int r = 0; r < nr; r++)
+	{
+		double* ptr_sobel = scharr_x.ptr<double>(r); 
+		double* ptr_phase_map = normal_phase.ptr<double>(r);
+
+		for (int c = 0; c < nc; c++)
+		{
+			if (std::abs(ptr_sobel[c]) < 300)
+			{
+				ptr_sobel[c] = 0;
+			}
+			else
+			{
+				if (ptr_phase_map[c] > 0)
+				{
+					ptr_phase_map[c] -= ptr_sobel[c] * 0.0000001 * offset_value;
+				} 
+			}
+		}
+
+	}
+
+
+	return true;
 }
 
 bool MergeTextureMap(std::vector<cv::Mat> patterns, cv::Mat& texture_map)

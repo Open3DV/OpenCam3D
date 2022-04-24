@@ -749,9 +749,9 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	cv::Mat xL_rotate_y;
 	cv::Mat R1;
 	cv::Mat pattern_mapping;
-	//lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+	lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
 	 
-	lookup_table_machine_.readTable("../", 1200, 1920);
+	//lookup_table_machine_.readTable("../", 1200, 1920);
 
 	 
 	endTime = clock();//¼ÆÊ±½áÊø
@@ -834,6 +834,61 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	encode_machine_.selectMaskBaseConfidence(ver_confidence_map_6, confidence_val, unwrap_mask);
 	encode_machine_.maskMap(unwrap_mask, unwrap_ver);
 
+
+	cv::Mat sobel_brightness = patterns[18].clone();
+
+	cv::Mat color(nr, nc, CV_8UC3, cv::Scalar(0, 0, 0));
+	std::vector<cv::Mat> brightness_channel;
+	brightness_channel.push_back(sobel_brightness);
+	brightness_channel.push_back(sobel_brightness);
+	brightness_channel.push_back(sobel_brightness);
+	cv::merge(brightness_channel, color);
+
+	int offset_value = 40;
+	//compensatePhaseBaseScharr(unwrap_ver, sobel_brightness, offset_value);
+
+
+	cv::Mat sobel_grad_x,scharr_x; 
+	cv::Sobel(sobel_brightness, sobel_grad_x, CV_64F, 1, 0, 1); 
+	Scharr(sobel_brightness, scharr_x, CV_64F, 1, 0, 1, 0, BORDER_DEFAULT);
+	cv::GaussianBlur(scharr_x, scharr_x, cv::Size(5, 5), 3, 3);
+	cv::Mat sobel_threshold; 
+
+	for (int r = 0; r < nr; r++)
+	{
+		double* ptr_sobel = scharr_x.ptr<double>(r);
+		cv::Vec3b* ptr_color = color.ptr<cv::Vec3b>(r);
+		double* ptr_phase_map = unwrap_ver.ptr<double>(r);
+
+		for (int c = 0; c < nc; c++)
+		{
+			if (std::abs(ptr_sobel[c]) < 300)
+			{
+				ptr_sobel[c] = 0;
+			}
+			else
+			{
+				if (ptr_phase_map[c] > 0)
+				{
+					ptr_phase_map[c] -= ptr_sobel[c] * 0.0000001* offset_value;
+				}
+
+				if (ptr_sobel[c] >= 300)
+				{
+					ptr_color[c][0] = 255;
+					ptr_color[c][1] = 0;
+					ptr_color[c][2] = 0;
+				}
+				else if (ptr_sobel[c] <= -300)
+				{
+					ptr_color[c][0] = 0;
+					ptr_color[c][1] = 0;
+					ptr_color[c][2] = 255;
+				}
+			}
+		}
+
+	}
 	 
 	cv::Mat texture_map = patterns[18];
 	cv::Mat undistort_img;
@@ -881,7 +936,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	cv::imwrite(save_depth_tiff, z_map);
 	cv::imwrite(save_brightness_dir, texture_map);
 	cv::imwrite(save_depth_dir, color_map);
-	SavePointToTxt(deep_map_table, save_points_dir, texture_map);
+	SavePointToTxt(deep_map_table, save_points_dir, color);
 
 	std::cout << "pointcloud: " << save_points_dir;
 

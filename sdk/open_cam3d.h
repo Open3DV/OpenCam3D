@@ -184,6 +184,13 @@ extern "C"
 	//输出参数：exposure(相机曝光时间)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetParamCameraExposure(float &exposure);
+
+	//函数名： DfSetParamOffset
+	//功能： 设置补偿参数
+	//输入参数：offset(补偿值)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamOffset(float offset);
 }
 
 

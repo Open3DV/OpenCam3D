@@ -200,13 +200,13 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 
 					/***********************************************************************/
 
-					//if (255 == ptr1[j] || 255 == ptr2[j] || 255 == ptr3[j] || 255 == ptr4[j])
-					//{
-					//	ptr_m[j] = 0;
-					//	ptr_con[j] = 0;
-					//	optr[j] = 0;
-					//}
-					//else
+					if (255 == ptr1[j] || 255 == ptr2[j] || 255 == ptr3[j] || 255 == ptr4[j])
+					{
+						ptr_m[j] = 0;
+						ptr_con[j] = 0;
+						optr[j] = 0;
+					}
+					else
 					{
 						optr[j] = CV_PI + std::atan2(a, b);
 					} 
