@@ -38,6 +38,12 @@ struct FirmwareConfigParam
 	int generate_brightness_model;
 	//生成亮度曝光
 	float generate_brightness_exposure;
+	//混合曝光参数
+	int mixed_exposure_param_list[6];
+	int mixed_led_param_list[6];
+	int mixed_exposure_num;
+	//1:光强融合多曝光模式、2：曝光时间-光强融合多曝光模式
+	int hdr_model;
  
 
 };

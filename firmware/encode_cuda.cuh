@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <vector>
 
+
+void BubbleSort(float  *p, int length, int * ind_diff);
 /***************************************************************************************/
 //用于查找表
 bool generate_pointcloud_base_table();
@@ -63,6 +65,8 @@ bool parallel_cuda_copy_pointcloud_from_gpu(float* pointcloud,unsigned char* bri
 bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* brightness); 
 
 bool parallel_cuda_copy_result_to_hdr(int serial_flag,int brigntness_serial);
+
+__global__ void parallel_cuda_count_sum_pixel(const unsigned char* brightness,uint32_t img_height, uint32_t img_width, float* sum_pixels);
 
 __global__ void parallel_cuda_merge_hdr_6(const float*  depth_map_0,const float*  depth_map_1,const float*  depth_map_2,
 	const float*  depth_map_3,const float*  depth_map_4,const float*  depth_map_5,

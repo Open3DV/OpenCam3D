@@ -47,6 +47,23 @@ SystemConfigDataStruct::SystemConfigDataStruct()
 
     instance_.firwmare_param_.generate_brightness_exposure = 12000;
     instance_.firwmare_param_.generate_brightness_model = 1;
+    instance_.firwmare_param_.mixed_exposure_num = 2;
+    instance_.firwmare_param_.hdr_model = 1;
+
+    instance_.firwmare_param_.mixed_led_param_list[0] = 0;
+    instance_.firwmare_param_.mixed_led_param_list[1] = 1023;
+    instance_.firwmare_param_.mixed_led_param_list[2] = 1023;
+    instance_.firwmare_param_.mixed_led_param_list[3] = 1023;
+    instance_.firwmare_param_.mixed_led_param_list[4] = 1023;
+    instance_.firwmare_param_.mixed_led_param_list[5] = 1023;
+
+    instance_.firwmare_param_.mixed_exposure_param_list[0] = 6000;
+    instance_.firwmare_param_.mixed_exposure_param_list[1] = 12000;
+    instance_.firwmare_param_.mixed_exposure_param_list[2] = 24000;
+    instance_.firwmare_param_.mixed_exposure_param_list[3] = 36000;
+    instance_.firwmare_param_.mixed_exposure_param_list[4] = 48000;
+    instance_.firwmare_param_.mixed_exposure_param_list[5] = 60000;
+
 }
 
 bool SystemConfigDataStruct::loadFromSettings(const std::string& f)

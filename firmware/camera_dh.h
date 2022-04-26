@@ -42,8 +42,12 @@ public:
 
 	bool copyBrightness(char* buffer); 
 	
-	bool setOffsetParam(float offset){
+	void setOffsetParam(float offset){
 		phase_compensate_value = offset;
+	}
+	
+	void getOffsetParam(float &offset){
+		offset = phase_compensate_value;
 	}
 	/********************************************************************/
 	//gpu parallel

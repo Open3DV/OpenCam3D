@@ -780,6 +780,119 @@ int handle_cmd_get_frame_03_more_exposure(int client_sock)
 
 /*******************************************************************************************************************/
 
+int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    LOG(INFO)<<"Mixed HDR Exposure:"; 
+  
+    std::vector<int> led_current_list; 
+    std::vector<int> camera_exposure_list; 
+    
+    for(int i= 0;i< system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num;i++)
+    {
+        led_current_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list[i]);
+        camera_exposure_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
+ 
+    }
+
+    int depth_buf_size = 1920*1200*4;  
+    int brightness_buf_size = 1920*1200*1;
+
+    float* depth_map = new float[depth_buf_size]; 
+    unsigned char* brightness = new unsigned char[brightness_buf_size];
+
+
+//    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
+
+    for(int i= 0;i< led_current_list.size();i++)
+    {
+        int led_current = led_current_list[i];
+        lc3010.SetLedCurrent(led_current,led_current,led_current); 
+        
+        std::cout << "set led: " << led_current << std::endl;
+ 
+        float exposure = camera_exposure_list[i];
+        LOG(INFO)<<"Set Camera Exposure Time: "<<exposure<<"\n";
+
+        if(camera.setScanExposure(exposure))
+        {
+            lc3010.set_camera_exposure(exposure);
+        } 
+
+        lc3010.pattern_mode04();
+    
+        camera.captureFrame04ToGpu();   
+        parallel_cuda_copy_result_to_hdr(i,18); 
+    }
+
+
+    lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
+    LOG(INFO) << "Set Camera Exposure Time: " << system_config_settings_machine_.Instance().config_param_.camera_exposure_time << "\n"; 
+    if (camera.setScanExposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time))
+    {
+        lc3010.set_camera_exposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time);
+    }
+
+    cudaDeviceSynchronize();
+
+
+    parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
+
+    
+    /******************************************************************************/
+    //send data
+    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+    
+    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+    printf("brightness ret=%d\n", ret);
+
+    LOG(INFO)<<"Send Frame03";
+
+    float temperature = read_temperature(0);
+    
+    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+        
+	delete [] depth_map;
+	delete [] brightness;
+	
+	return DF_FAILED;
+    }
+    printf("frame sent!\n");
+    
+    delete [] depth_map;
+    delete [] brightness;
+    
+
+
+    return DF_SUCCESS;
+
+}
+
+
+/********************************************************************************************************************/
+
+/*******************************************************************************************************************/
+
 int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -802,7 +915,7 @@ int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
     unsigned char* brightness = new unsigned char[brightness_buf_size];
 
 
-   std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
+//    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
 
     for(int i= 0;i< led_current_list.size();i++)
     {
@@ -871,7 +984,6 @@ int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
 
 
 /********************************************************************************************************************/
-
 int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -1667,6 +1779,29 @@ int handle_cmd_set_param_offset(int client_sock)
     return DF_SUCCESS;
 }
 
+
+//获取补偿参数
+int handle_cmd_get_param_offset(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	
+    float offset = 0;
+ 
+    camera.getOffsetParam(offset);
+
+    int ret = send_buffer(client_sock, (char*)(&offset), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    } 
+  
+    return DF_SUCCESS;
+}
+
 //设置相机曝光参数
 int handle_cmd_set_param_camera_exposure(int client_sock)
 {
@@ -1686,7 +1821,7 @@ int handle_cmd_set_param_camera_exposure(int client_sock)
     }
  
 
-    if(exposure>= 20 && exposure<= 1000000)
+    if(exposure>= 6000 && exposure<= 60000)
     { 
         system_config_settings_machine_.Instance().config_param_.camera_exposure_time = exposure; 
 
@@ -1770,7 +1905,63 @@ int handle_cmd_set_param_generate_brightness(int client_sock)
     return DF_SUCCESS;
 }
 
+
+//设置混合多曝光参数
+int handle_cmd_set_param_mixed_hdr(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+    int param[13]; 
+
+    int ret = recv_buffer(client_sock, (char*)(&param), sizeof(int)*7);
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    int num = param[0];  
+      //set led current
+    
+        if(0< num && num<= 6)
+        {
+ 
+            system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num = num;
+            memcpy(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list, param+1, sizeof(int) * 6);
+            memcpy(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list, param+7, sizeof(int) * 6);
+            system_config_settings_machine_.Instance().firwmare_param_.hdr_model = 2;
+            return DF_SUCCESS;
+        }
   
+        return DF_FAILED;
+}
+
+//获取混合多曝光参数
+int handle_cmd_get_param_mixed_hdr(int client_sock)
+{
+    if (check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;
+    }
+
+    int param[13];
+    param[0] = system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num;
+
+    memcpy(param + 1, system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list, sizeof(int) * 6);
+    memcpy(param + 7, system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list, sizeof(int) * 6);
+
+    int ret = send_buffer(client_sock, (char *)(&param), sizeof(int) * 13);
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
+    }
+    return DF_SUCCESS;
+}
+
 //设置多曝光参数
 int handle_cmd_set_param_hdr(int client_sock)
 {
@@ -1796,6 +1987,7 @@ int handle_cmd_set_param_hdr(int client_sock)
  
             system_config_settings_machine_.Instance().config_param_.exposure_num = num;
             memcpy(system_config_settings_machine_.Instance().config_param_.exposure_param, param+1, sizeof(int) * 6);
+            system_config_settings_machine_.Instance().firwmare_param_.hdr_model = 1;
             return DF_SUCCESS;
         }
   
@@ -2511,8 +2703,15 @@ int handle_commands(int client_sock)
     case DF_CMD_GET_FRAME_HDR:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_HDR"; 
     	// handle_cmd_get_frame_03_more_exposure(client_sock);
-    	handle_cmd_get_frame_04_hdr_parallel(client_sock);
-	    break;
+        if(1 == system_config_settings_machine_.Instance().firwmare_param_.hdr_model)
+        {
+            handle_cmd_get_frame_04_hdr_parallel(client_sock);
+        }
+        else if (2 == system_config_settings_machine_.Instance().firwmare_param_.hdr_model)
+        {
+            handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(client_sock);
+        } 
+        break;
  
 	case DF_CMD_GET_FRAME_03:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_03";  
@@ -2652,6 +2851,18 @@ int handle_commands(int client_sock)
 	case DF_CMD_SET_PARAM_OFFSET:
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_OFFSET";   
     	handle_cmd_set_param_offset(client_sock);
+	    break;
+	case DF_CMD_GET_PARAM_OFFSET:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_OFFSET";   
+    	handle_cmd_get_param_offset(client_sock);
+	    break;
+	case DF_CMD_SET_PARAM_MIXED_HDR:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_MIXED_HDR";   
+    	handle_cmd_set_param_mixed_hdr(client_sock);
+	    break;
+	case DF_CMD_GET_PARAM_MIXED_HDR:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_MIXED_HDR";   
+    	handle_cmd_get_param_mixed_hdr(client_sock);
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
