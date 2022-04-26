@@ -86,6 +86,9 @@ open_cam3d.exe --set-camera-exposure-param --ip 192.168.x.x --exposure 12000\n\
 24.Get Camera Exposure Param: \n\
 open_cam3d.exe --get-camera-exposure-param --ip 192.168.x.x\n\
 \n\
+25.Set Offset Param: \n\
+open_cam3d.exe --set-offset-param --offset 12 --ip 192.168.x.x\n\
+\n\
 ";
 
 void help_with_version(const char* help);
@@ -110,6 +113,7 @@ int set_generate_brightness_param(const char* ip, int model, float exposure);
 int get_generate_brightness_param(const char* ip, int &model, float &exposure);
 int set_camera_exposure_param(const char* ip, float exposure);
 int get_camera_exposure_param(const char* ip, float &exposure);
+int set_offset_param(const char* ip, float offset);
 int set_calib_looktable(const char* ip, const char* calib_param_path);
 int test_calib_param(const char* ip, const char* result_path);
 int get_temperature(const char* ip);
@@ -156,6 +160,8 @@ enum opt_set
 	EXPOSURE,
 	SET_CAMERA_EXPOSURE,
 	GET_CAMERA_EXPOSURE,
+	SET_OFFSET,
+	OFFSET,
 };
 
 static struct option long_options[] =
@@ -166,6 +172,7 @@ static struct option long_options[] =
 	{"use", required_argument, NULL, USE},
 	{"model", required_argument, NULL, MODEL},
 	{"exposure", required_argument, NULL, EXPOSURE},
+	{"offset", required_argument, NULL, OFFSET},
 	{"get-temperature",no_argument,NULL,GET_TEMPERATURE},
 	{"get-calib-param",no_argument,NULL,GET_CALIB_PARAM},
 	{"set-calib-param",no_argument,NULL,SET_CALIB_PARAM},
@@ -191,6 +198,7 @@ static struct option long_options[] =
 	{"get-generate-brightness-param",no_argument,NULL,GET_GENERATE_BRIGHTNESS},
 	{"set-camera-exposure-param",no_argument,NULL,SET_CAMERA_EXPOSURE},
 	{"get-camera-exposure-param",no_argument,NULL,GET_CAMERA_EXPOSURE},
+	{"set-offset-param",no_argument,NULL,SET_OFFSET},
 };
 
 
@@ -200,6 +208,7 @@ const char* repetition_count;
 const char* use_command;
 const char* c_model;
 const char* c_exposure;
+const char* c_offset;
 int command = HELP;
 
 struct CameraCalibParam calibration_param_;
@@ -230,6 +239,9 @@ int main(int argc, char* argv[])
 			break;
 		case EXPOSURE:
 			c_exposure = optarg;
+			break;
+		case OFFSET:
+			c_offset = optarg;
 			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
@@ -332,6 +344,12 @@ int main(int argc, char* argv[])
 	{
 		float exposure = 0;
 		get_camera_exposure_param(camera_id, exposure);
+	}
+	break;
+	case SET_OFFSET:
+	{
+		float offset = std::atof(c_offset);
+		set_offset_param(camera_id, offset);
 	}
 	break;
 	default:
@@ -950,6 +968,36 @@ int get_camera_exposure_param(const char* ip, float& exposure)
 
 
 	std::cout << "camera exposure: " << exposure << std::endl;
+}
+
+
+int set_offset_param(const char* ip, float offset)
+{
+	if (offset< 0)
+	{
+		std::cout << "offset param out of range!" << std::endl;
+		return 0;
+	}
+
+
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+
+	DfSetParamOffset(offset);
+
+
+	DfDisconnectNet();
+
+
+	std::cout << "offset: " << offset << std::endl;
+
+	return 1;
 }
 
 int set_camera_exposure_param(const char* ip, float exposure)
