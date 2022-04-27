@@ -1916,7 +1916,7 @@ int handle_cmd_set_param_mixed_hdr(int client_sock)
 	  
     int param[13]; 
 
-    int ret = recv_buffer(client_sock, (char*)(&param), sizeof(int)*7);
+    int ret = recv_buffer(client_sock, (char*)(&param), sizeof(int)*13);
     if(ret == DF_FAILED)
     {
         LOG(INFO)<<"send error, close this connection!\n";
