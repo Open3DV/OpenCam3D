@@ -119,7 +119,7 @@ private slots:
 
 	void do_QRadioButton_toggled_generate_brightness_darkness(bool state);
 
-	void add_exposure_item(int row,int col,int val);
+	void add_exposure_item(int row,int exposure,int led);
 
 	bool remove_exposure_item(int row);  
 
@@ -165,6 +165,7 @@ private:
 
 	//6¸öexposureÊäÈë¿ò
 	std::vector<QSpinBox*> exposure_time_list_;
+	std::vector<QSpinBox*> led_current_list_;
 
 	int radio_button_flag_;
 

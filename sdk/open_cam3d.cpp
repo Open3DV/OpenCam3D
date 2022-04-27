@@ -1950,6 +1950,47 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 }
 
 /*****************************************************************************************************/
+	//函数名： DfGetParamOffset
+	//功能： 获取补偿参数
+	//输入参数：无
+	//输出参数：offset(补偿值)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamOffset(float& offset)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_OFFSET, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = recv_buffer((char*)(&offset), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
 
 	//函数名： DfSetParamOffset
 	//功能： 设置补偿参数
@@ -2299,6 +2340,103 @@ DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T)
 	return DF_SUCCESS;
 }
 
+//函数名： DfSetParamMixedHdr
+//功能： 设置混合多曝光参数（最大曝光次数为6次）
+//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfSetParamMixedHdr(int num, int exposure_param[6], int led_param[6])
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_MIXED_HDR, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		int param[13];
+		param[0] = num;
+
+		memcpy(param + 1, exposure_param, sizeof(int) * 6);
+		memcpy(param + 7, led_param, sizeof(int) * 6);
+
+		ret = send_buffer((char*)(param), sizeof(int) * 13, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamMixedHdr
+//功能： 获取混合多曝光参数（最大曝光次数为6次）
+//输入参数： 无
+//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfGetParamMixedHdr(int& num, int exposure_param[6], int led_param[6])
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_MIXED_HDR, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		int param[13]; 
+
+		ret = recv_buffer((char*)(param), sizeof(int) * 13, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+
+		memcpy(exposure_param, param + 1, sizeof(int) * 6);
+		memcpy(led_param, param + 7, sizeof(int) * 6);
+		num = param[0];
+
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
 //函数名： DfSetParamHdr
 //功能： 设置多曝光参数（最大曝光次数为6次）
 //输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
@@ -2365,8 +2503,7 @@ DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-		int param[7];
-		param[0] = num;
+		int param[7]; 
 		 
 		ret = recv_buffer((char*)(param), sizeof(int) * 7, g_sock);
 		if (ret == DF_FAILED)

@@ -21,9 +21,9 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	connected_flag_ = false; 
 
 	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
 	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+	//ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 	ui.tableWidget_more_exposure->setEditTriggers(QAbstractItemView::NoEditTriggers); //设置不可编辑
 	ui.tableWidget_more_exposure->setFrameShape(QFrame::Box);
 
@@ -111,7 +111,7 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.spinBox_camera_exposure_define, SIGNAL(valueChanged(int)), this, SLOT(do_spin_generate_brightness_exposure_changed(int)));
 
 	min_depth_value_ = 300;
-	max_depth_value_ = 1200;
+	max_depth_value_ = 1600;
 
 	capture_show_flag_ = false;
 	capturing_flag_ = false;
@@ -307,7 +307,7 @@ void CameraCaptureGui::undateSystemConfigUiData()
 {
 	ui.spinBox_led->setValue(system_config_param_.led_current);
 
-	ui.spinBox_exposure_num->setValue(system_config_param_.exposure_num);
+	ui.spinBox_exposure_num->setValue(firmware_config_param_.mixed_exposure_num);
 
 	ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
 
@@ -343,6 +343,7 @@ void CameraCaptureGui::setUiData()
 	ui.spinBox_max_z->setValue(processing_gui_settings_data_.Instance().high_z_value);
 	ui.lineEdit_ip->setText(processing_gui_settings_data_.Instance().ip);
 
+	ui.checkBox_hdr->setChecked(processing_gui_settings_data_.Instance().use_hdr_model);
 	//ui.spinBox_exposure_num->setDisabled(true);
 	//ui.spinBox_led->setDisabled(true);
 }
@@ -373,7 +374,7 @@ bool CameraCaptureGui::remove_exposure_item(int row)
 
  
 
-void CameraCaptureGui::add_exposure_item(int row, int col, int val)
+void CameraCaptureGui::add_exposure_item(int row, int exposure, int led)
 {
   
 
@@ -384,21 +385,29 @@ void CameraCaptureGui::add_exposure_item(int row, int col, int val)
 		ui.tableWidget_more_exposure->setRowCount(item_count + 1); 
 	}
  
-	QSpinBox* upperSpinBoxItem = new QSpinBox();
-	upperSpinBoxItem->setRange(0, 1023);//设置数值显示范围
-	upperSpinBoxItem->setValue(val);
-	upperSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
-	upperSpinBoxItem->setAlignment(Qt::AlignHCenter);
+	QSpinBox* exposureSpinBoxItem = new QSpinBox();
+	exposureSpinBoxItem->setRange(6000, 60000);//设置数值显示范围
+	exposureSpinBoxItem->setValue(exposure);
+	exposureSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	exposureSpinBoxItem->setAlignment(Qt::AlignHCenter);
 
 
-	ui.tableWidget_more_exposure->setItem(row, 0 + 2* col, new QTableWidgetItem(QString::number(2*row + col + 1)));
-	ui.tableWidget_more_exposure->setCellWidget(row, 1 + 2 * col, upperSpinBoxItem);//i为所在行，j+2为所在列
+	QSpinBox* ledSpinBoxItem = new QSpinBox();
+	ledSpinBoxItem->setRange(0, 1023);//设置数值显示范围
+	ledSpinBoxItem->setValue(led);
+	ledSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	ledSpinBoxItem->setAlignment(Qt::AlignHCenter);
+
+	ui.tableWidget_more_exposure->setItem(row, 0, new QTableWidgetItem(QString::number(row+1)));
+	ui.tableWidget_more_exposure->setCellWidget(row, 1 , exposureSpinBoxItem); 
+	ui.tableWidget_more_exposure->setCellWidget(row, 2, ledSpinBoxItem);
 	 
-	ui.tableWidget_more_exposure->setColumnWidth(2 * col,10);
-	ui.tableWidget_more_exposure->item(row, +2 * col)->setTextAlignment(Qt::AlignHCenter | Qt::AlignCenter);
-	ui.tableWidget_more_exposure->item(row, +2 * col)->setSelected(false);
+	//ui.tableWidget_more_exposure->setColumnWidth(2 * col,10);
+	//ui.tableWidget_more_exposure->item(row, +2 * col)->setTextAlignment(Qt::AlignHCenter | Qt::AlignCenter);
+	//ui.tableWidget_more_exposure->item(row, +2 * col)->setSelected(false);
 
-	exposure_time_list_.push_back(upperSpinBoxItem);
+	exposure_time_list_.push_back(exposureSpinBoxItem);
+	led_current_list_.push_back(ledSpinBoxItem);
 
 }
 
@@ -534,14 +543,14 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 
 bool CameraCaptureGui::manyExposureParamHasChanged()
 {
-	if (system_config_param_.exposure_num != ui.spinBox_exposure_num->value())
+	if (firmware_config_param_.mixed_exposure_num != ui.spinBox_exposure_num->value())
 	{
 		return true;
 	}
 
 	for (int i = 0; i < exposure_time_list_.size(); i++)
 	{
-		if (system_config_param_.exposure_param[i] != exposure_time_list_[i]->value())
+		if (firmware_config_param_.mixed_exposure_param_list[i] != exposure_time_list_[i]->value() || firmware_config_param_.mixed_led_param_list[i] != led_current_list_[i]->value())
 		{
 			return true;
 		}
@@ -705,13 +714,14 @@ void CameraCaptureGui::updateManyExposureParam()
 {
 	for (int i = 0; i < exposure_time_list_.size(); i++)
 	{
-		system_config_param_.exposure_param[i] = exposure_time_list_[i]->value();
+		firmware_config_param_.mixed_exposure_param_list[i] = exposure_time_list_[i]->value();
+		firmware_config_param_.mixed_led_param_list[i] = led_current_list_[i]->value(); 
 	}
 
-	system_config_param_.exposure_num = exposure_time_list_.size();
+	firmware_config_param_.mixed_exposure_num = exposure_time_list_.size();
 
 
-	int ret_code = DfSetSystemConfigParam(system_config_param_);
+	int ret_code = DfSetParamMixedHdr(firmware_config_param_.mixed_exposure_num, firmware_config_param_.mixed_exposure_param_list, firmware_config_param_.mixed_led_param_list);
 	if (0 != ret_code)
 	{
 		qDebug() << "Get Param Error;";
@@ -734,10 +744,7 @@ void CameraCaptureGui::updateManyExposureParam()
 
 void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 {
-  
-	 
-	int item_rows = (val + 1) / 2;
-
+   
 	int item_num = ui.tableWidget_more_exposure->rowCount();
 
 
@@ -745,40 +752,35 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 	{
 		remove_exposure_item(row);
 	}
-	 
-	std::vector<int> old_led_list;
-	  
 
+	std::vector<int> old_exposure_list;
+	std::vector<int> old_led_list;
+	   
 	std::vector<QSpinBox*> old_exposure_time_list = exposure_time_list_;
+	std::vector<QSpinBox*> old_led_current_list = led_current_list_;
 
 
 	for (int i = 0; i < exposure_time_list_.size(); i++)
 	{
-		old_led_list.push_back(exposure_time_list_.at(i)->value());
-		//qDebug()<<"old "<<i<<": "<< old_led_list[i];
+		old_exposure_list.push_back(exposure_time_list_.at(i)->value());
+		old_led_list.push_back(led_current_list_.at(i)->value()); 
 	}
 	 
 
 	exposure_time_list_.clear();
-	 
+	led_current_list_.clear();
 
 	for (int i = 0; i < val; i++)
 	{
-		int rows = i / 2;
-		int cols = i % 2;
+		int rows = i;
+		int cols = 0;
 
 		//int led_val = system_config_param_.led_current;
-		int led_val = system_config_param_.exposure_param[i];
+		int exposure_val = firmware_config_param_.mixed_exposure_param_list[i];
+		int led_val = firmware_config_param_.mixed_led_param_list[i];
 		 
-		//if (i < old_exposure_time_list.size())
-		//{
-		//	//led_val = old_exposure_time_list.at(i)->value();
-		//	//qDebug()<<i<< " led_val: " << led_val;
-
-		//	led_val = system_config_param_.exposure_param[i];
-		//}
-
-		add_exposure_item(rows, cols, led_val);
+ 
+		add_exposure_item(rows, exposure_val, led_val);
 	}
 
 	//qDebug() << "exposure_time_list size: " << exposure_time_list_.size();
@@ -1786,7 +1788,7 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 
 void CameraCaptureGui::do_checkBox_toggled_hdr(bool state)
 {
-
+	processing_gui_settings_data_.Instance().use_hdr_model = state;
 	if (connected_flag_)
 	{
 		if (state)

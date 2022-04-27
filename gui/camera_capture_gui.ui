@@ -233,9 +233,9 @@
             <property name="geometry">
              <rect>
               <x>0</x>
-              <y>0</y>
-              <width>458</width>
-              <height>734</height>
+              <y>-47</y>
+              <width>437</width>
+              <height>844</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -494,10 +494,16 @@
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>255</height>
+                  </size>
+                 </property>
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
-                   <height>132</height>
+                   <height>16777215</height>
                   </size>
                  </property>
                  <property name="font">
@@ -513,13 +519,16 @@
                   <enum>Qt::ScrollBarAlwaysOff</enum>
                  </property>
                  <property name="alternatingRowColors">
-                  <bool>false</bool>
+                  <bool>true</bool>
                  </property>
                  <property name="rowCount">
                   <number>0</number>
                  </property>
+                 <property name="columnCount">
+                  <number>3</number>
+                 </property>
                  <attribute name="horizontalHeaderVisible">
-                  <bool>false</bool>
+                  <bool>true</bool>
                  </attribute>
                  <attribute name="horizontalHeaderCascadingSectionResizes">
                   <bool>false</bool>
@@ -546,7 +555,7 @@
                  </column>
                  <column>
                   <property name="text">
-                   <string>亮度</string>
+                   <string>曝光时间</string>
                   </property>
                   <property name="textAlignment">
                    <set>AlignCenter</set>
@@ -554,15 +563,7 @@
                  </column>
                  <column>
                   <property name="text">
-                   <string>组号</string>
-                  </property>
-                  <property name="textAlignment">
-                   <set>AlignCenter</set>
-                  </property>
-                 </column>
-                 <column>
-                  <property name="text">
-                   <string>亮度</string>
+                   <string>投影亮度</string>
                   </property>
                   <property name="textAlignment">
                    <set>AlignCenter</set>

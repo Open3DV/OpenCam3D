@@ -11,6 +11,7 @@ struct  GuiConfigDataStruct
 	int high_z_value;
 
 	QString ip;
+	bool use_hdr_model;
 	
   
 	bool loadFromSettings(const QString& f);
