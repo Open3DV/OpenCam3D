@@ -111,7 +111,7 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.spinBox_camera_exposure_define, SIGNAL(valueChanged(int)), this, SLOT(do_spin_generate_brightness_exposure_changed(int)));
 
 	min_depth_value_ = 300;
-	max_depth_value_ = 1600;
+	max_depth_value_ = 3000;
 
 	capture_show_flag_ = false;
 	capturing_flag_ = false;
@@ -119,6 +119,9 @@ bool CameraCaptureGui::initializeFunction()
 
 	generate_brightness_model_ = GENERATE_BRIGHTNESS_DEFAULT_;
 	generate_brightness_exposure_ = 12000;
+
+	board_size_.width = 40.0;
+	board_size_.height = 20.0;
 	/**********************************************************************************************************************/
 
 
@@ -1214,7 +1217,7 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		cv::Mat pc1(point_3d.size(), 3, CV_64F, cv::Scalar(0));
 		cv::Mat pc2(point_3d.size(), 3, CV_64F, cv::Scalar(0));
 
-		std::vector<cv::Point3f> world_points = calib_function.generateAsymmetricWorldFeature(20, 10);
+		std::vector<cv::Point3f> world_points = calib_function.generateAsymmetricWorldFeature(board_size_.width, board_size_.height);
 
 		for (int r = 0; r < point_3d.size(); r++)
 		{
@@ -1314,7 +1317,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 		if (found)
 		{
 			Calibrate_Function calib_machine;
-			std::vector<cv::Point3f> objects = calib_machine.generateAsymmetricWorldFeature(20.0, 10.0);
+			std::vector<cv::Point3f> objects = calib_machine.generateAsymmetricWorldFeature(board_size_.width, board_size_.height);
 
 			cv::Mat raux, taux;
 			std::vector<cv::Point2f> image_points_pro;
@@ -1466,7 +1469,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 		cv::Mat pc1(point_3d.size(), 3, CV_64F, cv::Scalar(0));
 		cv::Mat pc2(point_3d.size(), 3, CV_64F, cv::Scalar(0));
 
-		std::vector<cv::Point3f> world_points = calib_function.generateAsymmetricWorldFeature(20, 10);
+		std::vector<cv::Point3f> world_points = calib_function.generateAsymmetricWorldFeature(board_size_.width, board_size_.height);
 
 		for (int r = 0; r < point_3d.size(); r++)
 		{

@@ -6,8 +6,8 @@
 
 DF_Reconstruct::DF_Reconstruct()
 {
-	dlp_width_ = 1280;
-	dlp_height_ = 720;
+	dlp_width_ = 1920;
+	dlp_height_ = 1080;
 
 
 	//calib_path_ = "./param.txt";

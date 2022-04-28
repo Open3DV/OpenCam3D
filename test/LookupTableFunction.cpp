@@ -9,7 +9,7 @@ LookupTableFunction::LookupTableFunction()
 	image_size_.height = 1200;
 
 	min_low_z_ = 300;
-	max_max_z_ = 1500;
+	max_max_z_ = 3000;
 }
 
 
@@ -846,7 +846,7 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 
 		for (int Xc = 0; Xc < nc; Xc++) {
 			//����Xp��������
-			double Xp = 1280 * ptr_x[Xc] / phase_max;
+			double Xp = 1920 * ptr_x[Xc] / phase_max;
 			//��Ҫ��mask������������Ƿ���Ҫ
 			if (ptr_m[Xc] == 255) {
 				//������ȣ���Ҫ�õ�����ĵ�����꣬����λ�õ���Xp���꣬������������ֵ����ľ����Ӳ�����õ���b

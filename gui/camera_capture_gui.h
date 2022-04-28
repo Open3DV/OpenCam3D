@@ -213,4 +213,6 @@ private:
 	//生成亮度图模式
 	int generate_brightness_model_;
 	float generate_brightness_exposure_;
+
+	cv::Size2f board_size_;
 };
