@@ -65,8 +65,8 @@ float* d_projector_distortion_;
 float* d_rotation_matrix_;
 float* d_translation_matrix_;
 
-__device__ int d_dlp_width_ = 1280;
-__device__ int d_dlp_height_ = 720;
+__device__ int d_dlp_width_ = 1920;
+__device__ int d_dlp_height_ = 1080;
 __device__ float d_max_phase_ = 2* 3.1415926535;
 
 bool load_calib_data_flag_ = false;
@@ -2134,7 +2134,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 	{
 		/****************************************************************************/
 		//phase to position
-		float Xp = phase_x[serial_id] * 1280.0 / (128.0*2*DF_PI); 
+		float Xp = phase_x[serial_id] * 1920.0 / (128.0*2*DF_PI); 
   
     	float Xcr = bilinear_interpolation(idx, idy,1920, xL_rotate_x);
         float Ycr = bilinear_interpolation(idx, idy, 1920,xL_rotate_y);
@@ -2147,7 +2147,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 		float Z_L = Z * Xcr * R_1[6] + Z * Ycr * R_1[7] + Z * R_1[8];
  
   
-		if(confidence_map[serial_id] > 10 && Z_L > 100 && Z_L< 2000)
+		if(confidence_map[serial_id] > 10 && Z_L > 100 && Z_L< 3000)
 		{
 		    pointcloud[3 * serial_id + 0] = X_L;
 		    pointcloud[3 * serial_id + 1] = Y_L;
