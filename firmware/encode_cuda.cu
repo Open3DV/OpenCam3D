@@ -2147,7 +2147,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 		float Z_L = Z * Xcr * R_1[6] + Z * Ycr * R_1[7] + Z * R_1[8];
  
   
-		if(confidence_map[serial_id] > 10 && Z_L > 100 && Z_L< 3000)
+		if(confidence_map[serial_id] > 10 && Z_L > 100 && Z_L< 3000 && Xp > 0)
 		{
 		    pointcloud[3 * serial_id + 0] = X_L;
 		    pointcloud[3 * serial_id + 1] = Y_L;
