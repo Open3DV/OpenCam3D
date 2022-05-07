@@ -25,6 +25,10 @@
 
 INITIALIZE_EASYLOGGINGPP 
 
+
+#define DFX_800 800
+#define DFX_1800 1800
+
 std::random_device rd;
 std::mt19937 rand_num(rd());
 bool connected = false;
@@ -50,6 +54,32 @@ bool readSystemConfig()
 bool saveSystemConfig()
 {
     return system_config_settings_machine_.saveToSettings("../system_config.ini");
+}
+
+bool set_camera_version(int version)
+{
+    switch (version)
+    {
+    case DFX_800:
+    {
+        cuda_set_camera_version(DFX_800);
+        return true;
+    }
+    break;
+
+    case DFX_1800:
+    {
+
+        cuda_set_camera_version(DFX_1800);
+        return true;
+    }
+    break;
+
+    default:
+        break;
+    }
+
+    return false;
 }
 
 int heartbeat_check()
@@ -2931,6 +2961,9 @@ int init()
 
     float temperature_val = read_temperature(0); 
     LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
+
+    set_camera_version(DFX_800);
+    LOG(INFO)<<"camera version: "<<DFX_800;
 
     return DF_SUCCESS;
 }

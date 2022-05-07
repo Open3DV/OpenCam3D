@@ -9,6 +9,9 @@
 #include <vector>  
 #include "easylogging++.h"
 
+#define DFX_800 800
+#define DFX_1800 1800
+
 int patterns_count_ = 36;
 int wrap_count_ = 8;
 int unwrap_count_ = 2;
@@ -102,6 +105,50 @@ dim3 blocksPerGrid((image_width_ + threadsPerBlock.x - 1) / threadsPerBlock.x,
       exit(1);\
   }\
 }
+
+
+bool cuda_set_camera_version(int version)
+{
+    switch (version)
+    {
+    case DFX_800:
+    {
+		int dlp_width = 1280;
+		int dlp_height = 720;
+		cudaMemcpyToSymbol(d_dlp_width_, &dlp_width, sizeof(int));
+		cudaMemcpyToSymbol(d_dlp_height_, &dlp_height, sizeof(int));
+  
+		int camera_width = 1920;
+		int camera_height = 1200;
+		cudaMemcpyToSymbol(d_image_width_, &camera_width, sizeof(int));
+		cudaMemcpyToSymbol(d_image_height_, &camera_height, sizeof(int));
+
+        return true;
+    }
+    break;
+
+    case DFX_1800:
+    {
+		int dlp_width = 1920;
+		int dlp_height = 1080;
+		cudaMemcpyToSymbol(d_dlp_width_, &dlp_width, sizeof(int));
+		cudaMemcpyToSymbol(d_dlp_height_, &dlp_height, sizeof(int));
+
+		int camera_width = 1920;
+		int camera_height = 1200;
+		cudaMemcpyToSymbol(d_image_width_, &camera_width, sizeof(int));
+		cudaMemcpyToSymbol(d_image_height_, &camera_height, sizeof(int));
+        return true;
+    }
+    break;
+
+    default:
+        break;
+    }
+
+	return false;
+}
+
 
 /***********************************************************************************************************************************************/
 
@@ -2049,7 +2096,7 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 		triangulation(x_norm_L, y_norm_L, x_norm_R, y_norm_R, rotation_matrix, translation_matrix,
 			X_L, Y_L, Z_L, X_R, Y_R, Z_R, error);
-		if(confidence_map[serial_id] > 10 && error< 3.0)	
+		if(confidence_map[serial_id] > 10 && error< 3.0 && dlp_x > 0 && dlp_y > 0)	
 		//if(confidence_map[serial_id] > 10 && error< 0.5 && dlp_x> 0.0 && dlp_y > 0.0)
 		{
 		    d_out_point_cloud_map[3 * serial_id + 0] = X_L;
@@ -2134,7 +2181,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 	{
 		/****************************************************************************/
 		//phase to position
-		float Xp = phase_x[serial_id] * 1920.0 / (128.0*2*DF_PI); 
+		float Xp = phase_x[serial_id] * d_dlp_width_ / (128.0*2*DF_PI); 
   
     	float Xcr = bilinear_interpolation(idx, idy,1920, xL_rotate_x);
         float Ycr = bilinear_interpolation(idx, idy, 1920,xL_rotate_y);

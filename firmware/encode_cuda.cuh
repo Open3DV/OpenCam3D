@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <vector>
 
+bool cuda_set_camera_version(int version);
 
 void BubbleSort(float  *p, int length, int * ind_diff);
 /***************************************************************************************/

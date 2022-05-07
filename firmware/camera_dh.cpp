@@ -14,7 +14,7 @@ CameraDh::CameraDh()
     generate_brigntness_model_ = 1;
     generate_brightness_exposure_time_ = 12000;
 
-    phase_compensate_value = 12;
+    phase_compensate_value = 0;
     
     buffer_size_ = 1920*1200;
     brightness_buff_ = new char[buffer_size_];
@@ -286,15 +286,19 @@ bool CameraDh::captureFrame04ToGpu()
                     parallel_cuda_compute_phase(3);
                     parallel_cuda_unwrap_phase(3); 
                     cudaDeviceSynchronize();
-                    LOG(INFO)<<"start offset";
-                    cv::Mat unwrap_map_x(1200,1920,CV_32FC1,cv::Scalar(0));
-                    cv::Mat brightness_map(1200,1920,CV_8UC1,brightness_buff_);
-                    parallel_cuda_copy_unwrap_phase_from_gpu(0,(float*)unwrap_map_x.data);
-                    compensatePhaseBaseScharr(unwrap_map_x,brightness_map,phase_compensate_value*128);
-                    parallel_cuda_copy_unwrap_phase_to_gpu(0,(float*)unwrap_map_x.data);
-                    
-                    LOG(INFO)<<"finished offset";
-                	generate_pointcloud_base_table();
+
+                    if (phase_compensate_value != 0)
+                    {
+                        LOG(INFO) << "start offset";
+                        cv::Mat unwrap_map_x(1200, 1920, CV_32FC1, cv::Scalar(0));
+                        cv::Mat brightness_map(1200, 1920, CV_8UC1, brightness_buff_);
+                        parallel_cuda_copy_unwrap_phase_from_gpu(0, (float *)unwrap_map_x.data);
+                        compensatePhaseBaseScharr(unwrap_map_x, brightness_map, phase_compensate_value * 128);
+                        parallel_cuda_copy_unwrap_phase_to_gpu(0, (float *)unwrap_map_x.data); 
+                        LOG(INFO) << "finished offset";
+                    }
+
+                    generate_pointcloud_base_table();
 
                     switch (generate_brigntness_model_)
                     { 
