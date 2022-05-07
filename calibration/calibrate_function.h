@@ -59,6 +59,8 @@ public:
 
 	std::vector<cv::Point3f> generateSymmetricWorldFeature(float width, float height);
 
+	void setBoardMessage(int rows, int cols, int width, int height);
+
 private:
 
 	cv::Size board_size_;

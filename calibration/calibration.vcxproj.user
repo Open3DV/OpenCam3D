@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--calibrate --patterns .\capture\calib\ --calib .\capture\param.txt</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--calibrate --patterns .\capture\calib\ --calib .\capture\param.txt --version DFX800 --board 20</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>--patterns ../Release/capture/calib/ --calib ../Release/capture/param.txt</LocalDebuggerCommandArguments>

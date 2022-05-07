@@ -21,6 +21,15 @@ Calibrate_Function::~Calibrate_Function()
 }
 
 
+void Calibrate_Function::setBoardMessage(int rows, int cols, int width, int height)
+{
+	board_size_.width = cols;
+	board_size_.height = rows;
+
+	board_width_ = width;
+	board_height_ = height;
+}
+
 double Calibrate_Function::computeLineError(std::vector<cv::Point2f> points, double max_err)
 {
 	double err = 0;
