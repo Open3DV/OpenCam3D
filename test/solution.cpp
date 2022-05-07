@@ -14,6 +14,43 @@
 #include "LookupTableFunction.h"
 //#include "../cmd/getopt.h" 
 /**************************************************************************/
+
+DfSolution::DfSolution()
+{
+	camera_version_ = 800;
+}
+
+DfSolution::~DfSolution()
+{
+
+}
+
+
+bool DfSolution::setCameraVersion(int version)
+{
+	camera_version_ = version;
+
+	switch (version)
+	{
+	case DFX_800:
+	{  
+		return true;
+	}
+	break;
+
+	case DFX_1800:
+	{  
+		return true;
+	}
+	break;
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
 int on_dropped_solution(void* param)
 {
 	std::cout << "Network dropped!" << std::endl;
@@ -744,6 +781,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	LookupTableFunction lookup_table_machine_;
 	//LookupTableFunction lookup_table_machine;
 	lookup_table_machine_.setCalibData(calib_param);
+	lookup_table_machine_.setCameraVersion(camera_version_);
 
 	cv::Mat xL_rotate_x;
 	cv::Mat xL_rotate_y;
@@ -1072,6 +1110,7 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 
 	DF_Reconstruct reconstruct_machine_;
 	reconstruct_machine_.setCalibData(calib_param);
+	reconstruct_machine_.setCameraVersion(camera_version_);
 	 
 	cv::Mat err_map;
 

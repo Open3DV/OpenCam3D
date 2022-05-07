@@ -20,6 +20,9 @@ class DfSolution
 
 public:
 
+	DfSolution();
+	~DfSolution();
+
 	bool reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param,std::string pointcloud_path = "./");
 
 	bool reconstructMixedVariableWavelengthXPatternsBaseTable(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path = "./");
@@ -44,8 +47,10 @@ public:
 
 	bool readImages(std::string dir, std::vector<cv::Mat>& patterns);
 
+	bool setCameraVersion(int version);
  
-
+private:
+	int camera_version_;
 
 };
 

@@ -1,6 +1,7 @@
 #include "LookupTableFunction.h"
 #include "iostream"
 #include <fstream>
+#include "../firmware/protocol.h"
 //#include "FileIoFunction.h" 
 
 LookupTableFunction::LookupTableFunction()
@@ -10,6 +11,9 @@ LookupTableFunction::LookupTableFunction()
 
 	min_low_z_ = 300;
 	max_max_z_ = 3000;
+
+	dlp_width_ = 1920;
+	dlp_height_ = 1080;
 }
 
 
@@ -17,6 +21,44 @@ LookupTableFunction::~LookupTableFunction()
 {
 }
 
+bool LookupTableFunction::setCameraVersion(int version)
+{
+
+	switch (version)
+	{
+	case DFX_800:
+	{
+		dlp_width_ = 1280;
+		dlp_height_ = 720;
+
+		min_low_z_ = 100;
+		max_max_z_ = 2000;
+
+		return true;
+	}
+	break;
+
+	case DFX_1800:
+	{
+
+		dlp_width_ = 1920;
+		dlp_height_ = 1080;
+
+		min_low_z_ = 300;
+		max_max_z_ = 3000;
+
+		return true;
+	}
+	break;
+
+	default:
+		break;
+	}
+
+	return false;
+
+
+}
 
 /*******************************************************************************************************/
 
@@ -846,9 +888,9 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 
 		for (int Xc = 0; Xc < nc; Xc++) {
 			//����Xp��������
-			double Xp = 1920 * ptr_x[Xc] / phase_max;
+			double Xp = dlp_width_ * ptr_x[Xc] / phase_max;
 			//��Ҫ��mask������������Ƿ���Ҫ
-			if (ptr_m[Xc] == 255) {
+			if (ptr_m[Xc] == 255 && Xp > 0) {
 				//������ȣ���Ҫ�õ�����ĵ�����꣬����λ�õ���Xp���꣬������������ֵ����ľ����Ӳ�����õ���b
 				ptr_d[Xc] = depth_per_point_6patterns_combine(Xc, Yc, Xp, xL_rotate_x, xL_rotate_y, single_pattern_mapping, b);
 			}

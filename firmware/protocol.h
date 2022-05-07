@@ -4,6 +4,8 @@
 #include "camera_param.h"
 
 #define DF_PORT 8080
+#define DFX_800 800
+#define DFX_1800 1800
 
 #define DF_CMD_CONNECT 10000001
 #define DF_CMD_DISCONNECT 10000002

@@ -26,9 +26,6 @@
 INITIALIZE_EASYLOGGINGPP 
 
 
-#define DFX_800 800
-#define DFX_1800 1800
-
 std::random_device rd;
 std::mt19937 rand_num(rd());
 bool connected = false;

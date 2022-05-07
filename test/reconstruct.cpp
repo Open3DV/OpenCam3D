@@ -3,6 +3,7 @@
 #include <fstream>
 #include "triangulation.h"
 #include <opencv2/imgcodecs.hpp>
+#include "../firmware/protocol.h"
 
 DF_Reconstruct::DF_Reconstruct()
 {
@@ -37,8 +38,42 @@ DF_Reconstruct::DF_Reconstruct()
 
 DF_Reconstruct::~DF_Reconstruct()
 {
+	
 }
 
+
+bool DF_Reconstruct::setCameraVersion(int version)
+{
+
+	switch (version)
+	{
+	case DFX_800:
+	{
+		dlp_width_ = 1280;
+		dlp_height_ = 720;
+
+		return true;
+	}
+	break;
+
+	case DFX_1800:
+	{
+
+		dlp_width_ = 1920;
+		dlp_height_ = 1080;
+
+		return true;
+	}
+	break;
+
+	default:
+		break;
+	}
+
+	return false;
+
+
+}
 
 bool DF_Reconstruct::setCalibData(CameraCalibParam param)
 {

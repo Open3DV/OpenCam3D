@@ -62,6 +62,8 @@ public:
 	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping); 
 
 	bool readTableFloat(std::string dir_path,cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+
+	bool setCameraVersion(int version);
 private:
 	void normalizePoint(
 		double x, double y,
@@ -90,5 +92,9 @@ private:
 	cv::Mat rotation_matrix_;
 	cv::Mat translation_matrix_;
 	double value_b_;
+
+	float dlp_width_;
+	float dlp_height_;
+
 };
 

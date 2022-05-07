@@ -8,9 +8,8 @@
 #include <stdint.h>
 #include <vector>  
 #include "easylogging++.h"
+#include "protocol.h"
 
-#define DFX_800 800
-#define DFX_1800 1800
 
 int patterns_count_ = 36;
 int wrap_count_ = 8;
