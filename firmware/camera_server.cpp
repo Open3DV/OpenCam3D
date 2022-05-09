@@ -1966,6 +1966,31 @@ int handle_cmd_set_param_mixed_hdr(int client_sock)
         return DF_FAILED;
 }
 
+//获取相机版本参数
+int handle_cmd_get_param_camera_version(int client_sock)
+{
+    if (check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;
+    }
+
+    int version = 0;
+
+    lc3010.read_dmd_device_id(version); 
+
+    int ret = send_buffer(client_sock, (char *)(&version), sizeof(int) * 1);
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
+    }
+
+    LOG(INFO)<<"camera version: "<<version << "\n";
+
+    return DF_SUCCESS;
+
+}
+
 //获取混合多曝光参数
 int handle_cmd_get_param_mixed_hdr(int client_sock)
 {
@@ -2891,6 +2916,10 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_MIXED_HDR";   
     	handle_cmd_get_param_mixed_hdr(client_sock);
 	    break;
+	case DF_CMD_GET_PARAM_CAMERA_VERSION:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_VERSION";   
+    	handle_cmd_get_param_camera_version(client_sock);
+	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
         handle_cmd_unknown(client_sock);
@@ -2959,8 +2988,12 @@ int init()
     float temperature_val = read_temperature(0); 
     LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
 
-    set_camera_version(DFX_800);
-    LOG(INFO)<<"camera version: "<<DFX_800;
+    int version= 0;
+    lc3010.read_dmd_device_id(version);
+    LOG(INFO)<<"read camera version: "<<version;
+
+    set_camera_version(version);
+    // LOG(INFO)<<"camera version: "<<DFX_800;
 
     return DF_SUCCESS;
 }

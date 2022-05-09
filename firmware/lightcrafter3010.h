@@ -21,6 +21,7 @@
 #define Read_Flash_Start 				0xE3
 #define Read_Flash_Continue				0xE4
 #define Write_Pattern_Order_Table_Entry	0x98
+#define Read_Device_ID					0xD4
 
 class LightCrafter3010
 {
@@ -78,6 +79,8 @@ public:
 	void set_camera_exposure(float exposure){
 		camera_exposure_ = exposure;
 	}
+
+	void read_dmd_device_id(int& version);
 private:
 	float camera_exposure_;
 };

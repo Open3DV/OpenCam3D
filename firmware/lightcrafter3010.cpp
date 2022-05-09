@@ -90,6 +90,28 @@ void LightCrafter3010::SetLedCurrent(unsigned short R, unsigned short G, unsigne
     write(0x54, buffer, 6);
 } 
 
+
+void LightCrafter3010::read_dmd_device_id(int& version)
+{
+    
+    unsigned char TxBuffer[8];
+
+    read(Read_Device_ID,TxBuffer,1);
+
+    int value = int(TxBuffer[0]);
+
+    // LOG(INFO)<<"DMD: "<<value;
+
+    if(11 == value)
+    {
+        version = 800;
+    }
+    else if(12 == value)
+    {
+        version = 1800;
+    }
+}
+
 void LightCrafter3010::enable_solid_field()
 {
     unsigned char TxBuffer[8];
