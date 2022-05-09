@@ -234,8 +234,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>441</width>
-              <height>747</height>
+              <width>437</width>
+              <height>844</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -474,7 +474,7 @@
                     <number>6000</number>
                    </property>
                    <property name="maximum">
-                    <number>28000</number>
+                    <number>60000</number>
                    </property>
                    <property name="singleStep">
                     <number>100</number>

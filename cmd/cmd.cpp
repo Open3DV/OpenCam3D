@@ -89,6 +89,9 @@ open_cam3d.exe --get-camera-exposure-param --ip 192.168.x.x\n\
 25.Set Offset Param: \n\
 open_cam3d.exe --set-offset-param --offset 12 --ip 192.168.x.x\n\
 \n\
+26.Get Camera Version: \n\
+open_cam3d.exe --get-camera-version --ip 192.168.x.x\n\
+\n\
 ";
 
 void help_with_version(const char* help);
@@ -123,6 +126,7 @@ int load_pattern_data(const char* ip);
 int program_pattern_data(const char* ip);
 int get_network_bandwidth(const char* ip);
 int get_firmware_version(const char* ip);
+int get_camera_version(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -162,6 +166,7 @@ enum opt_set
 	GET_CAMERA_EXPOSURE,
 	SET_OFFSET,
 	OFFSET,
+	GET_CAMERA_VERSION,
 };
 
 static struct option long_options[] =
@@ -199,6 +204,7 @@ static struct option long_options[] =
 	{"set-camera-exposure-param",no_argument,NULL,SET_CAMERA_EXPOSURE},
 	{"get-camera-exposure-param",no_argument,NULL,GET_CAMERA_EXPOSURE},
 	{"set-offset-param",no_argument,NULL,SET_OFFSET},
+	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION},
 };
 
 
@@ -350,6 +356,11 @@ int main(int argc, char* argv[])
 	{
 		float offset = std::atof(c_offset);
 		set_offset_param(camera_id, offset);
+	}
+	break;
+	case GET_CAMERA_VERSION:
+	{ 
+		get_camera_version(camera_id);
 	}
 	break;
 	default:
@@ -1268,5 +1279,26 @@ int get_firmware_version(const char* ip)
 	std::cout << "Firmware: " << version << std::endl;
 
 	DfDisconnectNet();
+	return 1;
+}
+
+
+int get_camera_version(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int version = 0;
+
+	DfGetCameraVersion(version);
+
+	DfDisconnectNet();
+	
+	std::cout << "Camera Version: " << version << std::endl;
 	return 1;
 }
