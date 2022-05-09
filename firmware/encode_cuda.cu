@@ -1902,12 +1902,12 @@ __global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * 
 
 		/*****************************************************************************/
 
-		float temp = 0.5 + (rate * d_in_wrap_abs[idy * img_width + idx] - d_in_wrap_high[idy * img_width + idx]) / (DF_PI);
+		float temp = 0.5 + (rate * d_in_wrap_abs[idy * img_width + idx] - d_in_wrap_high[idy * img_width + idx]) / (2*DF_PI);
 		int k = temp;
 		// d_out[idy * img_width + idx] = DF_PI*k + d_in_wrap_high[idy * img_width + idx];
 
 
-		float unwrap_value =  DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
+		float unwrap_value =  2*DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
 		float err = unwrap_value - (rate * d_in_wrap_abs[idy * img_width + idx]);
 		if(abs(err)> 0.8)
 		{
