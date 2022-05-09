@@ -267,9 +267,9 @@ bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, doubl
 
 			//double temp = 0.5 + l_ptr[j] / (1 * CV_PI) - h_ptr[j] / (rate * CV_PI); 
 
-			double temp = 0.5 + (rate * l_ptr[c] - h_ptr[c]) / (CV_PI);
+			double temp = 0.5 + (rate * l_ptr[c] - h_ptr[c]) / (2*CV_PI);
 			int k = temp;
-			h_unwrap_ptr[c] = CV_PI * k + h_ptr[c];
+			h_unwrap_ptr[c] = 2 * CV_PI * k + h_ptr[c];
 
 			ptr_err[c] = fabs(h_unwrap_ptr[c] - rate * l_ptr[c]);
 
