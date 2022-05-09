@@ -434,3 +434,10 @@ DF_SDK_API int DfGetNetworkBandwidth(int &speed);
 //输出参数：版本号
 //返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetFirmwareVersion(char* pVersion, int length);
+
+//函数名：  DfGetCameraVersion
+//功能：    获取相机型号
+//输入参数：无
+//输出参数：型号（800、1800）
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraVersion(int& version);
