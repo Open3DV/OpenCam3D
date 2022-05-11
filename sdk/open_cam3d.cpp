@@ -417,8 +417,8 @@ DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 	else
 	{
 
-		LOG(TRACE) << " Get Frame03:";
-		ret = DfGetFrame03(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+		LOG(TRACE) << " Get Frame04:";
+		ret = DfGetFrame04(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
 	}
 
 

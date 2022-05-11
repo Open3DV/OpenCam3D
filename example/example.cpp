@@ -10,7 +10,7 @@ int main()
     /*****************************************************************************************************/
 
     //连接相机
-    int ret_code = DfConnect("192.168.88.106");
+    int ret_code = DfConnect("192.168.0.103");
 
     int width = 0, height = 0;
 
@@ -91,12 +91,19 @@ int main()
         //采集单曝光数据
         if (false)
         {
-            //设置光机投影亮度参数
-            ret_code = DfSetParamLedCurrent(500);
+            //设置投影亮度参数
+            ret_code = DfSetParamLedCurrent(1023);
             if (0 != ret_code)
             {
                 std::cout << "Set LED Current Error!" << std::endl;
             } 
+
+            //设置相机曝光时间（us）
+            ret_code = DfSetParamCameraExposure(30000);
+            if (0 != ret_code)
+            {
+                std::cout << "Set Camera Exposure Error!" << std::endl;
+            }
 
             //采集一帧单次曝光的数据
             ret_code = DfCaptureData(1, timestamp_data);
@@ -106,11 +113,12 @@ int main()
 		else
 		{
 			//采集HDR模式数据 
-            int num = 3;
-            int param[6] = { 100,300,600,700,800,900 };
+            int num = 2;
+            int led_param[6] = { 100,1023,1023,1023,1023,1023 };
+            int exposure_param[6] = { 6000,30000,60000,60000,60000,60000 };
 
             //设置多曝光参数
-			ret_code = DfSetParamHdr(num, param);
+            ret_code = DfSetParamMixedHdr(num, exposure_param, led_param);
 
 			if (0 != ret_code)
 			{
