@@ -59,6 +59,7 @@ float* d_depth_map_;
 short* d_depth_map_short_;
 float* d_triangulation_error_map_;
 
+unsigned char* d_mask_;
 /*********************************************************************************/
 float* d_camera_intrinsic_;
 float* d_project_intrinsic_;
@@ -1142,6 +1143,7 @@ bool cuda_malloc_memory()
 
 
 	cudaMalloc((void**)&d_brightness_, image_height_*image_width_ * sizeof(unsigned char));
+	cudaMalloc((void**)&d_mask_, image_height_*image_width_ * sizeof(unsigned char));
 
 
 	cudaMalloc((void**)&d_camera_intrinsic_, 3*3 * sizeof(float));
@@ -1228,6 +1230,7 @@ bool cuda_free_memory()
 
 
 	cudaFree(d_brightness_);
+	cudaFree(d_mask_);
 
 	cudaFree(d_camera_intrinsic_);
 	cudaFree(d_project_intrinsic_);
@@ -2124,8 +2127,116 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 
 /***************************************************************************************************/
-
+__device__ float computePointsDistance(float* p0,float* p1)
+{
+	return std::sqrt(p0[0]*p1[0] + p0[1] *p1[1] + p0[2] * p1[2]);
+}
  
+//滤波
+__global__ void cuda_removal_points_base_mask(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,float* const deep_map,uchar* remove_mask)
+{
+  	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y; 
+  
+	const unsigned int serial_id = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+		if(0 == remove_mask[serial_id])
+		{
+			deep_map[serial_id] = 0;
+			point_cloud_map[3 * serial_id + 0] = 0;
+			point_cloud_map[3 * serial_id + 1] = 0;
+			point_cloud_map[3 * serial_id + 2] = 0;
+		}
+
+	}
+
+}
+
+//滤波
+__global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,uchar* remove_mask,float radius,int threshold)
+{
+ 	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y; 
+  
+	const unsigned int serial_id = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+		/****************************************************************************/
+		//定位区域
+		if (point_cloud_map[3 * serial_id + 2] > 0)
+		{
+			remove_mask[serial_id] = 255;
+
+			int w = radius * 2.5;
+
+			int s_r = idy - w;
+			int s_c = idx - w;
+
+			int e_r = idy + w;
+			int e_c = idx + w;
+
+			if (s_r < 0)
+			{
+				s_r = 0;
+			}
+			if (s_c < 0)
+			{
+				s_c = 0;
+			}
+
+			if (e_r >= img_height)
+			{
+				e_r = img_height - 1;
+			}
+
+			if (e_c >= img_width)
+			{
+				e_c = img_width - 1;
+			}
+
+			int num = 0;
+
+			for (int r = s_r; r <= e_r; r++)
+			{
+				for (int c = s_c; c <= e_c; c++)
+				{
+					int pos = r * img_width + c;
+					if (point_cloud_map[3 * pos + 2] > 0)
+					{  
+						float dx= point_cloud_map[3 * serial_id + 0] - point_cloud_map[3 * pos + 0];
+						float dy= point_cloud_map[3 * serial_id + 1] - point_cloud_map[3 * pos + 1];
+						float dz= point_cloud_map[3 * serial_id + 2] - point_cloud_map[3 * pos + 2];
+
+						float dist = std::sqrt(dx * dx + dy * dx + dz * dz); 
+ 
+						if (radius > dist)
+						{
+							num++;
+						}
+					}
+				}
+			} 
+
+			if (num < threshold)
+			{ 
+				remove_mask[serial_id] = 0;
+			} 
+		}
+		else
+		{ 
+			remove_mask[serial_id] = 0;
+		}
+
+		/******************************************************************/
+	}
+}
+
+
+/*****************************************************************************************************************************************************/
+
 
 bool generate_pointcloud_base_table()
 {
@@ -2135,6 +2246,13 @@ bool generate_pointcloud_base_table()
 												image_height_,image_width_,d_baseline_,d_point_cloud_map_,d_depth_map_);
 
 
+	// LOG(INFO)<<"remove start:";
+	cuda_filter_radius_outlier_removal << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_mask_,0.8,4); 
+	cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_);
+
+
+    // cudaDeviceSynchronize();
+	// LOG(INFO)<<"remove finished!";
 }
  
 

@@ -9,6 +9,12 @@
 #include <stdint.h>
 #include <vector>
 
+//滤波
+// __global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,uchar* remove_mask,float radius,int threshold);
+
+__device__ float computePointsDistance(float* p0,float* p1);
+
+
 bool cuda_set_camera_version(int version);
 
 void BubbleSort(float  *p, int length, int * ind_diff);
