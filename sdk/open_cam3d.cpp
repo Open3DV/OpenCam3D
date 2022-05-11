@@ -299,7 +299,19 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfConnect(const char* camera_id)
 {
-	 
+	/*******************************************************************************************************************/
+	//关闭log输出
+	el::Configurations conf;
+	conf.setToDefault();
+	conf.setGlobally(el::ConfigurationType::Format, "[%datetime{%H:%m:%s} | %level] %msg");
+	conf.setGlobally(el::ConfigurationType::Filename, "log\\log_%datetime{%Y%M%d}.log");
+	conf.setGlobally(el::ConfigurationType::Enabled, "true");
+	conf.setGlobally(el::ConfigurationType::ToFile, "true");
+	el::Loggers::reconfigureAllLoggers(conf);
+	el::Loggers::reconfigureAllLoggers(el::ConfigurationType::ToStandardOutput, "false");
+
+	/*******************************************************************************************************************/
+
 	DfRegisterOnDropped(on_dropped);
 
 	

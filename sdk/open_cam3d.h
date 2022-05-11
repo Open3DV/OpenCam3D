@@ -185,20 +185,6 @@ extern "C"
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetParamCameraExposure(float &exposure);
 
-	//函数名： DfSetParamOffset
-	//功能： 设置补偿参数
-	//输入参数：offset(补偿值)
-	//输出参数： 无
-	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
-	DF_SDK_API int DfSetParamOffset(float offset);
-
-	//函数名： DfGetParamOffset
-	//功能： 获取补偿参数
-	//输入参数：无
-	//输出参数：offset(补偿值)
-	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
-	DF_SDK_API int DfGetParamOffset(float& offset);
-
 	//函数名： DfSetParamMixedHdr
 	//功能： 设置混合多曝光参数（最大曝光次数为6次）
 	//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
@@ -441,3 +427,17 @@ DF_SDK_API int DfGetFirmwareVersion(char* pVersion, int length);
 //输出参数：型号（800、1800）
 //返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraVersion(int& version);
+
+//函数名： DfSetParamOffset
+//功能： 设置补偿参数
+//输入参数：offset(补偿值)
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamOffset(float offset);
+
+//函数名： DfGetParamOffset
+//功能： 获取补偿参数
+//输入参数：无
+//输出参数：offset(补偿值)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamOffset(float& offset);
