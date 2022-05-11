@@ -299,7 +299,19 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfConnect(const char* camera_id)
 {
-	 
+	/*******************************************************************************************************************/
+	//关闭log输出
+	el::Configurations conf;
+	conf.setToDefault();
+	conf.setGlobally(el::ConfigurationType::Format, "[%datetime{%H:%m:%s} | %level] %msg");
+	conf.setGlobally(el::ConfigurationType::Filename, "log\\log_%datetime{%Y%M%d}.log");
+	conf.setGlobally(el::ConfigurationType::Enabled, "true");
+	conf.setGlobally(el::ConfigurationType::ToFile, "true");
+	el::Loggers::reconfigureAllLoggers(conf);
+	el::Loggers::reconfigureAllLoggers(el::ConfigurationType::ToStandardOutput, "false");
+
+	/*******************************************************************************************************************/
+
 	DfRegisterOnDropped(on_dropped);
 
 	
@@ -1192,6 +1204,61 @@ DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 	return DF_SUCCESS;
 }
 
+
+DF_SDK_API int DfGetFrame04(float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size)
+{
+	LOG(INFO) << "GetFrame04";
+	assert(depth_buf_size == image_size * sizeof(float) * 1);
+	assert(brightness_buf_size == image_size * sizeof(char) * 1);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+
+	ret = send_command(DF_CMD_GET_FRAME_04, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		LOG(INFO) << "token checked ok";
+		LOG(INFO) << "receiving buffer, depth_buf_size=" << depth_buf_size;
+		ret = recv_buffer((char*)depth, depth_buf_size, g_sock);
+		LOG(INFO) << "depth received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer, brightness_buf_size=" << brightness_buf_size;
+		ret = recv_buffer((char*)brightness, brightness_buf_size, g_sock);
+		LOG(INFO) << "brightness received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		//brightness = (unsigned char*)depth + depth_buf_size;
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get frame rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	LOG(INFO) << "Get frame04 success";
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
 DF_SDK_API int DfGetFrame01(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size)
 {
@@ -1787,6 +1854,76 @@ DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param)
 	return DF_SUCCESS;
 }
 
+//函数名： DfSetCalibrationLookTable
+//功能：设置标定参数接口
+//输入参数：calibration_param（标定参数）,rotate_x、rotate_y, rectify_r1, mapping
+//输出参数：无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfSetCalibrationLookTable(const struct CameraCalibParam& calibration_param, float* rotate_x,
+	float* rotate_y, float* rectify_r1, float* mapping)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_CAMERA_LOOKTABLE, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		LOG(INFO) << "start send_buffer: calibration_param";
+		ret = send_buffer((char*)(&calibration_param), sizeof(calibration_param), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+		 
+		/*****************************************************************/
+
+		LOG(INFO) << "start send_buffer rotate_x size: "<< 1920 * 1200 * sizeof(float);
+		ret = send_buffer((char*)(rotate_x), 1920*1200*sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+		LOG(INFO) << "start send_buffer: rotate_y";
+		ret = send_buffer((char*)(rotate_y), 1920 * 1200 * sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "start send_buffer: rectify_r1";
+		ret = send_buffer((char*)(rectify_r1), 3 * 3 * sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+		LOG(INFO) << "start send_buffer: mapping";
+		ret = send_buffer((char*)(mapping), 4000 * 2000 * sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
 DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_param)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -1825,6 +1962,292 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 }
 
 /*****************************************************************************************************/
+	//函数名： DfGetParamOffset
+	//功能： 获取补偿参数
+	//输入参数：无
+	//输出参数：offset(补偿值)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamOffset(float& offset)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_OFFSET, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = recv_buffer((char*)(&offset), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+	//函数名： DfSetParamOffset
+	//功能： 设置补偿参数
+	//输入参数：offset(补偿值)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamOffset(float offset)
+{
+
+	if (offset < 0)
+	{
+		std::cout << "offset param out of range!" << std::endl;
+		return DF_FAILED;
+	}
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_OFFSET, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = send_buffer((char*)(&offset), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+	//函数名： DfSetParamCameraExposure
+	//功能： 设置相机曝光时间
+	//输入参数：exposure(相机曝光时间)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamCameraExposure(float exposure)
+{
+
+	if (exposure < 6000 || exposure> 60000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return DF_FAILED;
+	}
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_CAMERA_EXPOSURE_TIME, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+  
+		ret = send_buffer((char*)(&exposure), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamCameraExposure
+//功能： 获取相机曝光时间
+//输入参数： 无
+//输出参数：exposure(相机曝光时间)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamCameraExposure(float& exposure)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_CAMERA_EXPOSURE_TIME, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		 
+		ret = recv_buffer((char*)(&exposure), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		} 
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+	//函数名： DfSetParamGenerateBrightness
+	//功能： 设置生成亮度图参数
+	//输入参数：model(1:与条纹图同步连续曝光、2：单独发光曝光、3：不发光单独曝光)、exposure(亮度图曝光时间)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamGenerateBrightness(int model, float exposure)
+{
+	if (exposure < 20 || exposure> 1000000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return DF_FAILED;
+	}
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_GENERATE_BRIGHTNESS, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{ 
+		ret = send_buffer((char*)(&model), sizeof(int) , g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		ret = send_buffer((char*)(&exposure), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamGenerateBrightness
+//功能： 获取生成亮度图参数
+//输入参数： 无
+//输出参数：model(1:与条纹图同步连续曝光、2：单独发光曝光、3：不发光单独曝光)、exposure(亮度图曝光时间)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamGenerateBrightness(int& model, float& exposure)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_GENERATE_BRIGHTNESS, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+  
+		ret = recv_buffer((char*)(&model), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		ret = recv_buffer((char*)(&exposure), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+ 
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
 
 	//函数名： DfSetParamStandardPlaneExternal
 	//功能： 设置基准平面的外参
@@ -1929,6 +2352,103 @@ DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T)
 	return DF_SUCCESS;
 }
 
+//函数名： DfSetParamMixedHdr
+//功能： 设置混合多曝光参数（最大曝光次数为6次）
+//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfSetParamMixedHdr(int num, int exposure_param[6], int led_param[6])
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_MIXED_HDR, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		int param[13];
+		param[0] = num;
+
+		memcpy(param + 1, exposure_param, sizeof(int) * 6);
+		memcpy(param + 7, led_param, sizeof(int) * 6);
+
+		ret = send_buffer((char*)(param), sizeof(int) * 13, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamMixedHdr
+//功能： 获取混合多曝光参数（最大曝光次数为6次）
+//输入参数： 无
+//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfGetParamMixedHdr(int& num, int exposure_param[6], int led_param[6])
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_MIXED_HDR, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		int param[13]; 
+
+		ret = recv_buffer((char*)(param), sizeof(int) * 13, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+
+		memcpy(exposure_param, param + 1, sizeof(int) * 6);
+		memcpy(led_param, param + 7, sizeof(int) * 6);
+		num = param[0];
+
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
 //函数名： DfSetParamHdr
 //功能： 设置多曝光参数（最大曝光次数为6次）
 //输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）
@@ -1995,8 +2515,7 @@ DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-		int param[7];
-		param[0] = num;
+		int param[7]; 
 		 
 		ret = recv_buffer((char*)(param), sizeof(int) * 7, g_sock);
 		if (ret == DF_FAILED)
@@ -2109,5 +2628,45 @@ DF_SDK_API int DfGetParamLedCurrent(int& led)
 	return DF_SUCCESS;
 }
 
+//函数名：  DfGetCameraVersion
+//功能：    获取相机型号
+//输入参数：无
+//输出参数：型号（800、1800）
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraVersion(int& version)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_CAMERA_VERSION, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer((char*)(&version), sizeof(version), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
 
 /*********************************************************************************************************/

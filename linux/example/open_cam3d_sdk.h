@@ -6,8 +6,7 @@
 #elif __linux
 #define DF_SDK_API 
 #endif
-/***************************************************************************************/
-
+/***************************************************************************************/ 
 
 extern "C"
 {
@@ -154,4 +153,47 @@ extern "C"
 	//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T);
+
+	//函数名： DfSetParamGenerateBrightness
+	//功能： 设置生成亮度图参数
+	//输入参数：model(1:与条纹图同步连续曝光、2：单独发光曝光、3：不发光单独曝光)、exposure(亮度图曝光时间)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamGenerateBrightness(int model, float exposure);
+
+	//函数名： DfGetParamGenerateBrightness
+	//功能： 获取生成亮度图参数
+	//输入参数： 无
+	//输出参数：model(1:与条纹图同步连续曝光、2：单独发光曝光、3：不发光单独曝光)、exposure(亮度图曝光时间)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamGenerateBrightness(int& model, float& exposure);
+
+	//函数名： DfSetParamCameraExposure
+	//功能： 设置相机曝光时间
+	//输入参数：exposure(相机曝光时间)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamCameraExposure(float exposure);
+
+	//函数名： DfGetParamCameraExposure
+	//功能： 获取相机曝光时间
+	//输入参数： 无
+	//输出参数：exposure(相机曝光时间)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamCameraExposure(float& exposure);
+
+	//函数名： DfSetParamMixedHdr
+	//功能： 设置混合多曝光参数（最大曝光次数为6次）
+	//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfSetParamMixedHdr(int num, int exposure_param[6], int led_param[6]);
+
+	//函数名： DfGetParamMixedHdr
+	//功能： 获取混合多曝光参数（最大曝光次数为6次）
+	//输入参数： 无
+	//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfGetParamMixedHdr(int& num, int exposure_param[6], int led_param[6]);
 }
+

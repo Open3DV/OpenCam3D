@@ -156,6 +156,48 @@ extern "C"
 	//输出参数： R(旋转矩阵：3*3)、T(平移矩阵：3*1)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T);
+
+	//函数名： DfSetParamGenerateBrightness
+	//功能： 设置生成亮度图参数
+	//输入参数：model(1:与条纹图同步连续曝光、2：单独发光曝光、3：不发光单独曝光)、exposure(亮度图曝光时间)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamGenerateBrightness(int model,float exposure);
+
+	//函数名： DfGetParamGenerateBrightness
+	//功能： 获取生成亮度图参数
+	//输入参数： 无
+	//输出参数：model(1:与条纹图同步连续曝光、2：单独发光曝光、3：不发光单独曝光)、exposure(亮度图曝光时间)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamGenerateBrightness(int& model, float& exposure);
+
+	//函数名： DfSetParamCameraExposure
+	//功能： 设置相机曝光时间
+	//输入参数：exposure(相机曝光时间)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamCameraExposure(float exposure);
+
+	//函数名： DfGetParamCameraExposure
+	//功能： 获取相机曝光时间
+	//输入参数： 无
+	//输出参数：exposure(相机曝光时间)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamCameraExposure(float &exposure);
+
+	//函数名： DfSetParamMixedHdr
+	//功能： 设置混合多曝光参数（最大曝光次数为6次）
+	//输入参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfSetParamMixedHdr(int num, int exposure_param[6], int led_param[6]);
+
+	//函数名： DfGetParamMixedHdr
+	//功能： 获取混合多曝光参数（最大曝光次数为6次）
+	//输入参数： 无
+	//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
+	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+	DF_SDK_API int DfGetParamMixedHdr(int &num, int exposure_param[6], int led_param[6]);
 }
 
 
@@ -271,6 +313,14 @@ DF_SDK_API int DfGetFrameHdr(float* depth, int depth_buf_size,
 DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetFrame04
+//功能： 获取一帧数据（亮度图+深度图），基于Raw04相位图
+//输入参数：depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetFrame04(float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size);
+
 //函数名： DfGetRepetitionFrame03
 //功能： 获取一帧数据（亮度图+深度图），基于Raw03相位图，6步相移的图重复count次
 //输入参数：count（重复次数）、depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
@@ -286,12 +336,20 @@ DF_SDK_API int DfGetRepetitionFrame03(int count,float* depth, int depth_buf_size
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param);
 
-//函数名： DfGetCalibrationParam
+//函数名： DfSetCalibrationParam
 //功能：设置标定参数接口
 //输入参数：calibration_param（标定参数）
 //输出参数：无
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_param);
+
+//函数名： DfSetCalibrationLookTable
+//功能：设置标定参数接口
+//输入参数：calibration_param（标定参数）,rotate_x、rotate_y, rectify_r1, mapping
+//输出参数：无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfSetCalibrationLookTable(const struct CameraCalibParam& calibration_param,float* rotate_x,
+	float* rotate_y,float* rectify_r1,float* mapping);
 
 //函数名： DfGetDeviceTemperature
 //功能：获取设备温度
@@ -362,3 +420,24 @@ DF_SDK_API int DfGetNetworkBandwidth(int &speed);
 //输出参数：版本号
 //返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetFirmwareVersion(char* pVersion, int length);
+
+//函数名：  DfGetCameraVersion
+//功能：    获取相机型号
+//输入参数：无
+//输出参数：型号（800、1800）
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraVersion(int& version);
+
+//函数名： DfSetParamOffset
+//功能： 设置补偿参数
+//输入参数：offset(补偿值)
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamOffset(float offset);
+
+//函数名： DfGetParamOffset
+//功能： 获取补偿参数
+//输入参数：无
+//输出参数：offset(补偿值)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamOffset(float& offset);
