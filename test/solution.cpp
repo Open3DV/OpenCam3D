@@ -13,6 +13,7 @@
 #include "../gui/PrecisionTest.h"
 #include "LookupTableFunction.h"
 //#include "../cmd/getopt.h" 
+#include "FilterModule.h"
 /**************************************************************************/
 
 DfSolution::DfSolution()
@@ -942,8 +943,12 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	std::vector<cv::Point3f> points_cloud;
 	ret = lookup_table_machine_.generate_pointcloud(z_map_table, unwrap_mask, deep_map_table);
 
-
-
+	 
+	startTime = clock();//计时开始   
+	FilterModule filter_machine;
+	filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.8, 4);
+	endTime = clock();//计时结束
+	std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	/*********************************************************************************/
 
@@ -1122,6 +1127,14 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 		return false;
 
 	}
+ 
+
+	clock_t startTime, endTime;
+	startTime = clock();//计时开始   
+	FilterModule filter_machine;
+	filter_machine.RadiusOutlierRemoval(deep_map, unwrap_mask, 0.8, 4);  
+	endTime = clock();//计时结束
+	std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	cv::Mat color_err_map;
 	cv::Mat gray_err_map;
