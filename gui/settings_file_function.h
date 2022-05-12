@@ -13,6 +13,8 @@ struct  GuiConfigDataStruct
 	QString ip;
 	bool use_hdr_model;
 	
+	int calibration_board;
+	
   
 	bool loadFromSettings(const QString& f);
 	bool saveToSettings(const QString& f);

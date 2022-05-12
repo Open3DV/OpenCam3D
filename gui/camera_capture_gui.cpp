@@ -67,6 +67,35 @@ CameraCaptureGui::~CameraCaptureGui()
 }
 
 
+void CameraCaptureGui::setCalibrationBoard(int flag)
+{
+
+	switch (flag)
+	{
+	case 20:
+	{
+		board_size_.width = 20.0;
+		board_size_.height = 10.0;
+		calibration_board_flag_ = flag;
+
+		processing_gui_settings_data_.Instance().calibration_board = flag;
+	}
+	break;
+
+	case 40:
+	{
+		board_size_.width = 40.0;
+		board_size_.height = 20.0;
+		calibration_board_flag_ = flag;
+		processing_gui_settings_data_.Instance().calibration_board = flag;
+	}
+	break;
+	default:
+		break;
+	}
+}
+
+
 bool CameraCaptureGui::initializeFunction()
 {
 	/********************************************************************************************************************/
@@ -121,8 +150,8 @@ bool CameraCaptureGui::initializeFunction()
 	generate_brightness_model_ = GENERATE_BRIGHTNESS_DEFAULT_;
 	generate_brightness_exposure_ = 12000;
 
-	board_size_.width = 40.0;
-	board_size_.height = 20.0;
+	board_size_.width = 20.0;
+	board_size_.height = 10.0;
 	/**********************************************************************************************************************/
 
 
@@ -654,6 +683,11 @@ void CameraCaptureGui::sleep(int sectime)
 	}
 }
 
+
+void CameraCaptureGui::getGuiConfigParam(struct GuiConfigDataStruct& gui_param)
+{
+	gui_param = processing_gui_settings_data_;
+}
 
 bool CameraCaptureGui::getShowCalibrationMessage(struct SystemConfigParam& config_param, struct CameraCalibParam& calibration_param)
 {

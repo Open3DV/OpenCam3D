@@ -58,6 +58,7 @@ SettingsFileFunction::SettingsFileFunction()
 	gui_config_.Instance().ip = "";
 	gui_config_.Instance().low_z_value = 300;
 	gui_config_.Instance().high_z_value = 1200;
+	gui_config_.Instance().calibration_board = 20;
 
 	firmware_config_param_.generate_brightness_exposure = 12000;
 	firmware_config_param_.generate_brightness_model = 1;
@@ -209,6 +210,11 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 		{
 			gui_config_.Instance().use_hdr_model = gui_Obj.value("use_hdr_model").toBool();
 		}
+
+		if (gui_Obj.contains("calibration_board") && gui_Obj["calibration_board"].isDouble())
+		{
+			gui_config_.Instance().calibration_board = gui_Obj.value("calibration_board").toInt();
+		}
 	}
 
 
@@ -296,7 +302,8 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	jsonObject_gui.insert("low_z_value", gui_config_.Instance().low_z_value);
 	jsonObject_gui.insert("high_z_value", gui_config_.Instance().high_z_value);
 	jsonObject_gui.insert("ip", gui_config_.Instance().ip);
-	jsonObject_gui.insert("use_hdr_model", gui_config_.Instance().use_hdr_model);
+	jsonObject_gui.insert("use_hdr_model", gui_config_.Instance().use_hdr_model); 
+	jsonObject_gui.insert("calibration_board", gui_config_.Instance().calibration_board);
 
 	rootObject.insert("gui", jsonObject_gui);
 

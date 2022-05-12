@@ -21,6 +21,26 @@ Calibrate_Function::~Calibrate_Function()
 }
 
 
+void Calibrate_Function::setCalibrationBoard(int board_num)
+{
+	switch (board_num)
+	{
+	case 20:
+	{
+		setBoardMessage(11, 7, 20, 10);
+	}
+	break;
+
+	case 40:
+	{
+		setBoardMessage(11, 7, 40, 20); 
+	}
+	break;
+	default:
+		break;
+	}
+}
+
 void Calibrate_Function::setBoardMessage(int rows, int cols, int width, int height)
 {
 	board_size_.width = cols;

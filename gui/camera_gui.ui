@@ -89,7 +89,14 @@
     <addaction name="action_save_camera_config"/>
     <addaction name="action_exit"/>
    </widget>
+   <widget class="QMenu" name="menu_setting">
+    <property name="title">
+     <string>设置</string>
+    </property>
+    <addaction name="action_select_calibration_board"/>
+   </widget>
    <addaction name="menu_file"/>
+   <addaction name="menu_setting"/>
    <addaction name="menu_help"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -153,6 +160,11 @@
   <action name="action_get_calibration_param">
    <property name="text">
     <string>标定参数</string>
+   </property>
+  </action>
+  <action name="action_select_calibration_board">
+   <property name="text">
+    <string>选择标定板</string>
    </property>
   </action>
  </widget>

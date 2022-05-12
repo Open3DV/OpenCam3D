@@ -70,8 +70,12 @@ public:
 
 	bool getShowCalibrationMessage(struct SystemConfigParam &config_param, struct CameraCalibParam &calibration_param);
 
+	void getGuiConfigParam(struct GuiConfigDataStruct& gui_param);
+
 	//更新生成亮度图参数
 	void updateGenerateBrightnessParam();
+
+	void setCalibrationBoard(int flag);
 
 private:
 	bool showImage();
@@ -217,4 +221,6 @@ private:
 	float generate_brightness_exposure_;
 
 	cv::Size2f board_size_;
+
+	int calibration_board_flag_;
 };

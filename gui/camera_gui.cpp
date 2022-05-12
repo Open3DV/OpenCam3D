@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QFileDialog>
 #include "../firmware/version.h"
+#include "select_calibration_board_gui.h"
 
 camera_gui::camera_gui(QWidget *parent)
 	: QMainWindow(parent)
@@ -33,6 +34,7 @@ camera_gui::camera_gui(QWidget *parent)
     connect(ui.action_save_camera_config, SIGNAL(triggered()), this, SLOT(do_action_save_camera_config()));
     connect(ui.action_exit, SIGNAL(triggered()), this, SLOT(do_action_exit()));
     connect(ui.action_get_calibration_param, SIGNAL(triggered()), this, SLOT(do_action_show_calibration_param()));
+    connect(ui.action_select_calibration_board, SIGNAL(triggered()), this, SLOT(do_action_select_calibration_board()));
 
 }
 
@@ -96,6 +98,25 @@ void camera_gui::do_action_save_camera_config()
     }
 }
 
+
+void camera_gui::do_action_select_calibration_board()
+{
+    SelectCalibrationBoardGui board_widget;
+    struct GuiConfigDataStruct gui_param;
+    ui.tab_capture->getGuiConfigParam(gui_param);
+    board_widget.set_board_type(gui_param.Instance().calibration_board);
+
+    if (QDialog::Accepted == board_widget.exec())
+    {
+        int flag = board_widget.get_board_type();
+        qDebug() << "board: " << flag;
+
+        ui.tab_capture->setCalibrationBoard(flag);
+    }
+
+
+    
+}
 
 void camera_gui::do_action_show_calibration_param()
 {

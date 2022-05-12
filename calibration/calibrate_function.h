@@ -61,6 +61,8 @@ public:
 
 	void setBoardMessage(int rows, int cols, int width, int height);
 
+	void setCalibrationBoard(int board_num);
+
 private:
 
 	cv::Size board_size_;
