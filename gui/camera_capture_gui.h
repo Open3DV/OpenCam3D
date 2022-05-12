@@ -151,6 +151,8 @@ private slots:
 
 	void do_pushButton_save_as();
 
+	void do_pushButton_open_folder();
+
 	 
 
 private:

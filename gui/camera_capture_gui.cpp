@@ -10,7 +10,7 @@
 #include <qheaderview.h>
 #include "../calibration/calibrate_function.h"
 #include "PrecisionTest.h"
- 
+#include <qdesktopservices.h>
  
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
@@ -94,6 +94,7 @@ bool CameraCaptureGui::initializeFunction()
 
 
 	connect(ui.pushButton_save_as, SIGNAL(clicked()), this, SLOT(do_pushButton_save_as()));
+	connect(ui.pushButton_open_folder, SIGNAL(clicked()), this, SLOT(do_pushButton_open_folder()));
 	connect(ui.pushButton_test_accuracy, SIGNAL(clicked()), this, SLOT(do_pushButton_test_accuracy()));
 	connect(ui.pushButton_calibrate_external_param, SIGNAL(clicked()), this, SLOT(do_pushButton_calibrate_external_param()));
 
@@ -147,7 +148,7 @@ void CameraCaptureGui::addLogMessage(QString str)
 
 bool CameraCaptureGui::saveOneFrameData(QString path_name)
 {
-	if (path_name.isEmpty())
+	if (path_name.isEmpty() || brightness_map_.empty() || depth_map_.empty() || height_map_.empty())
 	{
 		return false;
 	}
@@ -1598,9 +1599,28 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	}
 }
 
+
+void CameraCaptureGui::do_pushButton_open_folder()
+{  
+
+	QFileInfo fileInfo(last_path_); 
+	QDir dir(fileInfo.absoluteFilePath());
+	  
+	if (!dir.exists())
+	{
+		dir.setPath("../TestData");
+	}
+
+	QDesktopServices::openUrl(QUrl::fromLocalFile(dir.absolutePath()));//, QUrl::TolerantMode)
+
+}
+
 void CameraCaptureGui::do_pushButton_save_as()
 {
-
+	if (brightness_map_.empty() || depth_map_.empty() || height_map_.empty())
+	{
+		return;
+	}
 
 	QString StrCurrentTime = "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
 
@@ -1611,12 +1631,10 @@ void CameraCaptureGui::do_pushButton_save_as()
 		return;
 	}
 
-	last_path_ = path;
+	QFileInfo fileInfo(path); 
+	last_path_ = fileInfo.absolutePath();
 
-	//QStringList str_list = path.split(".");
-
-	//QString name = str_list[0];
-	 
+  
 
 	std::thread t_s(&CameraCaptureGui::saveOneFrameData,this, path);
 	t_s.detach(); 
