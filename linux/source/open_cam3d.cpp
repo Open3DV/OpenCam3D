@@ -34,6 +34,8 @@ extern SOCKET g_sock;
 
 int (*p_OnDropped)(void*) = 0;
 
+int camera_version = 0;
+
 /**************************************************************************************************************/
 
 
@@ -344,7 +346,13 @@ DF_SDK_API int DfConnect(const char* camera_id)
 	camera_width_ = width;
 	camera_height_ = height;
 
+	ret = DfGetCameraVersion(camera_version); 
 
+	if (ret == DF_FAILED)
+	{
+		return -1;
+	}
+	
 
 	//≥ı ºªØ
 
@@ -417,8 +425,8 @@ DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 	else
 	{
 
-		LOG(TRACE) << " Get Frame03:";
-		ret = DfGetFrame03(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+		LOG(TRACE) << " Get Frame04:";
+		ret = DfGetFrame04(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
 	}
 
 
@@ -2061,11 +2069,43 @@ DF_SDK_API int DfSetParamOffset(float offset)
 DF_SDK_API int DfSetParamCameraExposure(float exposure)
 {
 
-	if (exposure < 6000 || exposure> 60000)
+	float min_exposure = 0;
+	float max_exposure = 0;
+
+	switch (camera_version)
 	{
-		std::cout << "exposure param out of range!" << std::endl;
-		return DF_FAILED;
+	case 800:
+	{
+		min_exposure = 6000;
+		max_exposure = 60000;
 	}
+	break;
+
+	case 1800:
+	{
+		min_exposure = 6000;
+		max_exposure = 28000;
+	}
+	break;
+
+	default:
+		break;
+	}
+
+	if (exposure < min_exposure)
+	{
+		exposure = min_exposure;
+	}
+	else if (exposure > max_exposure)
+	{
+		exposure = max_exposure;
+	}
+
+	//if (exposure < 6000 || exposure> 60000)
+	//{
+	//	std::cout << "exposure param out of range!" << std::endl;
+	//	return DF_FAILED;
+	//}
 
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
