@@ -223,4 +223,5 @@ private:
 	cv::Size2f board_size_;
 
 	int calibration_board_flag_;
+	int camera_version_;
 };

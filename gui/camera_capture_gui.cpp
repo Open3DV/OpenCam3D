@@ -152,6 +152,8 @@ bool CameraCaptureGui::initializeFunction()
 
 	board_size_.width = 20.0;
 	board_size_.height = 10.0;
+
+	camera_version_ = 800;
 	/**********************************************************************************************************************/
 
 
@@ -1073,10 +1075,39 @@ void  CameraCaptureGui::do_pushButton_connect()
 				return;
 			}
 			//获取相机标定参数
-			DfGetCalibrationParam(camera_calibration_param_);
+			ret_code = DfGetCalibrationParam(camera_calibration_param_);
+			if (0 != ret_code)
+			{
+				qDebug() << "Get Calibration Param Error!;";
+				return;
+			}
+
+			//获取相机型号参数
+			ret_code = DfGetCameraVersion(camera_version_);
+			if (0 != ret_code)
+			{
+				qDebug() << "Get Calibration Param Error!;";
+				return;
+			}
+
+			switch (camera_version_)
+			{
+			case 800:
+			{
+				addLogMessage(QString::fromLocal8Bit("连接DFX800成功！"));
+			}
+			break;
+			case 1800:
+			{
+				addLogMessage(QString::fromLocal8Bit("连接DFX1800成功！"));
+			}
+			break;
+			default:
+				break;
+			}
 	 
 
-			addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
+			//addLogMessage(QString::fromLocal8Bit("连接相机成功！"));
 			//保存ip配置
 			processing_gui_settings_data_.Instance().ip = camera_ip_;
 
