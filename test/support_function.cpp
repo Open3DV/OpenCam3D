@@ -1,12 +1,17 @@
-#include "support_function.h"
-#include "iostream" 
-#include <fstream> 
+#ifdef _WIN32  
+#include <windows.h>
+#elif __linux 
 #include <sys/types.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#endif 
+#include "support_function.h"
+#include "iostream" 
+#include <fstream> 
+
 /**************************************************************************************************************************/
 
 std::time_t getTimeStamp(int& msec)
@@ -161,19 +166,20 @@ void getJustCurrentDir(std::string path, std::vector<std::string>& dirs)
  { 
 
 #ifdef _WIN32 
- 	//�ļ����
+
+	//文件句柄
 	intptr_t hFile = 0;
-	//�ļ���Ϣ 
+	//文件信息 
 	struct _finddata_t fileinfo;
 	std::string p;
 	if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1) {
 		do {
 			if ((fileinfo.attrib & _A_SUBDIR)) {
 				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
-					dirs.push_back(path /*+ "/" */+ fileinfo.name);
+					dirs.push_back(path /*+ "/" */ + fileinfo.name);
 					//files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 
-				} 
+				}
 			}
 
 		} while (_findnext(hFile, &fileinfo) == 0);

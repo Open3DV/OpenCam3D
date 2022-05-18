@@ -1,16 +1,17 @@
 #ifdef _WIN32  
 #include <windows.h>
+#include <io.h>
 #elif __linux 
 #include <cstring>
 #include "iostream" 
 #include <fstream> 
 #include <sys/types.h>
 #include <dirent.h>
+#include <sys/io.h>
 #endif 
 
 #include "solution.h" 
 #include "support_function.h" 
-#include <sys/io.h>
 #include <iostream>  
 #include "../sdk/open_cam3d.h"
 #include <assert.h>
@@ -970,11 +971,11 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	ret = lookup_table_machine_.generate_pointcloud(z_map_table, unwrap_mask, deep_map_table);
 
 	 
-	startTime = clock();//��ʱ��ʼ   
-	FilterModule filter_machine;
-	filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.8, 4);
-	endTime = clock();//��ʱ����
-	std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+	//startTime = clock();//��ʱ��ʼ   
+	//FilterModule filter_machine;
+	//filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.8, 4);
+	//endTime = clock();//��ʱ����
+	//std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	/*********************************************************************************/
 

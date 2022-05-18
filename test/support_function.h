@@ -1,12 +1,19 @@
 #pragma once
+#ifdef _WIN32  
+#include <windows.h>
+#include <chrono>
+#include <ctime>
+#include <time.h>
+#include <stddef.h> 
+#include <io.h>  
+#elif __linux 
+#include <stdio.h>  
+#endif 
+ 
+
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
-#include<chrono>
-#include<ctime>
-#include <time.h>
-#include<stddef.h> 
-#include <sys/io.h>
 
 using namespace std;
 using namespace std::chrono;

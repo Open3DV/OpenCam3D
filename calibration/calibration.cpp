@@ -13,7 +13,7 @@ const char* help_info =
 "Examples:\n\
 \n\
 1.Calibrate:\n\
-calibration.exe --calibrate --patterns --version DFX800 --board 20 --calib ./param.txt \n\
+calibration.exe --calibrate --patterns ./capture/calib --version DFX800 --board 20 --calib ./param.txt \n\
 \n\
 2.Get Version:\n\
 calibration.exe --get-version \n\

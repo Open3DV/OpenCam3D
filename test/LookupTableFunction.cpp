@@ -32,7 +32,7 @@ bool LookupTableFunction::setCameraVersion(int version)
 		dlp_height_ = 720;
 
 		min_low_z_ = 100;
-		max_max_z_ = 2000;
+		max_max_z_ = 5000;
 
 		return true;
 	}
@@ -45,7 +45,7 @@ bool LookupTableFunction::setCameraVersion(int version)
 		dlp_height_ = 1080;
 
 		min_low_z_ = 300;
-		max_max_z_ = 3000;
+		max_max_z_ = 10000;
 
 		return true;
 	}
