@@ -1,5 +1,4 @@
 #pragma once
-
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -7,7 +6,7 @@
 #include<ctime>
 #include <time.h>
 #include<stddef.h> 
-#include <io.h>
+#include <sys/io.h>
 
 using namespace std;
 using namespace std::chrono;
@@ -34,7 +33,7 @@ std::string GetTimeStamp();
 
 bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map);
 
-//��ȡz-map Roiͼ
+//��ȡz-map Roiͼ
 bool MaskZMap(cv::Mat& z_map, cv::Mat mask);
 
 bool MapToColor(cv::Mat deep_map, cv::Mat& color_map, cv::Mat& grey_map, int low_z, int high_z); 
@@ -48,3 +47,4 @@ bool MergeTextureMap(std::vector<cv::Mat> patterns, cv::Mat& texture_map);
 bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, int offset_value);
 
 
+bool compareNat(const std::string& a, const std::string& b);

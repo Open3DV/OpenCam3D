@@ -6,14 +6,11 @@ add_compile_options(-fPIC)
 project(example CXX)
 
 set(APP_SRC example.cpp)
-#set(APP_SRC Test.cpp)
 
 
 #print message
 message(${PROJECT_SOURCE_DIR})   
 
-#link_libraries(/home/scan3d/3D_Camera/linux_code/DF8/DF8_Lib/libdexforce_camera.so)
-link_libraries(${PROJECT_SOURCE_DIR}/libopen_cam3d_sdk.so)
- 
 
+link_libraries(${PROJECT_SOURCE_DIR}/libopen_cam3d_sdk.so) 
 add_executable(${PROJECT_NAME} ${APP_SRC}) 

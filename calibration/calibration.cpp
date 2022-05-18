@@ -5,7 +5,7 @@
 #include <string.h>
 #include "../test/encode.h"   
 #include "../test/support_function.h"
-#include "Calibrate_Function.h"
+#include "calibrate_function.h"
 #include "../cmd/getopt.h"
 #include "../firmware/version.h"
 
@@ -13,7 +13,7 @@ const char* help_info =
 "Examples:\n\
 \n\
 1.Calibrate:\n\
-calibration.exe --calibrate --patterns --version DFX800 --board 20 ./calib --calib ./param.txt \n\
+calibration.exe --calibrate --patterns --version DFX800 --board 20 --calib ./param.txt \n\
 \n\
 2.Get Version:\n\
 calibration.exe --get-version \n\
@@ -111,6 +111,7 @@ int main(int argc, char* argv[])
 		std::string version_str(char_version);
 		std::string board_str(char_board);
 
+ 
 		if (patterns_str.empty() || calib_str.empty() || version_str.empty())
 		{
 			printf("calibration.exe --calibrate --patterns --version DFX800 --board 20 ./calib --calib ./param.txt \n");
@@ -186,13 +187,18 @@ void project_version()
 	char info[100 * 1024] = { '\0' };
 	char version[] = _VERSION_;
 	char enter[] = "\n";
-
+#ifdef _WIN32 
 	strcpy_s(info, sizeof(enter), enter);
 	strcat_s(info, sizeof(info), version);
 	strcat_s(info, sizeof(info), enter);
 	strcat_s(info, sizeof(info), enter);
-
-	printf_s(info);
+#elif __linux
+	strncpy(info, enter, sizeof(enter));
+	strncat(info, version, sizeof(info));
+	strncat(info, enter, sizeof(info));
+	strncat(info, enter, sizeof(info)); 
+#endif 
+	printf(info);
 }
 
 bool calibrate_stereo(std::string patterns_path, std::string calib_path)

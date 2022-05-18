@@ -93,7 +93,7 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 				double a = ptr0[c] * std::cos(0 * CV_2PI / 6.0) + ptr1[c] * std::cos(1 * CV_2PI / 6.0) + ptr2[c] * std::cos(2 * CV_2PI / 6.0)
 					+ ptr3[c] * std::cos(3 * CV_2PI / 6.0) + ptr4[c] * std::cos(4 * CV_2PI / 6.0) + ptr5[c] * std::cos(5 * CV_2PI / 6.0);
 
-				double r = std::sqrtf(a * a + b * b);
+				double r = std::sqrt(a * a + b * b);
 
 				//if (r > 255)
 				//{
@@ -189,7 +189,7 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 					double a = ptr4[j] - ptr2[j];
 					double b = ptr1[j] - ptr3[j];
  
-					double r = std::sqrtf(a*a + b*b) + 0.5; 
+					double r = std::sqrt(a*a + b*b) + 0.5; 
 
 					//if(r> 255)
 					//{

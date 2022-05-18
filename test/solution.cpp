@@ -1,13 +1,22 @@
+#ifdef _WIN32  
+#include <windows.h>
+#elif __linux 
+#include <cstring>
+#include "iostream" 
+#include <fstream> 
+#include <sys/types.h>
+#include <dirent.h>
+#endif 
+
 #include "solution.h" 
-#include "Support_Function.h"
-#include <io.h>
+#include "support_function.h" 
+#include <sys/io.h>
 #include <iostream>  
 #include "../sdk/open_cam3d.h"
-#include <windows.h>
 #include <assert.h>
 #include <fstream>
 #include <iomanip>
-#include "../Firmware/protocol.h"
+#include "../firmware/protocol.h"
 #include "AnalyseError.h"
 #include "../calibration/calibrate_function.h" 
 #include "../gui/PrecisionTest.h"
@@ -119,7 +128,7 @@ bool DfSolution::readCameraCalibData(std::string path, struct CameraCalibParam& 
 
 	float I[40] = { 0 };
 
-	//´Ódata1ÎÄ¼þÖÐ¶ÁÈëintÊý¾Ý
+	//ï¿½ï¿½data1ï¿½Ä¼ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½intï¿½ï¿½ï¿½ï¿½
 	for (int i = 0; i < 40; i++)
 	{
 
@@ -259,34 +268,51 @@ bool DfSolution::captureMixedVariableWavelengthPatterns(std::string ip, std::vec
 
 void  DfSolution::getFiles(std::string path, std::vector<std::string>& files)
 {
-	//ÎÄ¼þ¾ä±ú  
+
+#ifdef _WIN32 
+	//ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½  
 	intptr_t    hFile = 0;
-	//ÎÄ¼þÐÅÏ¢£¬ÉùÃ÷Ò»¸ö´æ´¢ÎÄ¼þÐÅÏ¢µÄ½á¹¹Ìå  
+	//ï¿½Ä¼ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½æ´¢ï¿½Ä¼ï¿½ï¿½ï¿½Ï¢ï¿½Ä½á¹¹ï¿½ï¿½  
 	struct _finddata_t fileinfo;
-	string p;//×Ö·û´®£¬´æ·ÅÂ·¾¶
-	if ((hFile = _findfirst(p.assign(path).append("/*.bmp").c_str(), &fileinfo)) != -1)//Èô²éÕÒ³É¹¦£¬Ôò½øÈë
+	string p;//ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½
+	if ((hFile = _findfirst(p.assign(path).append("/*.bmp").c_str(), &fileinfo)) != -1)//ï¿½ï¿½ï¿½ï¿½ï¿½Ò³É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		do
 		{
-			//Èç¹ûÊÇÄ¿Â¼,µü´úÖ®£¨¼´ÎÄ¼þ¼ÐÄÚ»¹ÓÐÎÄ¼þ¼Ð£©  
+			//ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Â¼,ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Ú»ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ð£ï¿½  
 			if ((fileinfo.attrib & _A_SUBDIR))
 			{
-				//ÎÄ¼þÃû²»µÈÓÚ"."&&ÎÄ¼þÃû²»µÈÓÚ".."
-					//.±íÊ¾µ±Ç°Ä¿Â¼
-					//..±íÊ¾µ±Ç°Ä¿Â¼µÄ¸¸Ä¿Â¼
-					//ÅÐ¶ÏÊ±£¬Á½Õß¶¼ÒªºöÂÔ£¬²»È»¾ÍÎÞÏÞµÝ¹éÌø²»³öÈ¥ÁË£¡
+				//ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"."&&ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½".."
+					//.ï¿½ï¿½Ê¾ï¿½ï¿½Ç°Ä¿Â¼
+					//..ï¿½ï¿½Ê¾ï¿½ï¿½Ç°Ä¿Â¼ï¿½Ä¸ï¿½Ä¿Â¼
+					//ï¿½Ð¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ß¶ï¿½Òªï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ÞµÝ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¥ï¿½Ë£ï¿½
 				//if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
 				//	getFiles(p.assign(path).append("\\").append(fileinfo.name), files);
 			}
-			//Èç¹û²»ÊÇ,¼ÓÈëÁÐ±í  
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½  
 			else
 			{
 				files.push_back(p.assign(path).append("/").append(fileinfo.name));
 			}
 		} while (_findnext(hFile, &fileinfo) == 0);
-		//_findcloseº¯Êý½áÊø²éÕÒ
+		//_findcloseï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		_findclose(hFile);
 	}
+
+ 
+#elif __linux
+	DIR *pDir;
+    struct dirent* ptr;
+    if(!(pDir = opendir(path.c_str())))
+        return;
+    while((ptr = readdir(pDir))!=0) {
+        if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0)
+            files.push_back(path + "/" + ptr->d_name);
+    }
+    closedir(pDir);
+
+#endif 
+ 
 
 }
  
@@ -534,25 +560,25 @@ bool DfSolution::testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, st
 
 	double diff = precision_machine.computeTwoPointSetDistance(world_points, transform_points);
 
-	std::cout << "Ïà»ú¾«¶È: "<< diff<< " mm" << std::endl;
+	std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: "<< diff<< " mm" << std::endl;
 
 	if (diff > 0.1)
 	{
-		std::cout << "Ïà»úÄÚ²Î¾«¶È²»¹»£¡" << std::endl;
+		std::cout << "ï¿½ï¿½ï¿½ï¿½Ú²Î¾ï¿½ï¿½È²ï¿½ï¿½ï¿½ï¿½ï¿½" << std::endl;
 
 		if (0 == calib_function.testOverExposure(undistort_img, undist_circle_points))
 		{
-			std::cout << "±ê¶¨°å¹ýÆØÁË£¡" << std::endl;
-			std::cout << "Çëµ÷½ÚÍ¶Ó°ÁÁ¶È£¡" << std::endl;
+			std::cout << "ï¿½ê¶¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë£ï¿½" << std::endl;
+			std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½Í¶Ó°ï¿½ï¿½ï¿½È£ï¿½" << std::endl;
 		}
 	} 
 	else
 	{
-		std::cout << "Ïà»úÄÚ²ÎºÏ¸ñ£¡" << std::endl; 
+		std::cout << "ï¿½ï¿½ï¿½ï¿½Ú²ÎºÏ¸ï¿½" << std::endl; 
 	}
 	/****************************************************************************************************/
 
-		//ÏÔÊ¾
+		//ï¿½ï¿½Ê¾
 
 	cv::Mat draw_color_img;
 	cv::Size board_size = calib_function.getBoardSize();
@@ -724,15 +750,15 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 	double err_value = analyse_err_machine.computeError(err_map);
 	//std::cout << "calibrate err: " << err_value << std::endl;
 
-	std::cout << "Ïà»ú¾«¶È: " << err_value << " mm" << std::endl;
+	std::cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: " << err_value << " mm" << std::endl;
 
 	if (err_value > 0.1)
 	{
-		std::cout << "Ïà»úÄÚ²Î¾«¶È²»¹»£¡" << std::endl; 
+		std::cout << "ï¿½ï¿½ï¿½ï¿½Ú²Î¾ï¿½ï¿½È²ï¿½ï¿½ï¿½ï¿½ï¿½" << std::endl; 
 	}
 	else
 	{
-		std::cout << "Ïà»úÄÚ²ÎºÏ¸ñ£¡" << std::endl;
+		std::cout << "ï¿½ï¿½ï¿½ï¿½Ú²ÎºÏ¸ï¿½" << std::endl;
 
 	}
 
@@ -776,7 +802,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	/***********************************************************************************/
 
 	clock_t startTime, endTime;
-	startTime = clock();//¼ÆÊ±¿ªÊ¼
+	startTime = clock();//ï¿½ï¿½Ê±ï¿½ï¿½Ê¼
 
 
 	LookupTableFunction lookup_table_machine_;
@@ -793,7 +819,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	//lookup_table_machine_.readTable("../", 1200, 1920);
 
 	 
-	endTime = clock();//¼ÆÊ±½áÊø
+	endTime = clock();//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
 	std::cout << "The run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	/************************************************************************************/
@@ -935,7 +961,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	texture_map = undistort_img.clone();
 	   
 	cv::Mat z_map_table;
-	//²é±íÖØ½¨¡¢deep_map ÈýÍ¨µÀÎªx y zÈýÍ¨µÀµÄdouble Êý¾Ý
+	//ï¿½ï¿½ï¿½ï¿½Ø½ï¿½ï¿½ï¿½deep_map ï¿½ï¿½Í¨ï¿½ï¿½Îªx y zï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½double ï¿½ï¿½ï¿½ï¿½
 	lookup_table_machine_.rebuildData(unwrap_ver, 1, z_map_table, unwrap_mask);
 
 	cv::Mat deep_map_table;
@@ -944,10 +970,10 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	ret = lookup_table_machine_.generate_pointcloud(z_map_table, unwrap_mask, deep_map_table);
 
 	 
-	startTime = clock();//¼ÆÊ±¿ªÊ¼   
+	startTime = clock();//ï¿½ï¿½Ê±ï¿½ï¿½Ê¼   
 	FilterModule filter_machine;
 	filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.8, 4);
-	endTime = clock();//¼ÆÊ±½áÊø
+	endTime = clock();//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
 	std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	/*********************************************************************************/
@@ -1130,10 +1156,10 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
  
 
 	clock_t startTime, endTime;
-	startTime = clock();//¼ÆÊ±¿ªÊ¼   
+	startTime = clock();//ï¿½ï¿½Ê±ï¿½ï¿½Ê¼   
 	FilterModule filter_machine;
 	filter_machine.RadiusOutlierRemoval(deep_map, unwrap_mask, 0.8, 4);  
-	endTime = clock();//¼ÆÊ±½áÊø
+	endTime = clock();//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
 	std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	cv::Mat color_err_map;

@@ -94,7 +94,7 @@ double PrecisionTest::computeTwoPointSetDistance(std::vector<cv::Point3f> point_
 	for (int i = 0; i < point_set_0.size(); i++)
 	{
 		cv::Point3f differ_p = point_set_0[i] - point_set_1[i];
-		double differ_val = std::sqrtf(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
+		double differ_val = std::sqrt(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
 		dist_list.push_back(differ_val);
 		//std::cout << differ_val;
 
@@ -109,7 +109,7 @@ double PrecisionTest::computeTwoPointSetDistance(std::vector<cv::Point3f> point_
 float PrecisionTest::computeTwoPointDistance(cv::Point3f p0, cv::Point3f p1)
 {
 	cv::Point3f differ_p = p0 - p1;
-	double differ_val = std::sqrtf(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
+	double differ_val = std::sqrt(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
 
 	return differ_val;
 }
@@ -117,7 +117,7 @@ float PrecisionTest::computeTwoPointDistance(cv::Point3f p0, cv::Point3f p1)
 
 float PrecisionTest::computePointToPlaneDistance(cv::Point3f point, std::vector<float> plane)
 {
-	float mod_length = std::sqrtf(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
+	float mod_length = std::sqrt(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
 	//float rms = std::abs(point.x * plane[0] + point.y * plane[1] + point.z * plane[2] + plane[3]) / mod_length;
 	float rms = point.x * plane[0] + point.y * plane[1] + point.z * plane[2] + plane[3] / mod_length;
 
@@ -214,7 +214,7 @@ float PrecisionTest::fitPlaneBaseLeastSquares(std::vector<cv::Point3f> points_3d
 	std::cout << "Normal point: " << plane[0] << " , " << plane[1] << " , "
 	    << plane[2] << " , " << plane[3];
 
-	double mod_length = std::sqrtf(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
+	double mod_length = std::sqrt(plane[0] * plane[0] + plane[1] * plane[1] + plane[2] * plane[2]);
 	double rms = 0.0;
 	for (int p = 0; p < points_3d.size(); p++)
 	{

@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "solution.h"
-#include "../Firmware/camera_param.h"
+#include "../firmware/camera_param.h"
 #include "../cmd/getopt.h"
 
 

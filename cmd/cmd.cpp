@@ -1,16 +1,26 @@
-﻿#include "../sdk/open_cam3d.h"
+#pragma once
+#ifdef _WIN32 
+#include "../sdk/open_cam3d.h" 
+#include <windows.h>
+#elif __linux
+#include "../sdk/open_cam3d.h" 
+#include <cstring>
+#include <iomanip>
+#include <stdio.h> 
+#define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
+#endif 
 #include "../firmware/system_config_settings.h"
 #include "../firmware/protocol.h"
 #include "../firmware/version.h"
 #include "../test/solution.h"
 #include "opencv2/opencv.hpp"
-#include <windows.h>
 #include <assert.h>
 #include <fstream>
 #include <string.h>
 #include "getopt.h" 
 #include "../test/LookupTableFunction.h"
 
+using namespace std;
 
 const char* help_info =
 "Examples:\n\
@@ -376,13 +386,26 @@ void help_with_version(const char* help)
 	char version[] = _VERSION_;
 	char enter[] = "\n";
 
+	#ifdef _WIN32 
 	strcpy_s(info, sizeof(enter), enter);
 	strcat_s(info, sizeof(info), version);
 	strcat_s(info, sizeof(info), enter);
 	strcat_s(info, sizeof(info), enter);
 	strcat_s(info, sizeof(info), help);
+	 
 
-	printf_s(info);
+	#elif __linux
+	strncpy(info, enter, sizeof(enter));
+	strncat(info, version, sizeof(info));
+	strncat(info, enter, sizeof(info));
+	strncat(info, enter, sizeof(info));
+	strncat(info, help, sizeof(info));
+
+	#endif 
+
+
+	printf(info);
+
 }
 
 int on_dropped(void* param)
@@ -1191,10 +1214,32 @@ int load_pattern_data(const char* ip)
 	if (fopen_s(&fw, "pattern_data.dat", "wb") == 0) {
 		fwrite(LoadBuffer, 1, PATTERN_DATA_SIZE, fw);
 		fclose(fw);
-		sprintf_s(string, "pattern_data.dat");
+		
+		#ifdef _WIN32 
+	 
+			sprintf_s(string,sizeof("pattern_data.dat"), "pattern_data.dat");
+		#elif __linux
+		 
+			snprintf(string,sizeof("pattern_data.dat"),  "pattern_data.dat");
+		#endif 
+		
+		
+		
+		
+		
 	}
 	else {
-		sprintf_s(string, "save pattern data fail");
+	
+		#ifdef _WIN32 
+	 
+			sprintf_s(string, sizeof("save pattern data fail") , "save pattern data fail");
+		#elif __linux
+		 
+			snprintf(string, sizeof("save pattern data fail") , "save pattern data fail");
+		#endif 
+	
+		
+		
 	}
 
 	std::cout << "Load Pattern save as:" << string << std::endl;
@@ -1222,7 +1267,13 @@ int program_pattern_data(const char* ip)
 	// read the pattern data from file into the front half of the buffer.
 	FILE* fw;
 	if (fopen_s(&fw, "pattern_data.dat", "rb") == 0) {
-		fread_s(pOrg, PATTERN_DATA_SIZE, 1, PATTERN_DATA_SIZE, fw);
+		
+		#ifdef _WIN32  
+			fread_s(pOrg, PATTERN_DATA_SIZE, 1, PATTERN_DATA_SIZE, fw); 
+		#elif __linux
+			fread(pOrg, PATTERN_DATA_SIZE, PATTERN_DATA_SIZE, fw);  
+		#endif 
+		
 		fclose(fw);
 		std::cout << "Program Pattern:" << "load file ok!" << std::endl;
 	}

@@ -1364,7 +1364,7 @@ DF_SDK_API int DfGetCameraRawData03(unsigned char* raw, int raw_buf_size)
 	if (raw)
 	{
 		LOG(INFO) << "GetRaw03";
-		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 36);
+		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 31);
 		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 		if (ret == DF_FAILED)
 		{

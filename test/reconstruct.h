@@ -2,7 +2,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp> 
-#include "../Firmware/camera_param.h"
+#include "../firmware/camera_param.h"
 
 class DF_Reconstruct
 {

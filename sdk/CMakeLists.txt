@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "-Wl,-rpath=./")
 
 project(open_cam3d_sdk CXX)
 find_package(Threads)
-set(APP_SRC open_cam3d.cpp)
+#set(APP_SRC open_cam3d.cpp)
 
-add_library(open_cam3d_sdk SHARED open_cam3d.cpp triangulation.cpp socket_tcp.cpp utils.cpp easylogging++.cc) 
+add_library(open_cam3d_sdk SHARED open_cam3d.cpp ../test/triangulation.cpp socket_tcp.cpp utils.cpp ../firmware/easylogging++.cc) 
 target_link_libraries(open_cam3d_sdk PRIVATE Threads::Threads)

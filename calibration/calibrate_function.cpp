@@ -1,5 +1,9 @@
-#include "calibrate_function.h"
+#ifdef _WIN32  
 #include <windows.h>
+#elif __linux 
+#include <cstring>
+#endif 
+#include "calibrate_function.h" 
 #include <assert.h>
 #include <fstream> 
 #include <iomanip>
@@ -97,7 +101,7 @@ bool Calibrate_Function::saveMatTxt(cv::Mat mat, std::string path)
 	int nr = mat.rows;
 	int nc = mat.cols;
 
-	//±£´ætxt 
+	//ï¿½ï¿½ï¿½ï¿½txt 
 	std::ofstream stream(path, std::ios::trunc);
 
 	for (int r = 0; r < nr; r++)
@@ -122,7 +126,7 @@ bool Calibrate_Function::savePointsTxt(std::vector<cv::Point2f> points, std::str
 		return false;
 
 	/*************************************************************************************************************************/
-	//±£´ætxt 
+	//ï¿½ï¿½ï¿½ï¿½txt 
 	std::ofstream stream(path, std::ios::trunc);
 
 	for(int i= 0;i< points.size();i++)
@@ -168,7 +172,7 @@ bool Calibrate_Function::writeCalibTxt(cv::Mat camera_intrinsic, cv::Mat camera_
 	}
 
 	/*************************************************************************************************************************/
-	//±£´ætxt 
+	//ï¿½ï¿½ï¿½ï¿½txt 
 	std::ofstream stream(path, std::ios::trunc);
 
 	stream << camera_intrinsic.at<double>(0, 0) << "\n";
@@ -287,7 +291,7 @@ double Calibrate_Function::calibrateStereo(std::vector<std::vector<cv::Point2f>>
 
 
 
-	//±ê¶¨
+	//ï¿½ê¶¨
 	bool mustInitUndistort = true;
 	int flag = 0;
 
@@ -390,18 +394,18 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 	cv::Mat distCoeffs;
 	std::vector<cv::Mat> rvecsMat, tvecsMat;
 	int flag = 0;
-	/* ÔËÐÐ±ê¶¨º¯Êý */
+	/* ï¿½ï¿½ï¿½Ð±ê¶¨ï¿½ï¿½ï¿½ï¿½ */
 	double err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
 		flag,cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
 
 	//std::cout << "First calibrate error: " << err_first << std::endl;
 
 
-	double total_err = 0.0;            // ËùÓÐÍ¼ÏñµÄÆ½¾ùÎó²îµÄ×ÜºÍ 
-	double err = 0.0;                  // Ã¿·ùÍ¼ÏñµÄÆ½¾ùÎó²î
+	double total_err = 0.0;            // ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Üºï¿½ 
+	double err = 0.0;                  // Ã¿ï¿½ï¿½Í¼ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½
 	double totalErr = 0.0;
 	double totalPoints = 0.0;
-	std::vector<cv::Point2f> image_points_pro;     // ±£´æÖØÐÂ¼ÆËãµÃµ½µÄÍ¶Ó°µã
+	std::vector<cv::Point2f> image_points_pro;     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½Í¶Ó°ï¿½ï¿½
 
 	std::vector<std::vector<cv::Point2f>> select_camera_points;
 	std::vector<std::vector<cv::Point3f>> select_world_points;
@@ -419,7 +423,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 		for (int i = 0; i < dlp_points_list.size(); i++)
 		{
 
-			projectPoints(world_feature_points[i], rvecsMat[i], tvecsMat[i], cameraMatrix, distCoeffs, image_points_pro);   //Í¨¹ýµÃµ½µÄÉãÏñ»úÄÚÍâ²ÎÊý£¬¶Ô½ÇµãµÄ¿Õ¼äÈýÎ¬×ø±ê½øÐÐÖØÐÂÍ¶Ó°¼ÆËã
+			projectPoints(world_feature_points[i], rvecsMat[i], tvecsMat[i], cameraMatrix, distCoeffs, image_points_pro);   //Í¨ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô½Çµï¿½Ä¿Õ¼ï¿½ï¿½ï¿½Î¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¶Ó°ï¿½ï¿½ï¿½ï¿½
 			err = cv::norm(cv::Mat(dlp_points_list[i]), cv::Mat(image_points_pro), cv::NORM_L2);
 
 
@@ -686,7 +690,7 @@ bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_point
 		//cv::Point d_p;
 		//d_p.x = pos.x + 0.5;
 		//d_p.y = pos.y + 0.5;
-		//¿ÉÒÔ²åÖµÓÅ»¯
+		//ï¿½ï¿½ï¿½Ô²ï¿½Öµï¿½Å»ï¿½
 
 
 		double  hor_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_hor);
@@ -793,18 +797,18 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 	std::vector<cv::Mat> rvecsMat, tvecsMat;
 	int flag = 0;
 
-	/* ÔËÐÐ±ê¶¨º¯Êý */
+	/* ï¿½ï¿½ï¿½Ð±ê¶¨ï¿½ï¿½ï¿½ï¿½ */
 	double err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat, 
 		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
 
 	//std::cout << "First calibrate error: " << err_first<<std::endl;
 
 
-	double total_err = 0.0;            // ËùÓÐÍ¼ÏñµÄÆ½¾ùÎó²îµÄ×ÜºÍ 
-	double err = 0.0;                  // Ã¿·ùÍ¼ÏñµÄÆ½¾ùÎó²î
+	double total_err = 0.0;            // ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Üºï¿½ 
+	double err = 0.0;                  // Ã¿ï¿½ï¿½Í¼ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½
 	double totalErr = 0.0;
 	double totalPoints = 0.0;
-	std::vector<cv::Point2f> image_points_pro;     // ±£´æÖØÐÂ¼ÆËãµÃµ½µÄÍ¶Ó°µã
+	std::vector<cv::Point2f> image_points_pro;     // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½Í¶Ó°ï¿½ï¿½
 
 	std::vector<std::vector<cv::Point2f>> select_camera_points;
 	std::vector<std::vector<cv::Point3f>> select_world_points;
@@ -822,7 +826,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 		for (int i = 0; i < camera_points_list.size(); i++)
 		{
 
-			projectPoints(world_feature_points[i], rvecsMat[i], tvecsMat[i], cameraMatrix, distCoeffs, image_points_pro);   //Í¨¹ýµÃµ½µÄÉãÏñ»úÄÚÍâ²ÎÊý£¬¶Ô½ÇµãµÄ¿Õ¼äÈýÎ¬×ø±ê½øÐÐÖØÐÂÍ¶Ó°¼ÆËã
+			projectPoints(world_feature_points[i], rvecsMat[i], tvecsMat[i], cameraMatrix, distCoeffs, image_points_pro);   //Í¨ï¿½ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô½Çµï¿½Ä¿Õ¼ï¿½ï¿½ï¿½Î¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¶Ó°ï¿½ï¿½ï¿½ï¿½
 			err = cv::norm(cv::Mat(camera_points_list[i]), cv::Mat(image_points_pro), cv::NORM_L2);
 
 

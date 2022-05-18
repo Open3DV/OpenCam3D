@@ -1,10 +1,36 @@
-#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+
+#ifdef _WIN32 
 #include "socket_tcp.h"
 #include <winsock2.h>
 #include <iostream>
 #include <assert.h>
 #pragma comment(lib, "ws2_32.lib")
-#include "../Firmware/easylogging++.h"
+#elif __linux
+
+
+	#include <sys/socket.h>
+	#include <arpa/inet.h>
+	#include <netinet/in.h>
+	#include <netinet/tcp.h>
+
+	#include <unistd.h>
+
+	//#define SOCKET int 
+	#define INVALID_SOCKET (~0)
+	#define SOCKET_ERROR -1
+	//#define AF_INET 2
+	//#define SOCK_STREAM 1
+	
+	//#define WORD unsigned short 
+	//#define MAKEWORD(a, b)      ((WORD)(((BYTE)(((DWORD_PTR)(a)) & 0xff)) | ((WORD)((BYTE)(((DWORD_PTR)(b)) & 0xff))) << 8))
+#endif
+
+#include "socket_tcp.h"
+#include <iostream>
+#include <assert.h>
+#include "../firmware/easylogging++.h"
+#include "../firmware/protocol.h"
 
 SOCKET g_sock = INVALID_SOCKET;
 SOCKET g_sock_heartbeat = INVALID_SOCKET;
@@ -13,6 +39,7 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 {
 	if (sock == INVALID_SOCKET)
 	{
+	#ifdef _WIN32 
 		WORD sockVersion = MAKEWORD(2, 2);
 		WSADATA data;
 		if (WSAStartup(sockVersion, &data) != 0)
@@ -20,6 +47,9 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 			LOG(ERROR) << "WSAStartup error!";
 			return DF_FAILED;
 		}
+	#elif __linux
+
+	#endif
 		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (sock == INVALID_SOCKET)
 		{
@@ -30,12 +60,21 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 		struct sockaddr_in host_addr;
 		host_addr.sin_family = AF_INET;
 		host_addr.sin_port = htons(port);
+
+#ifdef _WIN32 
 		host_addr.sin_addr.S_un.S_addr = inet_addr(camera_ip);
+#elif __linux
+		host_addr.sin_addr.s_addr = inet_addr(camera_ip);
+#endif
 
 		if (connect(sock, (struct sockaddr*)&host_addr, sizeof(host_addr)) == SOCKET_ERROR)
 		{ 
 			LOG(ERROR) << "Connect error !";
+#ifdef _WIN32 
 			closesocket(sock);
+#elif __linux
+			close(sock);
+#endif
 			sock = INVALID_SOCKET;
 			return DF_FAILED;
 		}
@@ -53,15 +92,22 @@ int close_socket(SOCKET& sock)
 {
 	if (sock != INVALID_SOCKET)
 	{
+
+#ifdef _WIN32 
 		closesocket(sock);
 		sock = INVALID_SOCKET;
 		WSACleanup();
+
+#elif __linux
+		close(sock);
+		sock = INVALID_SOCKET;
+		//WSACleanup();
+
+#endif
 	}
 	return DF_SUCCESS;
 }
-#else
 
-#endif
 
 int send_command(int command, SOCKET& sock)
 {
@@ -104,7 +150,7 @@ int recv_buffer(char* buffer, int buffer_size, SOCKET& sock)
 	while (ret != -1)
 	{
 		ret = recv(sock, buffer, buffer_size, 0); 
-		//LOG(INFO) << "recv£º " << "ret=" << ret << std::endl;
+		//LOG(INFO) << "recvï¿½ï¿½ " << "ret=" << ret << std::endl;
 		if (ret > 0)
 		{
 			buffer_size -= ret;
