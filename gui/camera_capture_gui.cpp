@@ -11,7 +11,7 @@
 #include "../calibration/calibrate_function.h"
 #include "PrecisionTest.h"
 #include <qdesktopservices.h>
- 
+#include <thread>
 
 CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 	: QWidget(parent)
@@ -1236,7 +1236,7 @@ double CameraCaptureGui::computePointsDistance(cv::Point2f p_0, cv::Point2f p_1,
 	f_p_1_inter.z = calib_function.Bilinear_interpolation(p_1.x, p_1.y, point_cloud_channels[2]);
 
 	cv::Point3f differ_p = f_p_1_inter - f_p_0_inter;
-	double differ_val = std::sqrtf(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
+    double differ_val = std::sqrt(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
 
 	return differ_val;
 } 

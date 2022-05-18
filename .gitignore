@@ -9,3 +9,4 @@ example/*.dll
 example/*.lib
 build
 firmware/version.h
+TestData
