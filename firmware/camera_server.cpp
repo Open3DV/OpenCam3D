@@ -941,6 +941,7 @@ int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
     float* depth_map = new float[depth_buf_size]; 
     unsigned char* brightness = new unsigned char[brightness_buf_size];
 
+ 
 
 //    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
 
