@@ -504,7 +504,7 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 		CHECK(cudaMemcpy(&sum_pixels_list[i], d_hdr_bright_pixel_sum_list_[i], 1* sizeof(float), cudaMemcpyDeviceToHost));
     }
  
-   
+ 
 	std::vector<float> param_list;
 	std::vector<int> id; 
 	std::vector<bool> flag_list;
@@ -549,7 +549,7 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 		{
 
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_list_[0], 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[0], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[0], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 		} 
 		break;
 		case 2:
@@ -559,7 +559,7 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
@@ -569,7 +569,7 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 				d_hdr_brightness_list_[id[1]], d_hdr_brightness_list_[id[2]], image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
@@ -580,7 +580,7 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
@@ -592,7 +592,7 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
@@ -605,7 +605,7 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
@@ -614,7 +614,9 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 		 		return false;
 
 	}
- 
+
+ 	// CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[id[0]], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+ 	CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[hdr_num-1], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 	LOG(INFO)<<"DHR Finished!";
 
 	return true;
@@ -632,8 +634,7 @@ __global__ void parallel_cuda_merge_hdr_6(const float*  depth_map_0,const float*
 
 	if (idx < img_width && idy < img_height)
 	{
-
-
+ 
 
 		float pixel= 0;
 		pixel +=  brightness_0[offset];
@@ -892,6 +893,9 @@ bool parallel_cuda_copy_result_to_hdr(int serial_flag,int brigntness_serial)
 
 	CHECK(cudaMemcpyAsync(d_hdr_depth_map_list_[serial_flag], d_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToDevice)); 
 	CHECK(cudaMemcpyAsync(d_hdr_brightness_list_[serial_flag], d_patterns_list[brigntness_serial], 1 * image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToDevice));
+
+	float val  = 0;
+	CHECK(cudaMemcpyAsync(d_hdr_bright_pixel_sum_list_[serial_flag], &val, sizeof(float), cudaMemcpyHostToDevice)); 
  	parallel_cuda_count_sum_pixel << <blocksPerGrid, threadsPerBlock >> > (d_hdr_brightness_list_[serial_flag],image_height_,image_width_,d_hdr_bright_pixel_sum_list_[serial_flag]);
  
 	LOG(INFO)<<"parallel_cuda_copy_result_to_hdr: "<<serial_flag;
