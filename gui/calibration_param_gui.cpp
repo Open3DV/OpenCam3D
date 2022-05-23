@@ -1,6 +1,6 @@
-#include "calibration_param_gui.h"
+﻿#include "calibration_param_gui.h"
 
-CalibrationParamGui::CalibrationParamGui(QWidget *parent)
+CalibrationParamGui::CalibrationParamGui(QWidget* parent)
 	: QDialog(parent)
 {
 	ui.setupUi(this);
@@ -39,7 +39,7 @@ bool CalibrationParamGui::setShowCalibrationMessage(struct SystemConfigParam con
 		extrinsic_str += QString::number(extrinsic[9 + r]);
 		extrinsic_str += "\r\n";
 	}
-	 
+
 	ui.textEdit_extrinsic->setText(extrinsic_str);
 
 
@@ -49,11 +49,11 @@ bool CalibrationParamGui::setShowCalibrationMessage(struct SystemConfigParam con
 	{
 		for (int c = 0; c < 3; c++)
 		{
-			intrinsic_str += QString::number(calibration_param.camera_intrinsic[r*3 + c]);
+			intrinsic_str += QString::number(calibration_param.camera_intrinsic[r * 3 + c]);
 			intrinsic_str += "\t \t";
 		}
 		intrinsic_str += "\r\n";
-	} 
+	}
 
 	ui.textEdit_intrinsic->setText(intrinsic_str);
 
@@ -62,7 +62,7 @@ bool CalibrationParamGui::setShowCalibrationMessage(struct SystemConfigParam con
 	QString plane_str = "";
 
 	for (int r = 0; r < 3; r++)
-	{ 
+	{
 		for (int c = 0; c < 3; c++)
 		{
 			plane_str += QString::number(config_param.standard_plane_external_param[r * 3 + c]);
@@ -70,7 +70,7 @@ bool CalibrationParamGui::setShowCalibrationMessage(struct SystemConfigParam con
 		}
 		plane_str += QString::number(config_param.standard_plane_external_param[9 + r]);
 		plane_str += "\r\n";
-	} 
+	}
 	ui.textEdit_standard_plane->setText(plane_str);
 
 	return true;

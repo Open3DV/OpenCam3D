@@ -1,4 +1,4 @@
-#include "camera_capture_gui.h"
+ï»¿#include "camera_capture_gui.h"
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -13,33 +13,33 @@
 #include <qdesktopservices.h>
 #include <thread>
 
-CameraCaptureGui::CameraCaptureGui(QWidget *parent)
+CameraCaptureGui::CameraCaptureGui(QWidget* parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
 
-	connected_flag_ = false; 
+	connected_flag_ = false;
 
 	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
 	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
 	ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
 	//ui.tableWidget_more_exposure->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-	ui.tableWidget_more_exposure->setEditTriggers(QAbstractItemView::NoEditTriggers); //ÉèÖÃ²»¿É±à¼­
+	ui.tableWidget_more_exposure->setEditTriggers(QAbstractItemView::NoEditTriggers); //è®¾ç½®ä¸å¯ç¼–è¾‘
 	ui.tableWidget_more_exposure->setFrameShape(QFrame::Box);
 
-  
- 
+
+
 	config_system_param_machine_.loadProcessingSettingsFile("../camera_config.json");
 	config_system_param_machine_.getSystemConfigData(system_config_param_);
 	config_system_param_machine_.getFirmwareConfigData(firmware_config_param_);
 	config_system_param_machine_.getGuiConfigData(processing_gui_settings_data_);
 
- 
+
 
 	radio_button_flag_ = SELECT_BRIGHTNESS_FLAG_;
 	showImage();
 
-	setUiData(); 
+	setUiData();
 	initializeFunction();
 	undateSystemConfigUiData();
 
@@ -50,7 +50,7 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 
 	if (!dir.exists(path))
 	{
-		bool res = dir.mkpath(path); 
+		bool res = dir.mkpath(path);
 	}
 
 	//ui.tableWidget_more_exposure->hide();
@@ -59,7 +59,7 @@ CameraCaptureGui::CameraCaptureGui(QWidget *parent)
 
 	//ui.radioButton_depth_grey->hide();
 
- 
+
 }
 
 CameraCaptureGui::~CameraCaptureGui()
@@ -99,7 +99,7 @@ void CameraCaptureGui::setCalibrationBoard(int flag)
 bool CameraCaptureGui::initializeFunction()
 {
 	/********************************************************************************************************************/
-	  
+
 
 	/*******************************************************************************************************************/
 
@@ -119,7 +119,7 @@ bool CameraCaptureGui::initializeFunction()
 
 	connect(ui.pushButton_connect, SIGNAL(clicked()), this, SLOT(do_pushButton_connect()));
 	connect(ui.pushButton_capture_one_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_one_frame()));
-	connect(ui.pushButton_capture_continuous, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_continuous())); 
+	connect(ui.pushButton_capture_continuous, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_continuous()));
 
 
 	connect(ui.pushButton_save_as, SIGNAL(clicked()), this, SLOT(do_pushButton_save_as()));
@@ -162,12 +162,12 @@ bool CameraCaptureGui::initializeFunction()
 	return true;
 }
 
- 
+
 
 void CameraCaptureGui::addLogMessage(QString str)
 {
 
-	QString StrCurrentTime =  QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
+	QString StrCurrentTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss.zzz");
 
 	QString log = StrCurrentTime + " " + str;
 
@@ -175,7 +175,7 @@ void CameraCaptureGui::addLogMessage(QString str)
 
 	ui.textBrowser_log->repaint();
 }
- 
+
 
 bool CameraCaptureGui::saveOneFrameData(QString path_name)
 {
@@ -187,23 +187,23 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 	QDir dir(path_name);
 	path_name = dir.absolutePath();
 
-	 
+
 	QString brightness_str = path_name + "_bright.bmp";
-	cv::imwrite(brightness_str.toLocal8Bit().toStdString(), brightness_map_); 
-	 
+	cv::imwrite(brightness_str.toLocal8Bit().toStdString(), brightness_map_);
+
 	QString depth_str = path_name + "_depth_map.tiff";
 	cv::imwrite(depth_str.toLocal8Bit().toStdString(), depth_map_);
 
 	QString height_str = path_name + "_height_map.tiff";
 	cv::imwrite(height_str.toLocal8Bit().toStdString(), height_map_);
 
-	QString points_str = path_name + ".ply"; 
+	QString points_str = path_name + ".ply";
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 
 	depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
 
 
-	FileIoFunction file_io_machine; 
+	FileIoFunction file_io_machine;
 	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_);
 
 	return true;
@@ -212,16 +212,16 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 
 bool CameraCaptureGui::loadSettingData(QString path)
 {
-	bool ret =config_system_param_machine_.loadProcessingSettingsFile(path);
+	bool ret = config_system_param_machine_.loadProcessingSettingsFile(path);
 	if (!ret)
 	{
 		return false;
 	}
-	
+
 	config_system_param_machine_.getSystemConfigData(system_config_param_);
 	config_system_param_machine_.getFirmwareConfigData(firmware_config_param_);
 	config_system_param_machine_.getGuiConfigData(processing_gui_settings_data_);
-	   
+
 	setUiData();
 	undateSystemConfigUiData();
 
@@ -232,24 +232,24 @@ bool CameraCaptureGui::saveSettingData(QString path)
 {
 
 	//bool ret = processing_settings_data_.saveToSettings(path);
-	
+
 	config_system_param_machine_.setSystemConfigData(system_config_param_);
 	config_system_param_machine_.setFirmwareConfigData(firmware_config_param_);
 	config_system_param_machine_.setGuiConfigData(processing_gui_settings_data_);
 
 	bool ok = config_system_param_machine_.saveProcessingSettingsFile(path);
-	
+
 	return ok;
 }
 
 
 bool CameraCaptureGui::renderBrightnessImage(cv::Mat brightness)
 {
-	
+
 	cv::Mat color_map(brightness.size(), CV_8UC3, cv::Scalar(0, 0, 0));
 
 	int nr = color_map.rows;
-	int nc = color_map.cols; 
+	int nc = color_map.cols;
 
 	for (int r = 0; r < nr; r++)
 	{
@@ -288,7 +288,7 @@ bool CameraCaptureGui::renderHeightImage(cv::Mat height)
 	int low_z = processing_gui_settings_data_.Instance().low_z_value;
 	int high_z = processing_gui_settings_data_.Instance().high_z_value;
 
-	FileIoFunction io_machine; 
+	FileIoFunction io_machine;
 
 	io_machine.depthToColor(height, render_image_color_height_, render_image_gray_depth_, low_z, high_z);
 
@@ -348,7 +348,7 @@ void CameraCaptureGui::undateSystemConfigUiData()
 
 	ui.spinBox_camera_exposure_define->setValue(firmware_config_param_.generate_brightness_exposure);
 
-	switch(firmware_config_param_.generate_brightness_model)
+	switch (firmware_config_param_.generate_brightness_model)
 	{
 	case 1:
 	{
@@ -390,7 +390,7 @@ double CameraCaptureGui::get_exposure_item_value(int row)
 		return -1;
 
 	return exposure_time_list_[row]->value();
- 
+
 }
 
 
@@ -402,41 +402,41 @@ bool CameraCaptureGui::remove_exposure_item(int row)
 	if (row > item_count - 1)
 		return false;
 
-	ui.tableWidget_more_exposure->removeRow(row); 
+	ui.tableWidget_more_exposure->removeRow(row);
 
 	return true;
 }
 
- 
+
 
 void CameraCaptureGui::add_exposure_item(int row, int exposure, int led)
 {
-  
 
-	int item_count = ui.tableWidget_more_exposure->rowCount();  
-	
+
+	int item_count = ui.tableWidget_more_exposure->rowCount();
+
 	if (row >= item_count)
 	{
-		ui.tableWidget_more_exposure->setRowCount(item_count + 1); 
+		ui.tableWidget_more_exposure->setRowCount(item_count + 1);
 	}
- 
+
 	QSpinBox* exposureSpinBoxItem = new QSpinBox();
-	exposureSpinBoxItem->setRange(6000, 60000);//ÉèÖÃÊıÖµÏÔÊ¾·¶Î§
+	exposureSpinBoxItem->setRange(6000, 60000);//è®¾ç½®æ•°å€¼æ˜¾ç¤ºèŒƒå›´
 	exposureSpinBoxItem->setValue(exposure);
 	exposureSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
 	exposureSpinBoxItem->setAlignment(Qt::AlignHCenter);
 
 
 	QSpinBox* ledSpinBoxItem = new QSpinBox();
-	ledSpinBoxItem->setRange(0, 1023);//ÉèÖÃÊıÖµÏÔÊ¾·¶Î§
+	ledSpinBoxItem->setRange(0, 1023);//è®¾ç½®æ•°å€¼æ˜¾ç¤ºèŒƒå›´
 	ledSpinBoxItem->setValue(led);
 	ledSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
 	ledSpinBoxItem->setAlignment(Qt::AlignHCenter);
 
-	ui.tableWidget_more_exposure->setItem(row, 0, new QTableWidgetItem(QString::number(row+1)));
-	ui.tableWidget_more_exposure->setCellWidget(row, 1 , exposureSpinBoxItem); 
+	ui.tableWidget_more_exposure->setItem(row, 0, new QTableWidgetItem(QString::number(row + 1)));
+	ui.tableWidget_more_exposure->setCellWidget(row, 1, exposureSpinBoxItem);
 	ui.tableWidget_more_exposure->setCellWidget(row, 2, ledSpinBoxItem);
-	 
+
 	//ui.tableWidget_more_exposure->setColumnWidth(2 * col,10);
 	//ui.tableWidget_more_exposure->item(row, +2 * col)->setTextAlignment(Qt::AlignHCenter | Qt::AlignCenter);
 	//ui.tableWidget_more_exposure->item(row, +2 * col)->setSelected(false);
@@ -452,8 +452,8 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 
 	renderHeightImage(height_map_);
 	showImage();
-	 
- 
+
+
 }
 
 
@@ -468,7 +468,7 @@ void CameraCaptureGui::do_spin_camera_exposure_changed(int val)
 	}
 
 
-	//ÉèÖÃ²ÎÊıÊ±¼ÓËø
+	//è®¾ç½®å‚æ•°æ—¶åŠ é”
 	camera_setting_flag_ = true;
 	if (connected_flag_)
 	{
@@ -476,17 +476,17 @@ void CameraCaptureGui::do_spin_camera_exposure_changed(int val)
 		system_config_param_.camera_exposure_time = val;
 
 		int ret_code = -1;
-		//Èç¹ûÁ¬Ğø²É¼¯ÔÚÓÃ¡¢ÏÈÔİÍ£
+		//å¦‚æœè¿ç»­é‡‡é›†åœ¨ç”¨ã€å…ˆæš‚åœ
 		if (start_timer_flag_)
 		{
 
-			stopCapturingOneFrameBaseThread(); 
+			stopCapturingOneFrameBaseThread();
 
 			ret_code = DfSetParamCameraExposure(system_config_param_.camera_exposure_time);
 			if (0 == ret_code)
 			{
 				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
-				QString str = QString::fromLocal8Bit("ÉèÖÃÏà»úÆØ¹âÊ±¼ä: ") + QString::number(system_config_param_.camera_exposure_time);
+				QString str = u8"è®¾ç½®ç›¸æœºæ›å…‰æ—¶é—´: " + QString::number(system_config_param_.camera_exposure_time);
 				addLogMessage(str);
 			}
 
@@ -500,7 +500,7 @@ void CameraCaptureGui::do_spin_camera_exposure_changed(int val)
 			if (0 == ret_code)
 			{
 				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
-				QString str = QString::fromLocal8Bit("ÉèÖÃÏà»úÆØ¹âÊ±¼ä: ") + QString::number(system_config_param_.camera_exposure_time);
+				QString str = u8"è®¾ç½®ç›¸æœºæ›å…‰æ—¶é—´: " + QString::number(system_config_param_.camera_exposure_time);
 				addLogMessage(str);
 			}
 
@@ -511,15 +511,15 @@ void CameraCaptureGui::do_spin_camera_exposure_changed(int val)
 	camera_setting_flag_ = false;
 }
 
- 
+
 void CameraCaptureGui::do_spin_led_current_changed(int val)
-{  
+{
 	if (camera_setting_flag_)
-	{ 
+	{
 		return;
 	}
-	
-	//ÉèÖÃ²ÎÊıÊ±¼ÓËø
+
+	//è®¾ç½®å‚æ•°æ—¶åŠ é”
 	camera_setting_flag_ = true;
 	if (connected_flag_)
 	{
@@ -527,23 +527,23 @@ void CameraCaptureGui::do_spin_led_current_changed(int val)
 		system_config_param_.led_current = val;
 
 		int ret_code = -1;
-		//Èç¹ûÁ¬Ğø²É¼¯ÔÚÓÃ¡¢ÏÈÔİÍ£
+		//å¦‚æœè¿ç»­é‡‡é›†åœ¨ç”¨ã€å…ˆæš‚åœ
 		if (start_timer_flag_)
 		{
-  
+
 			stopCapturingOneFrameBaseThread();
-			 
-			
+
+
 			int ret_code = DfSetSystemConfigParam(system_config_param_);
 			if (0 == ret_code)
-			{ 
+			{
 				ui.spinBox_led->setValue(system_config_param_.led_current);
-				QString str = QString::fromLocal8Bit("ÉèÖÃÍ¶Ó°ÁÁ¶È: ") + QString::number(system_config_param_.led_current);
+				QString str = u8"è®¾ç½®æŠ•å½±äº®åº¦: " + QString::number(system_config_param_.led_current);
 				addLogMessage(str);
-			} 
+			}
 
 			do_pushButton_capture_continuous();
-		 
+
 		}
 		else
 		{
@@ -552,13 +552,13 @@ void CameraCaptureGui::do_spin_led_current_changed(int val)
 			if (0 == ret_code)
 			{
 				ui.spinBox_led->setValue(system_config_param_.led_current);
-				QString str = QString::fromLocal8Bit("ÉèÖÃÍ¶Ó°ÁÁ¶È: ") + QString::number(system_config_param_.led_current);
+				QString str = u8"è®¾ç½®æŠ•å½±äº®åº¦: " + QString::number(system_config_param_.led_current);
 				addLogMessage(str);
 			}
 
 		}
-		  
-	}  
+
+	}
 
 	camera_setting_flag_ = false;
 }
@@ -572,7 +572,7 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 	renderHeightImage(height_map_);
 	showImage();
 
- 
+
 }
 
 
@@ -604,13 +604,29 @@ bool CameraCaptureGui::setCameraConfigParam()
 	}
 
 
-	ret_code = DfSetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
+	//æ›´æ–°å¤šæ›å…‰å‚æ•° 
+	//for (int i = 0; i < exposure_time_list_.size(); i++)
+	//{
+	//	firmware_config_param_.mixed_exposure_param_list[i] = exposure_time_list_[i]->value();
+	//	firmware_config_param_.mixed_led_param_list[i] = led_current_list_[i]->value();
+	//}
 
+	//firmware_config_param_.mixed_exposure_num = exposure_time_list_.size();  
+	ret_code = DfSetParamMixedHdr(firmware_config_param_.mixed_exposure_num, firmware_config_param_.mixed_exposure_param_list, firmware_config_param_.mixed_led_param_list);
 	if (0 != ret_code)
 	{
 		qDebug() << "Set HDR Param Error;";
 		return false;
 	}
+
+
+	//ret_code = DfSetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
+
+	//if (0 != ret_code)
+	//{
+	//	qDebug() << "Set HDR Param Error;";
+	//	return false;
+	//}
 
 	ret_code = DfSetParamStandardPlaneExternal(&system_config_param_.standard_plane_external_param[0],
 		&system_config_param_.standard_plane_external_param[9]);
@@ -628,7 +644,7 @@ bool CameraCaptureGui::setCameraConfigParam()
 		return false;
 	}
 
-	ret_code = DfSetParamGenerateBrightness(firmware_config_param_.generate_brightness_model,firmware_config_param_.generate_brightness_exposure);
+	ret_code = DfSetParamGenerateBrightness(firmware_config_param_.generate_brightness_model, firmware_config_param_.generate_brightness_exposure);
 	if (0 != ret_code)
 	{
 		qDebug() << "Set Generate Brightness Param Error;";
@@ -704,7 +720,7 @@ bool CameraCaptureGui::getShowCalibrationMessage(struct SystemConfigParam& confi
 	return true;
 }
 
-//¸üĞÂÉú³ÉÁÁ¶ÈÍ¼²ÎÊı
+//æ›´æ–°ç”Ÿæˆäº®åº¦å›¾å‚æ•°
 void CameraCaptureGui::updateGenerateBrightnessParam()
 {
 	if (camera_setting_flag_)
@@ -712,13 +728,13 @@ void CameraCaptureGui::updateGenerateBrightnessParam()
 		return;
 	}
 
-	//ÉèÖÃ²ÎÊıÊ±¼ÓËø
+	//è®¾ç½®å‚æ•°æ—¶åŠ é”
 	camera_setting_flag_ = true;
 	if (connected_flag_)
 	{
-		  
+
 		int ret_code = -1;
-		//Èç¹ûÁ¬Ğø²É¼¯ÔÚÓÃ¡¢ÏÈÔİÍ£
+		//å¦‚æœè¿ç»­é‡‡é›†åœ¨ç”¨ã€å…ˆæš‚åœ
 		if (start_timer_flag_)
 		{
 
@@ -727,11 +743,11 @@ void CameraCaptureGui::updateGenerateBrightnessParam()
 
 			ret_code = DfSetParamGenerateBrightness(generate_brightness_model_, generate_brightness_exposure_);
 			if (0 == ret_code)
-			{ 
-				QString str = QString::fromLocal8Bit("ÉèÖÃÉú³ÉÁÁ¶ÈÍ¼²ÎÊı ");
+			{
+				QString str = u8"è®¾ç½®ç”Ÿæˆäº®åº¦å›¾å‚æ•° ";
 				addLogMessage(str);
-			} 
-			do_pushButton_capture_continuous(); 
+			}
+			do_pushButton_capture_continuous();
 		}
 		else
 		{
@@ -739,23 +755,23 @@ void CameraCaptureGui::updateGenerateBrightnessParam()
 
 			if (0 == ret_code)
 			{
-				QString str = QString::fromLocal8Bit("ÉèÖÃÉú³ÉÁÁ¶ÈÍ¼²ÎÊı ");
+				QString str = u8"è®¾ç½®ç”Ÿæˆäº®åº¦å›¾å‚æ•° ";
 				addLogMessage(str);
 			}
 
 		}
 
-	} 
+	}
 	camera_setting_flag_ = false;
 }
 
-//¸üĞÂ¶àÆØ¹â²ÎÊı
+//æ›´æ–°å¤šæ›å…‰å‚æ•°
 void CameraCaptureGui::updateManyExposureParam()
 {
 	for (int i = 0; i < exposure_time_list_.size(); i++)
 	{
 		firmware_config_param_.mixed_exposure_param_list[i] = exposure_time_list_[i]->value();
-		firmware_config_param_.mixed_led_param_list[i] = led_current_list_[i]->value(); 
+		firmware_config_param_.mixed_led_param_list[i] = led_current_list_[i]->value();
 	}
 
 	firmware_config_param_.mixed_exposure_num = exposure_time_list_.size();
@@ -777,14 +793,14 @@ void CameraCaptureGui::updateManyExposureParam()
 	//	return;
 	//}
 
-	QString str = QString::fromLocal8Bit("Í¬²½¶àÆØ¹â²ÎÊı ");
+	QString str = u8"åŒæ­¥å¤šæ›å…‰å‚æ•° ";
 	addLogMessage(str);
 
 }
 
 void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 {
-   
+
 	int item_num = ui.tableWidget_more_exposure->rowCount();
 
 
@@ -795,7 +811,7 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 
 	std::vector<int> old_exposure_list;
 	std::vector<int> old_led_list;
-	   
+
 	std::vector<QSpinBox*> old_exposure_time_list = exposure_time_list_;
 	std::vector<QSpinBox*> old_led_current_list = led_current_list_;
 
@@ -803,9 +819,9 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 	for (int i = 0; i < exposure_time_list_.size(); i++)
 	{
 		old_exposure_list.push_back(exposure_time_list_.at(i)->value());
-		old_led_list.push_back(led_current_list_.at(i)->value()); 
+		old_led_list.push_back(led_current_list_.at(i)->value());
 	}
-	 
+
 
 	exposure_time_list_.clear();
 	led_current_list_.clear();
@@ -818,8 +834,8 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 		//int led_val = system_config_param_.led_current;
 		int exposure_val = firmware_config_param_.mixed_exposure_param_list[i];
 		int led_val = firmware_config_param_.mixed_led_param_list[i];
-		 
- 
+
+
 		add_exposure_item(rows, exposure_val, led_val);
 	}
 
@@ -845,18 +861,18 @@ bool CameraCaptureGui::captureBrightness()
 	}
 
 	int width = camera_width_;
-	int height = camera_height_; 
+	int height = camera_height_;
 
- 
-	 
+
+
 
 	int image_size = width * height;
 
-	cv::Mat brightness(cv::Size(width, height), CV_8U,cv::Scalar(0));
+	cv::Mat brightness(cv::Size(width, height), CV_8U, cv::Scalar(0));
 	unsigned char* brightness_buf = (unsigned char*)brightness.data;
 
-	int ret_code = DfGetCameraData(0, 0,brightness_buf, image_size,0, 0,0, 0);
-	 
+	int ret_code = DfGetCameraData(0, 0, brightness_buf, image_size, 0, 0, 0, 0);
+
 
 	if (0 == ret_code)
 	{
@@ -891,7 +907,7 @@ void CameraCaptureGui::captureOneFrameBaseThread(bool hdr)
 
 	if (!connected_flag_)
 	{
-		return ;
+		return;
 	}
 
 
@@ -902,7 +918,7 @@ void CameraCaptureGui::captureOneFrameBaseThread(bool hdr)
 	capturing_flag_ = true;
 
 	int width = camera_width_;
-	int height = camera_height_; 
+	int height = camera_height_;
 
 	int image_size = width * height;
 
@@ -923,7 +939,7 @@ void CameraCaptureGui::captureOneFrameBaseThread(bool hdr)
 	{
 		ret_code = DfGetFrame04((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
 	}
-	 
+
 
 	/***************************************************************************/
 	if (0 == ret_code)
@@ -945,7 +961,7 @@ void CameraCaptureGui::captureOneFrameBaseThread(bool hdr)
 		std::vector<cv::Mat> channels;
 		cv::split(point_cloud, channels);
 		height_map_ = channels[2].clone();
-		 
+
 		//capture_m_mutex_.unlock();
 
 
@@ -954,13 +970,13 @@ void CameraCaptureGui::captureOneFrameBaseThread(bool hdr)
 
 		emit send_images_update();
 
-		  
-	} 
+
+	}
 	else
 	{
 		start_timer_flag_ = false;
 	}
-	 
+
 	capturing_flag_ = false;
 }
 
@@ -974,23 +990,23 @@ bool CameraCaptureGui::captureOneFrameData()
 
 	int width = camera_width_;
 	int height = camera_height_;
-  
 
-	addLogMessage(QString::fromLocal8Bit("²É¼¯Êı¾İ£º"));  
+
+	addLogMessage(u8"é‡‡é›†æ•°æ®ï¼š");
 	/*****************************************************************************/
 	int image_size = width * height;
 
 	cv::Mat brightness(height, width, CV_8U, cv::Scalar(0));
 	cv::Mat depth(height, width, CV_32F, cv::Scalar(0.));
-	cv::Mat point_cloud(height, width, CV_32FC3, cv::Scalar(0.)); 
+	cv::Mat point_cloud(height, width, CV_32FC3, cv::Scalar(0.));
 
-	int depth_buf_size = image_size * 1 * 4;  
-	int brightness_bug_size = image_size; 
+	int depth_buf_size = image_size * 1 * 4;
+	int brightness_bug_size = image_size;
 
 	int ret_code = 0;
 
 	if (ui.checkBox_hdr->isChecked())
-	{ 
+	{
 		if (connected_flag_)
 		{
 			bool changed = manyExposureParamHasChanged();
@@ -1004,40 +1020,40 @@ bool CameraCaptureGui::captureOneFrameData()
 		ret_code = DfGetFrameHdr((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
 	}
 	else
-	{ 
+	{
 		ret_code = DfGetFrame04((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
 	}
-	  
-	/***************************************************************************/ 
+
+	/***************************************************************************/
 	if (0 == ret_code)
 	{
 		brightness_map_ = brightness.clone();
 		depth_map_ = depth.clone();
-		 
-		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);  
-		transformPointcloud((float*)point_cloud.data,(float*)point_cloud.data, system_config_param_.standard_plane_external_param, &system_config_param_.standard_plane_external_param[9]);
-	 
+
+		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);
+		transformPointcloud((float*)point_cloud.data, (float*)point_cloud.data, system_config_param_.standard_plane_external_param, &system_config_param_.standard_plane_external_param[9]);
+
 		std::vector<cv::Mat> channels;
 		cv::split(point_cloud, channels);
 		height_map_ = channels[2].clone();
-		
 
-		addLogMessage(QString::fromLocal8Bit("²É¼¯Íê³É£¡"));
-  
+
+		addLogMessage(u8"é‡‡é›†å®Œæˆï¼");
+
 		float temperature = 0;
 		ret_code = DfGetDeviceTemperature(temperature);
 
 
-		emit send_temperature_update(temperature); 
+		emit send_temperature_update(temperature);
 
 		return true;
 	}
 
-	addLogMessage(QString::fromLocal8Bit("²É¼¯Ê§°Ü£¡"));
+	addLogMessage(u8"é‡‡é›†å¤±è´¥ï¼");
 	return false;
-	   
+
 }
- 
+
 
 bool CameraCaptureGui::isConnect()
 {
@@ -1046,7 +1062,7 @@ bool CameraCaptureGui::isConnect()
 
 
 void  CameraCaptureGui::do_pushButton_connect()
-{ 
+{
 
 	if (!connected_flag_)
 	{
@@ -1054,18 +1070,19 @@ void  CameraCaptureGui::do_pushButton_connect()
 		camera_ip_ = ui.lineEdit_ip->text();
 		if (camera_ip_.isEmpty())
 		{
-			addLogMessage(QString::fromLocal8Bit("ÇëÉèÖÃIP£¡"));
+			addLogMessage(u8"è¯·è®¾ç½®IPï¼");
 			return;
 		}
-		  
-		  
 
-		addLogMessage(QString::fromLocal8Bit("Á¬½ÓÏà»ú£º"));
+
+
+		//addLogMessage(QString::fromUtf8("è¿æ¥ç›¸æœºï¼š"));
+		addLogMessage(u8"è¿æ¥ç›¸æœºï¼š");
 		int ret_code = DfConnect(camera_ip_.toStdString().c_str());
 
 		if (0 == ret_code)
 		{
-			//±ØĞëÁ¬½ÓÏà»ú³É¹¦ºó£¬²Å¿É»ñÈ¡Ïà»ú·Ö±æÂÊ
+			//å¿…é¡»è¿æ¥ç›¸æœºæˆåŠŸåï¼Œæ‰å¯è·å–ç›¸æœºåˆ†è¾¨ç‡
 			ret_code = DfGetCameraResolution(&camera_width_, &camera_height_);
 			std::cout << "Width: " << camera_width_ << "    Height: " << camera_height_ << std::endl;
 
@@ -1074,7 +1091,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 				qDebug() << "Connect Error!;";
 				return;
 			}
-			//»ñÈ¡Ïà»ú±ê¶¨²ÎÊı
+			//è·å–ç›¸æœºæ ‡å®šå‚æ•°
 			ret_code = DfGetCalibrationParam(camera_calibration_param_);
 			if (0 != ret_code)
 			{
@@ -1082,7 +1099,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 				return;
 			}
 
-			//»ñÈ¡Ïà»úĞÍºÅ²ÎÊı
+			//è·å–ç›¸æœºå‹å·å‚æ•°
 			ret_code = DfGetCameraVersion(camera_version_);
 			if (0 != ret_code)
 			{
@@ -1094,21 +1111,21 @@ void  CameraCaptureGui::do_pushButton_connect()
 			{
 			case 800:
 			{
-				addLogMessage(QString::fromLocal8Bit("Á¬½ÓDFX800³É¹¦£¡"));
+				addLogMessage(u8"è¿æ¥DFX800æˆåŠŸï¼");
 			}
 			break;
 			case 1800:
 			{
-				addLogMessage(QString::fromLocal8Bit("Á¬½ÓDFX1800³É¹¦£¡"));
+				addLogMessage(u8"è¿æ¥DFX1800æˆåŠŸï¼");
 			}
 			break;
 			default:
 				break;
 			}
-	 
 
-			//addLogMessage(QString::fromLocal8Bit("Á¬½ÓÏà»ú³É¹¦£¡"));
-			//±£´æipÅäÖÃ
+
+			//addLogMessage(u8"è¿æ¥ç›¸æœºæˆåŠŸï¼"));
+			//ä¿å­˜ipé…ç½®
 			processing_gui_settings_data_.Instance().ip = camera_ip_;
 
 			//ret_code = DfGetSystemConfigParam(system_config_param_);
@@ -1118,6 +1135,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 			//	//return;
 			//}
 
+			//è®¾ç½®é…ç½®å‚æ•°
 			ret_code = DfSetSystemConfigParam(system_config_param_);
 			if (0 != ret_code)
 			{
@@ -1135,7 +1153,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 		else
 		{
 			std::cout << "Connect Camera Error!";
-			addLogMessage(QString::fromLocal8Bit("Á¬½ÓÏà»úÊ§°Ü£¡"));
+			addLogMessage(u8"è¿æ¥ç›¸æœºå¤±è´¥ï¼");
 			return;
 		}
 
@@ -1187,7 +1205,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 	}
 	else
 	{
-		//¶Ï¿ªÏà»ú
+		//æ–­å¼€ç›¸æœº
 		do_pushButton_disconnect();
 
 	}
@@ -1198,7 +1216,7 @@ void  CameraCaptureGui::do_pushButton_connect()
 
 void  CameraCaptureGui::do_pushButton_disconnect()
 {
-	
+
 	if (connected_flag_)
 	{
 		if (start_timer_flag_)
@@ -1207,7 +1225,7 @@ void  CameraCaptureGui::do_pushButton_disconnect()
 		}
 
 		DfDisconnect(camera_ip_.toStdString().c_str());
-		addLogMessage(QString::fromLocal8Bit("¶Ï¿ªÏà»ú£¡")); 
+		addLogMessage(u8"æ–­å¼€ç›¸æœºï¼");
 		connected_flag_ = false;
 
 		ui.pushButton_connect->setIcon(QIcon(":/dexforce_camera_gui/image/connect.png"));
@@ -1219,11 +1237,11 @@ void  CameraCaptureGui::do_pushButton_disconnect()
 
 double CameraCaptureGui::computePointsDistance(cv::Point2f p_0, cv::Point2f p_1, cv::Mat point_cloud)
 {
-  
-	std::vector<cv::Mat> point_cloud_channels;
-	cv::split(point_cloud, point_cloud_channels); 
 
-	//²åÖµ
+	std::vector<cv::Mat> point_cloud_channels;
+	cv::split(point_cloud, point_cloud_channels);
+
+	//æ’å€¼
 	cv::Point3f f_p_0_inter, f_p_1_inter;
 
 	Calibrate_Function calib_function;
@@ -1236,10 +1254,10 @@ double CameraCaptureGui::computePointsDistance(cv::Point2f p_0, cv::Point2f p_1,
 	f_p_1_inter.z = calib_function.Bilinear_interpolation(p_1.x, p_1.y, point_cloud_channels[2]);
 
 	cv::Point3f differ_p = f_p_1_inter - f_p_0_inter;
-    double differ_val = std::sqrt(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
+	double differ_val = std::sqrt(differ_p.x * differ_p.x + differ_p.y * differ_p.y + differ_p.z * differ_p.z);
 
 	return differ_val;
-} 
+}
 
 void CameraCaptureGui::do_pushButton_calibrate_external_param()
 {
@@ -1247,11 +1265,11 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 	if (depth_map_.empty() || brightness_map_.empty())
 	{
 		return;
-	} 
-	 
-	   
+	}
+
+
 	cv::Mat cameraMatrix(3, 3, CV_32FC1, camera_calibration_param_.camera_intrinsic);
-	cv::Mat distCoeffs = cv::Mat(5, 1, CV_32F, camera_calibration_param_.camera_distortion);  
+	cv::Mat distCoeffs = cv::Mat(5, 1, CV_32F, camera_calibration_param_.camera_distortion);
 
 	if (true)
 	{
@@ -1301,15 +1319,15 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		cv::Mat r(3, 3, CV_64F, cv::Scalar(0));
 		cv::Mat t(3, 3, CV_64F, cv::Scalar(0));
 
-		precision_machine.svdIcp(pc1, pc2, r, t);  
+		precision_machine.svdIcp(pc1, pc2, r, t);
 		r.convertTo(r, CV_32F);
 		t.convertTo(t, CV_32F);
 		transformPointcloud((float*)points_map.data, (float*)points_map.data, (float*)r.data, (float*)t.data);
 
-  
+
 		std::vector<cv::Mat> channels;
-		cv::split(points_map, channels); 
-		cv::Mat height_map = channels[2].clone(); 
+		cv::split(points_map, channels);
+		cv::Mat height_map = channels[2].clone();
 
 		height_map_ = height_map.clone();
 		renderHeightImage(height_map);
@@ -1328,7 +1346,7 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 		{
 			system_config_param_.standard_plane_external_param[9 + i] = t.ptr<float>(0)[i];
 			//qDebug() << translation_mat.ptr<float>(0)[i];
-		} 
+		}
 		if (connected_flag_)
 		{
 			int ret_code = DfSetSystemConfigParam(system_config_param_);
@@ -1336,19 +1354,19 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 			{
 				qDebug() << "Get Param Error;";
 				return;
-			} 
-			QString str = QString::fromLocal8Bit("±£´æ¸ß¶ÈÓ³Éä»ù×¼Æ½Ãæ");
-			addLogMessage(str); 
+			}
+			QString str = u8"ä¿å­˜é«˜åº¦æ˜ å°„åŸºå‡†å¹³é¢";
+			addLogMessage(str);
 
 		}
 		else
 		{
-			QString str = QString::fromLocal8Bit("Ïà»úÒÑ¶ÏÁ¬£¡");
+			QString str = u8"ç›¸æœºå·²æ–­è¿ï¼";
 			addLogMessage(str);
-		} 
+		}
 	}
 
-	/**************************************************************************************************/ 
+	/**************************************************************************************************/
 }
 
 void CameraCaptureGui::do_pushButton_test_accuracy()
@@ -1375,7 +1393,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	if (false)
 	{
 		/*************************************************************************************/
-		//PNP¾«¶È
+		//PNPç²¾åº¦
 
 		std::vector<cv::Point2f> circle_points;
 		bool found = calib_function.findCircleBoardFeature(img, circle_points);
@@ -1389,12 +1407,12 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 			std::vector<cv::Point2f> image_points_pro;
 
 			cv::solvePnP(objects, circle_points, cameraMatrix, distCoeffs, raux, taux, false, cv::SOLVEPNP_EPNP);
-			cv::projectPoints(objects, raux, taux, cameraMatrix, distCoeffs, image_points_pro);   //Í¨¹ıµÃµ½µÄÉãÏñ»úÄÚÍâ²ÎÊı£¬¶Ô½ÇµãµÄ¿Õ¼äÈıÎ¬×ø±ê½øĞĞÖØĞÂÍ¶Ó°¼ÆËã
+			cv::projectPoints(objects, raux, taux, cameraMatrix, distCoeffs, image_points_pro);   //é€šè¿‡å¾—åˆ°çš„æ‘„åƒæœºå†…å¤–å‚æ•°ï¼Œå¯¹è§’ç‚¹çš„ç©ºé—´ä¸‰ç»´åæ ‡è¿›è¡Œé‡æ–°æŠ•å½±è®¡ç®—
 			double err = cv::norm(cv::Mat(circle_points), cv::Mat(image_points_pro), cv::NORM_L2);
-			//addLogMessage(QString::fromLocal8Bit("NORM_L2: ") + QString::number(err));
+			//addLogMessage(u8"NORM_L2: ") + QString::number(err));
 
 			/*********************************************************************************/
-			//Æ½¾ùÏñËØ¾àÀë
+			//å¹³å‡åƒç´ è·ç¦»
 			double sumvalue = 0.0;
 			for (size_t i = 0; i < image_points_pro.size(); i++)
 			{
@@ -1403,7 +1421,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 				sumvalue += sqrt(x * x + y * y);
 			}
 			sumvalue /= image_points_pro.size();
-			addLogMessage(QString::fromLocal8Bit("Æ«²î: ") + QString::number(sumvalue, 'f', 5) + QString::fromLocal8Bit(" ÏñËØ"));
+			addLogMessage(u8"åå·®: " + QString::number(sumvalue, 'f', 5) + u8" åƒç´ ");
 			/*********************************************************************************/
 
 			cv::Mat color_img;
@@ -1423,7 +1441,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 
 
 	/*****************************************************************************************************/
-	//Æ½Ì¨²âÊÔ¾«¶È
+	//å¹³å°æµ‹è¯•ç²¾åº¦
 	if (false)
 	{
 
@@ -1457,7 +1475,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 		//StrCurrentTime += ".ply"; 
 		//FileIoFunction file_io_machine;
 		//file_io_machine.SaveAsciiPointsToPly(point_3d, StrCurrentTime); 
-		//addLogMessage(QString::fromLocal8Bit("±£´æÔ²µã: ") + StrCurrentTime);
+		//addLogMessage(u8"ä¿å­˜åœ†ç‚¹: ") + StrCurrentTime);
 
 
 
@@ -1466,7 +1484,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 
 		float rms = p_test_machine.fitPlaneBaseLeastSquares(point_3d, plane, center_point);
 
-		//addLogMessage(QString::fromLocal8Bit("Æ½ÃæÄâºÏRMS: ") + QString::number(rms));
+		//addLogMessage(u8"å¹³é¢æ‹ŸåˆRMS: ") + QString::number(rms));
 
 
 		center_points_list_.push_back(center_point);
@@ -1483,13 +1501,13 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 			//float value = std::floorf(dist);
 
 
-			addLogMessage(QString::fromLocal8Bit("Æ½ÃæÄâºÏRMS: ") + QString::number(rms) +
-				QString::fromLocal8Bit("¾àÀë: ") + QString::number(dist));
+			addLogMessage(u8"å¹³é¢æ‹ŸåˆRMS: " + QString::number(rms) +
+				u8"è·ç¦»: " + QString::number(dist));
 		}
 		else
 		{
-			addLogMessage(QString::fromLocal8Bit("Æ½ÃæÄâºÏRMS: ") + QString::number(rms) +
-				QString::fromLocal8Bit("¾àÀë: ") + QString::number(0));
+			addLogMessage(u8"å¹³é¢æ‹ŸåˆRMS: " + QString::number(rms) +
+				u8"è·ç¦»: " + QString::number(0));
 		}
 
 	}
@@ -1501,7 +1519,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	{
 		//ICP
 		cv::Mat undist_img;
-		cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs); 
+		cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
 		Calibrate_Function calib_function;
 		std::vector<cv::Point2f> undist_circle_points;
 		bool found = calib_function.findCircleBoardFeature(undist_img, undist_circle_points);
@@ -1511,7 +1529,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 			return;
 		}
 
-		//ÏÔÊ¾
+		//æ˜¾ç¤º
 		if (true)
 		{
 			cv::Mat color_img;
@@ -1561,16 +1579,16 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 
 		double diff = precision_machine.computeTwoPointSetDistance(world_points, transform_points);
 
-		//addLogMessage(QString::fromLocal8Bit("Æ½¾ùµãÆ«²î: ") + QString::number(diff) +
-		//	QString::fromLocal8Bit(" ¾àÀë: ") + QString::number(0));
+		//addLogMessage(u8"å¹³å‡ç‚¹åå·®: ") + QString::number(diff) +
+		//	u8" è·ç¦»: ") + QString::number(0));
 
 
-		//¼ÆËãÆ½Ãæ¾àÀë
+		//è®¡ç®—å¹³é¢è·ç¦»
 
 		std::vector<float> plane;
-		cv::Point3f center_point; 
+		cv::Point3f center_point;
 		float rms = precision_machine.fitPlaneBaseLeastSquares(point_3d, plane, center_point);
-		  
+
 
 		center_points_list_.push_back(center_point);
 		rms_list_.push_back(rms);
@@ -1582,15 +1600,15 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 		{
 			float dist = precision_machine.computePointToPlaneDistance(center_points_list_[center_points_list_.size() - 1],
 				plane_list_[center_points_list_.size() - 2]);
-			 
 
-			addLogMessage(QString::fromLocal8Bit("±ê¶¨¾«¶È: ") + QString::number(diff) +
-				QString::fromLocal8Bit("	¾àÀë: ") + QString::number(dist));
+
+			addLogMessage(u8"æ ‡å®šç²¾åº¦: " + QString::number(diff) +
+				u8"	è·ç¦»: " + QString::number(dist));
 		}
 		else
 		{
-			addLogMessage(QString::fromLocal8Bit("±ê¶¨¾«¶È: ") + QString::number(diff) +
-				QString::fromLocal8Bit("	¾àÀë: ") + QString::number(0));
+			addLogMessage(u8"æ ‡å®šç²¾åº¦: " + QString::number(diff) +
+				u8"	è·ç¦»: " + QString::number(0));
 		}
 
 
@@ -1598,7 +1616,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	}
 
 	/**********************************************************************************************/
-	//µã¾àÀë
+	//ç‚¹è·ç¦»
 	if (false)
 	{
 
@@ -1658,19 +1676,19 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 			max_err = std::abs(dist_3);
 		}
 
-		//addLogMessage(QString::fromLocal8Bit("±ê¶¨°å¾àÀë£º") + dist_str);
-		addLogMessage(QString::fromLocal8Bit("Æ«²î£º") + QString::number(max_err) + "mm");
+		//addLogMessage(u8"æ ‡å®šæ¿è·ç¦»ï¼š") + dist_str);
+		addLogMessage(u8"åå·®ï¼š" + QString::number(max_err) + "mm");
 
 	}
 }
 
 
 void CameraCaptureGui::do_pushButton_open_folder()
-{  
+{
 
-	QFileInfo fileInfo(last_path_); 
+	QFileInfo fileInfo(last_path_);
 	QDir dir(fileInfo.absoluteFilePath());
-	  
+
 	if (!dir.exists())
 	{
 		dir.setPath("../TestData");
@@ -1689,29 +1707,29 @@ void CameraCaptureGui::do_pushButton_save_as()
 
 	QString StrCurrentTime = "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
 
-	QString path = QFileDialog::getSaveFileName(this, "Set Save Name",last_path_ + StrCurrentTime);
+	QString path = QFileDialog::getSaveFileName(this, "Set Save Name", last_path_ + StrCurrentTime);
 
 	if (path.isEmpty())
 	{
 		return;
 	}
 
-	QFileInfo fileInfo(path); 
+	QFileInfo fileInfo(path);
 	last_path_ = fileInfo.absolutePath();
 
-  
 
-	std::thread t_s(&CameraCaptureGui::saveOneFrameData,this, path);
-	t_s.detach(); 
-	addLogMessage(QString::fromLocal8Bit("±£´æÂ·¾¶£º")+ path);
-	 
+
+	std::thread t_s(&CameraCaptureGui::saveOneFrameData, this, path);
+	t_s.detach();
+	addLogMessage(u8"ä¿å­˜è·¯å¾„ï¼š" + path);
+
 
 }
 
 
 bool CameraCaptureGui::captureOneFrameAndRender()
 {
-	bool ret = captureOneFrameData(); 
+	bool ret = captureOneFrameData();
 
 
 	if (ret)
@@ -1727,10 +1745,10 @@ bool CameraCaptureGui::captureOneFrameAndRender()
 			QString StrCurrentTime = "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
 			QString path_name = sys_path_ + StrCurrentTime;
 			//saveOneFrameData(path_name);
-			  
+
 			std::thread t_s(&CameraCaptureGui::saveOneFrameData, this, path_name);
 			t_s.detach();
-			addLogMessage(QString::fromLocal8Bit("±£´æÂ·¾¶£º") + path_name);
+			addLogMessage(u8"ä¿å­˜è·¯å¾„ï¼š" + path_name);
 		}
 	}
 	else
@@ -1752,16 +1770,16 @@ void  CameraCaptureGui::do_pushButton_capture_one_frame()
 		return;
 	}
 
- 
+
 
 	captureOneFrameAndRender();
-	 
+
 
 
 
 
 }
- 
+
 
 void CameraCaptureGui::do_undate_show_slot()
 {
@@ -1777,7 +1795,7 @@ void CameraCaptureGui::do_undate_show_slot()
 	renderDepthImage(depth_map_);
 	renderHeightImage(height_map_);
 
-	showImage(); 
+	showImage();
 
 	capture_show_flag_ = false;
 
@@ -1790,54 +1808,54 @@ void CameraCaptureGui::do_undate_show_slot()
 
 		std::thread t_s(&CameraCaptureGui::saveOneFrameData, this, path_name);
 		t_s.detach();
-		addLogMessage(QString::fromLocal8Bit("±£´æÂ·¾¶£º") + path_name);
+		addLogMessage(u8"ä¿å­˜è·¯å¾„ï¼š" + path_name);
 	}
 
-  
+
 }
 
 
 void  CameraCaptureGui::do_timeout_capture_slot()
 {
 
-	std::cout << "capture timeout"<<std::endl;
+	std::cout << "capture timeout" << std::endl;
 
 	capture_timer_.stop();
 
 	if (start_timer_flag_ && connected_flag_)
-	{  
-			//bool ret = captureOneFrameAndRender();  
-			//if (!ret)
-			//{
-			//	//Í£Ö¹Á¬Ğø²É¼¯
-			//	do_pushButton_capture_continuous();
-			//} 
-			//else
-			//{
-			//	capture_timer_.start();
-			//}
+	{
+		//bool ret = captureOneFrameAndRender();  
+		//if (!ret)
+		//{
+		//	//åœæ­¢è¿ç»­é‡‡é›†
+		//	do_pushButton_capture_continuous();
+		//} 
+		//else
+		//{
+		//	capture_timer_.start();
+		//}
 
-			std::thread t_s(&CameraCaptureGui::captureOneFrameBaseThread, this, ui.checkBox_hdr->isChecked());
-			t_s.detach();  
-			capture_timer_.start();
+		std::thread t_s(&CameraCaptureGui::captureOneFrameBaseThread, this, ui.checkBox_hdr->isChecked());
+		t_s.detach();
+		capture_timer_.start();
 	}
 	else
-	{	
-		//	//Í£Ö¹Á¬Ğø²É¼¯
-			do_pushButton_capture_continuous();
+	{
+		//	//åœæ­¢è¿ç»­é‡‡é›†
+		do_pushButton_capture_continuous();
 
 	}
 
 }
 
- 
+
 void  CameraCaptureGui::do_pushButton_capture_continuous()
 {
 
 	if (start_timer_flag_)
 	{
 		start_timer_flag_ = false;
-		capture_timer_.stop(); 
+		capture_timer_.stop();
 
 		ui.pushButton_capture_continuous->setIcon(QIcon(":/dexforce_camera_gui/image/video_start.png"));
 	}
@@ -1850,7 +1868,7 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 			capture_timer_.start();
 			ui.pushButton_capture_continuous->setIcon(QIcon(":/dexforce_camera_gui/image/video_stop.png"));
 		}
-		 
+
 	}
 
 	//capture_thread_ = new QThread(this);
@@ -1870,7 +1888,7 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 }
 
 /*********************************************************************************************************************************/
-//HDRÏÔÊ¾
+//HDRæ˜¾ç¤º
 
 void CameraCaptureGui::do_checkBox_toggled_hdr(bool state)
 {
@@ -1900,12 +1918,12 @@ void CameraCaptureGui::do_checkBox_toggled_hdr(bool state)
 		}
 
 	}
-	 
+
 }
 
 
 /*****************************************************************************************************************************/
-//ÏÔÊ¾Ïà¹Ø
+//æ˜¾ç¤ºç›¸å…³
 void CameraCaptureGui::do_QRadioButton_toggled_brightness(bool state)
 {
 	if (state)
@@ -2014,7 +2032,7 @@ bool CameraCaptureGui::setImage(cv::Mat img)
 	if (show_img.channels() == 3)//RGB Img
 	{
 		cv::Mat Rgb;
-		cv::cvtColor(show_img, Rgb, cv::COLOR_BGR2RGB);//ÑÕÉ«¿Õ¼ä×ª»»
+		cv::cvtColor(show_img, Rgb, cv::COLOR_BGR2RGB);//é¢œè‰²ç©ºé—´è½¬æ¢
 		//qimg = QImage((const uchar*)(Rgb.data), Rgb.cols, Rgb.rows, Rgb.step, QImage::Format_RGB888);
 
 		qimg = QImage(show_img.data, show_img.cols, show_img.rows, show_img.step, QImage::Format_RGB888);
@@ -2040,11 +2058,11 @@ bool CameraCaptureGui::setImage(cv::Mat img)
 
 
 	//pixmap_ = QPixmap::fromImage(qimg);
-	 
+
 
 	ui.label_image->setPixmap(QPixmap::fromImage(qimg));
 	ui.label_image->setScaledContents(true);
-	//ui.label_image->setPixmap(pixmap_.scaled(ui.label_image->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));  // ±£³Ö±ÈÀı & Æ½»¬Ëõ·Å(ÎŞ¾â³İ)
+	//ui.label_image->setPixmap(pixmap_.scaled(ui.label_image->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));  // ä¿æŒæ¯”ä¾‹ & å¹³æ»‘ç¼©æ”¾(æ— é”¯é½¿)
 
 	return true;
 }

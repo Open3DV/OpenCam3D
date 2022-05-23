@@ -1,6 +1,6 @@
-#include "select_calibration_board_gui.h"
+ï»¿#include "select_calibration_board_gui.h"
 
-SelectCalibrationBoardGui::SelectCalibrationBoardGui(QWidget *parent)
+SelectCalibrationBoardGui::SelectCalibrationBoardGui(QWidget* parent)
 	: QDialog(parent)
 {
 	ui.setupUi(this);
@@ -63,29 +63,29 @@ void SelectCalibrationBoardGui::do_QRadioButton_toggled_board_20(bool state)
 	board_type_ = 20;
 
 	QString str = "";
-	str += QString::fromLocal8Bit("  ·Ç¶Ô³ÆÔ²±ê¶¨°å");
+	str += u8"  éžå¯¹ç§°åœ†æ ‡å®šæ¿";
 	str += "\r\n";
 	str += "\r\n";
-	str += QString::fromLocal8Bit("  Ô²µãÊý: 7*11");
+	str += u8"  åœ†ç‚¹æ•°: 7*11";
 	str += "\r\n";
 	str += "\r\n";
-	str += QString::fromLocal8Bit("  Ô²ÐÄ¾à: 20 mm");
+	str += u8"  åœ†å¿ƒè·: 20 mm";
 
 	ui.label_board_message->setText(str);
 }
 
 void SelectCalibrationBoardGui::do_QRadioButton_toggled_board_40(bool state)
-{ 
+{
 	board_type_ = 40;
 
 	QString str = "";
-	str += QString::fromLocal8Bit("  ·Ç¶Ô³ÆÔ²±ê¶¨°å");
+	str += u8"  éžå¯¹ç§°åœ†æ ‡å®šæ¿";
 	str += "\r\n";
 	str += "\r\n";
-	str += QString::fromLocal8Bit("  Ô²µãÊý: 7*11");
+	str += u8"  åœ†ç‚¹æ•°: 7*11";
 	str += "\r\n";
 	str += "\r\n";
-	str += QString::fromLocal8Bit("  Ô²ÐÄ¾à: 40 mm");
+	str += u8"  åœ†å¿ƒè·: 40 mm";
 
 	ui.label_board_message->setText(str);
 }

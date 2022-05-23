@@ -1,4 +1,4 @@
-#include "AnalyseError.h"
+ï»¿#include "AnalyseError.h"
 #include "iostream"
 
 AnalyseError::AnalyseError()
@@ -16,16 +16,16 @@ AnalyseError::~AnalyseError()
 
 
 /**
-* @brief expandEdge À©Õ¹±ß½çº¯Êı
-* @param img:ÊäÈëÍ¼Ïñ£¬µ¥Í¨µÀ¶şÖµÍ¼£¬Éî¶ÈÎª8
-* @param edge  ±ß½çÊı×é£¬´æ·Å4Ìõ±ß½çÖµ
-* @param edgeID µ±Ç°±ß½çºÅ
-* @return ²¼¶ûÖµ È·¶¨µ±Ç°±ß½çÊÇ·ñ¿ÉÒÔÀ©Õ¹
+* @brief expandEdge æ‰©å±•è¾¹ç•Œå‡½æ•°
+* @param img:è¾“å…¥å›¾åƒï¼Œå•é€šé“äºŒå€¼å›¾ï¼Œæ·±åº¦ä¸º8
+* @param edge  è¾¹ç•Œæ•°ç»„ï¼Œå­˜æ”¾4æ¡è¾¹ç•Œå€¼
+* @param edgeID å½“å‰è¾¹ç•Œå·
+* @return å¸ƒå°”å€¼ ç¡®å®šå½“å‰è¾¹ç•Œæ˜¯å¦å¯ä»¥æ‰©å±•
 */
 
 bool AnalyseError::expandEdge(const cv::Mat& img, int edge[], const int edgeID)
 {
-	//[1] --³õÊ¼»¯²ÎÊı
+	//[1] --åˆå§‹åŒ–å‚æ•°
 	int nc = img.cols;
 	int nr = img.rows;
 	switch (edgeID) {
@@ -34,7 +34,7 @@ bool AnalyseError::expandEdge(const cv::Mat& img, int edge[], const int edgeID)
 			return false;
 		for (int i = edge[3]; i <= edge[1]; ++i)
 		{
-			if (img.at<uchar>(edge[0], i) == 255)//Óö¼û255ÏñËØ±íÃ÷Åöµ½±ßÔµÏß
+			if (img.at<uchar>(edge[0], i) == 255)//é‡è§255åƒç´ è¡¨æ˜ç¢°åˆ°è¾¹ç¼˜çº¿
 				return false;
 		}
 		edge[0]++;
@@ -45,7 +45,7 @@ bool AnalyseError::expandEdge(const cv::Mat& img, int edge[], const int edgeID)
 			return false;
 		for (int i = edge[2]; i <= edge[0]; ++i)
 		{
-			if (img.at<uchar>(i, edge[1]) == 255)//Óö¼û255ÏñËØ±íÃ÷Åöµ½±ßÔµÏß
+			if (img.at<uchar>(i, edge[1]) == 255)//é‡è§255åƒç´ è¡¨æ˜ç¢°åˆ°è¾¹ç¼˜çº¿
 				return false;
 		}
 		edge[1]++;
@@ -56,7 +56,7 @@ bool AnalyseError::expandEdge(const cv::Mat& img, int edge[], const int edgeID)
 			return false;
 		for (int i = edge[3]; i <= edge[1]; ++i)
 		{
-			if (img.at<uchar>(edge[2], i) == 255)//Óö¼û255ÏñËØ±íÃ÷Åöµ½±ßÔµÏß
+			if (img.at<uchar>(edge[2], i) == 255)//é‡è§255åƒç´ è¡¨æ˜ç¢°åˆ°è¾¹ç¼˜çº¿
 				return false;
 		}
 		edge[2]--;
@@ -67,7 +67,7 @@ bool AnalyseError::expandEdge(const cv::Mat& img, int edge[], const int edgeID)
 			return false;
 		for (int i = edge[2]; i <= edge[0]; ++i)
 		{
-			if (img.at<uchar>(i, edge[3]) == 255)//Óö¼û255ÏñËØ±íÃ÷Åöµ½±ßÔµÏß
+			if (img.at<uchar>(i, edge[3]) == 255)//é‡è§255åƒç´ è¡¨æ˜ç¢°åˆ°è¾¹ç¼˜çº¿
 				return false;
 		}
 		edge[3]--;
@@ -79,30 +79,30 @@ bool AnalyseError::expandEdge(const cv::Mat& img, int edge[], const int edgeID)
 	}
 
 }
- 
+
 
 /**
-* @brief ÇóÈ¡Á¬Í¨ÇøÓòÄÚ½Ó¾Ø
-* @param img:ÊäÈëÍ¼Ïñ£¬µ¥Í¨µÀ¶şÖµÍ¼£¬Éî¶ÈÎª8
-* @param center:×îĞ¡Íâ½Ó¾ØµÄÖĞĞÄ
-* @return  ×î´óÄÚ½Ó¾ØĞÎ
-* »ùÓÚÖĞĞÄÀ©Õ¹Ëã·¨
+* @brief æ±‚å–è¿é€šåŒºåŸŸå†…æ¥çŸ©
+* @param img:è¾“å…¥å›¾åƒï¼Œå•é€šé“äºŒå€¼å›¾ï¼Œæ·±åº¦ä¸º8
+* @param center:æœ€å°å¤–æ¥çŸ©çš„ä¸­å¿ƒ
+* @return  æœ€å¤§å†…æ¥çŸ©å½¢
+* åŸºäºä¸­å¿ƒæ‰©å±•ç®—æ³•
 */
 cv::Rect AnalyseError::InSquare(cv::Mat& img, const cv::Point center)
 {
-	// --[1]²ÎÊı¼ì²â
+	// --[1]å‚æ•°æ£€æµ‹
 	if (img.empty() || img.channels() > 1 || img.depth() > 8)
 		return cv::Rect();
-	// --[2] ³õÊ¼»¯±äÁ¿
+	// --[2] åˆå§‹åŒ–å˜é‡
 	int edge[4];
 	edge[0] = center.y + 1;//top
 	edge[1] = center.x + 1;//right
 	edge[2] = center.y - 1;//bottom
 	edge[3] = center.x - 1;//left
 						   //[2]
-						   // --[3]±ß½çÀ©Õ¹(ÖĞĞÄÀ©É¢·¨)
+						   // --[3]è¾¹ç•Œæ‰©å±•(ä¸­å¿ƒæ‰©æ•£æ³•)
 
-	bool EXPAND[4] = { 1,1,1,1 };//À©Õ¹±ê¼ÇÎ»
+	bool EXPAND[4] = { 1,1,1,1 };//æ‰©å±•æ ‡è®°ä½
 	int n = 0;
 	while (EXPAND[0] || EXPAND[1] || EXPAND[2] || EXPAND[3])
 	{
@@ -117,7 +117,7 @@ cv::Rect AnalyseError::InSquare(cv::Mat& img, const cv::Point center)
 	return cv::Rect(tl, br);
 }
 
- 
+
 
 double AnalyseError::computeError(cv::Mat err_map)
 {
@@ -150,7 +150,7 @@ double AnalyseError::computeError(cv::Mat err_map)
 			{
 				ptr_b[c] = 255;
 			}
-			 
+
 
 		}
 	}
@@ -177,15 +177,15 @@ double AnalyseError::computeError(cv::Mat err_map)
 	cv::drawContours(region_map, max_contours, -1, cv::Scalar(255), -1);
 
 	cv::Rect bounding_rect = cv::boundingRect(max_contour);
-	
+
 	bounding_rect.width *= 0.9;
 	bounding_rect.height *= 0.8;
-	bounding_rect.x += 0.05* bounding_rect.width;
+	bounding_rect.x += 0.05 * bounding_rect.width;
 	bounding_rect.y += 0.1 * bounding_rect.height;
 
-  
+
 	cv::rectangle(binary_map, bounding_rect, cv::Scalar(100), 1, 8);
- 
+
 
 
 	cv::Mat roi_map(err_map.size(), CV_8U, cv::Scalar(0));

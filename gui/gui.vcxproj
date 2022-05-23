@@ -82,6 +82,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_calib3d420.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_features2d420.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Command>
     </PostBuildEvent>
+    <ClCompile />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>

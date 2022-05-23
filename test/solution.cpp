@@ -890,7 +890,10 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 		std::cout << "unwrap Error!";
 		return false;
 	}
-
+	cv::Mat wrap_0 = ver_wrap_img_4[0].clone();
+	cv::Mat wrap_1 = ver_wrap_img_4[1].clone();
+	cv::Mat wrap_2 = ver_wrap_img_4[2].clone();
+	cv::Mat wrap_3 = ver_wrap_img_6[0].clone();
 
 	float confidence_val = 10;
 
@@ -1066,6 +1069,12 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 
 	ret = encode_machine_.computePhaseBaseSixStep(ver_patterns_img_6, ver_wrap_img_6, test_mask_, ver_confidence_map_6);
 	//ret = encode_machine_.computePhaseBaseSixStep(hor_patterns_img_6, hor_wrap_img_6, test_mask_, hor_confidence_map_6);
+
+	cv::Mat wrap_0 = ver_wrap_img_4[0].clone();
+	cv::Mat wrap_1 = ver_wrap_img_4[1].clone();
+	cv::Mat wrap_2 = ver_wrap_img_4[2].clone();
+	cv::Mat wrap_3 = ver_wrap_img_6[0].clone();
+
 
 	std::vector<double> variable_wrap_rate;
 	variable_wrap_rate.push_back(8);

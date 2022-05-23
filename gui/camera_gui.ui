@@ -13,7 +13,7 @@
   <property name="font">
    <font>
     <family>微软雅黑</family>
-    <pointsize>20</pointsize>
+    <pointsize>12</pointsize>
    </font>
   </property>
   <property name="windowTitle">
@@ -67,7 +67,8 @@
    <widget class="QMenu" name="menu_help">
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <family>微软雅黑</family>
+      <pointsize>12</pointsize>
      </font>
     </property>
     <property name="title">
@@ -79,7 +80,8 @@
    <widget class="QMenu" name="menu_file">
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <family>微软雅黑</family>
+      <pointsize>12</pointsize>
      </font>
     </property>
     <property name="title">
@@ -90,6 +92,12 @@
     <addaction name="action_exit"/>
    </widget>
    <widget class="QMenu" name="menu_setting">
+    <property name="font">
+     <font>
+      <family>微软雅黑</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
     <property name="title">
      <string>设置</string>
     </property>
@@ -122,7 +130,7 @@
    <property name="font">
     <font>
      <family>微软雅黑</family>
-     <pointsize>9</pointsize>
+     <pointsize>12</pointsize>
     </font>
    </property>
   </action>
@@ -133,7 +141,7 @@
    <property name="font">
     <font>
      <family>微软雅黑</family>
-     <pointsize>9</pointsize>
+     <pointsize>12</pointsize>
     </font>
    </property>
   </action>
@@ -144,6 +152,7 @@
    <property name="font">
     <font>
      <family>微软雅黑</family>
+     <pointsize>12</pointsize>
     </font>
    </property>
   </action>
@@ -154,6 +163,7 @@
    <property name="font">
     <font>
      <family>微软雅黑</family>
+     <pointsize>12</pointsize>
     </font>
    </property>
   </action>
@@ -161,10 +171,21 @@
    <property name="text">
     <string>标定参数</string>
    </property>
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
   </action>
   <action name="action_select_calibration_board">
    <property name="text">
     <string>选择标定板</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+    </font>
    </property>
   </action>
  </widget>

@@ -9,21 +9,21 @@
 #elif __linux
 
 
-	#include <sys/socket.h>
-	#include <arpa/inet.h>
-	#include <netinet/in.h>
-	#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 
-	#include <unistd.h>
+#include <unistd.h>
 
-	//#define SOCKET int 
-	#define INVALID_SOCKET (~0)
-	#define SOCKET_ERROR -1
-	//#define AF_INET 2
-	//#define SOCK_STREAM 1
-	
-	//#define WORD unsigned short 
-	//#define MAKEWORD(a, b)      ((WORD)(((BYTE)(((DWORD_PTR)(a)) & 0xff)) | ((WORD)((BYTE)(((DWORD_PTR)(b)) & 0xff))) << 8))
+//#define SOCKET int 
+#define INVALID_SOCKET (~0)
+#define SOCKET_ERROR -1
+//#define AF_INET 2
+//#define SOCK_STREAM 1
+
+//#define WORD unsigned short 
+//#define MAKEWORD(a, b)      ((WORD)(((BYTE)(((DWORD_PTR)(a)) & 0xff)) | ((WORD)((BYTE)(((DWORD_PTR)(b)) & 0xff))) << 8))
 #endif
 
 #include "socket_tcp.h"
@@ -39,7 +39,7 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 {
 	if (sock == INVALID_SOCKET)
 	{
-	#ifdef _WIN32 
+#ifdef _WIN32 
 		WORD sockVersion = MAKEWORD(2, 2);
 		WSADATA data;
 		if (WSAStartup(sockVersion, &data) != 0)
@@ -47,9 +47,9 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 			LOG(ERROR) << "WSAStartup error!";
 			return DF_FAILED;
 		}
-	#elif __linux
+#elif __linux
 
-	#endif
+#endif
 		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (sock == INVALID_SOCKET)
 		{
@@ -68,7 +68,7 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 #endif
 
 		if (connect(sock, (struct sockaddr*)&host_addr, sizeof(host_addr)) == SOCKET_ERROR)
-		{ 
+		{
 			LOG(ERROR) << "Connect error !";
 #ifdef _WIN32 
 			closesocket(sock);
@@ -116,7 +116,7 @@ int send_command(int command, SOCKET& sock)
 
 int recv_command(int* command, SOCKET& sock)
 {
-	return recv_buffer((char*)command, sizeof(int),sock);
+	return recv_buffer((char*)command, sizeof(int), sock);
 }
 
 int send_buffer(const char* buffer, int buffer_size, SOCKET& sock)
@@ -149,7 +149,7 @@ int recv_buffer(char* buffer, int buffer_size, SOCKET& sock)
 
 	while (ret != -1)
 	{
-		ret = recv(sock, buffer, buffer_size, 0); 
+		ret = recv(sock, buffer, buffer_size, 0);
 		//LOG(INFO) << "recv�� " << "ret=" << ret << std::endl;
 		if (ret > 0)
 		{
@@ -163,7 +163,7 @@ int recv_buffer(char* buffer, int buffer_size, SOCKET& sock)
 		}
 
 		if (null_flag > 100)
-		{ 
+		{
 			return DF_FAILED;
 		}
 
