@@ -80,10 +80,37 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 		double* optr = result.ptr<double>(r);
 		for (int c = 0; c < nc; c++)
 		{
+			int exposure_num = 0;
 			if (ptr_m[c])
 			{
 				//double a = ptr4[j] - ptr2[j];
 				//double b = ptr1[j] - ptr3[j];
+				if (255 == ptr0[c])
+				{
+					exposure_num++;
+				}
+
+				if (255 == ptr1[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr2[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr3[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr4[c])
+				{
+					exposure_num++;
+				}
+
+				if (255 == ptr5[c])
+				{
+					exposure_num++;
+				}
 
 
 				double b = ptr0[c] * std::sin(0 * CV_2PI / 6.0) + ptr1[c] * std::sin(1 * CV_2PI / 6.0) + ptr2[c] * std::sin(2 * CV_2PI / 6.0)
@@ -104,16 +131,16 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 
 				/***********************************************************************/
 
-				//if (255 == ptr1[c] || 255 == ptr2[c] || 255 == ptr3[c] || 255 == ptr4[c] || 255 == ptr4[c] || 255 == ptr5[c])
-				//{
-				//	ptr_m[c] = 0;
-				//	ptr_con[c] = 0;
-				//	optr[c] = 0;
-				//}
-				//else
-				//{
-				optr[c] = CV_PI + std::atan2(a, b);
-				//}
+				if (exposure_num > 3)
+				{
+					ptr_m[c] = 0;
+					ptr_con[c] = 0;
+					optr[c] = -1;
+				}
+				else
+				{
+					optr[c] = CV_PI + std::atan2(a, b);
+				}
 
 			}
 		}
@@ -184,8 +211,26 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 		double* optr = result.ptr<double>(i);
 		for (int j = 0; j < nc; j++)
 		{
+			int exposure_num = 0;
 			if (ptr_m[j] == 255)
 			{
+				if (255 == ptr1[j])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr2[j])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr3[j])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr4[j])
+				{
+					exposure_num++;
+				}
+
 				double a = ptr4[j] - ptr2[j];
 				double b = ptr1[j] - ptr3[j];
 
@@ -200,16 +245,16 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 
 				/***********************************************************************/
 
-				//if (255 == ptr1[j] || 255 == ptr2[j] || 255 == ptr3[j] || 255 == ptr4[j])
-				//{
-				//	ptr_m[j] = 0;
-				//	ptr_con[j] = 0;
-				//	optr[j] = 0;
-				//}
-				//else
-				//{
-				optr[j] = CV_PI + std::atan2(a, b);
-				//} 
+				if (exposure_num > 1)
+				{
+					ptr_m[j] = 0;
+					ptr_con[j] = 0;
+					optr[j] = -1;
+				}
+				else
+				{
+					optr[j] = CV_PI + std::atan2(a, b);
+				}
 
 			}
 		}
@@ -275,7 +320,7 @@ bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, doubl
 
 			k_ptr[c] = k;
 
-			if (ptr_err[c] > 1)
+			if (ptr_err[c] > 1.2)
 			{
 				h_unwrap_ptr[c] = -10;
 
