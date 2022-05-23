@@ -41,6 +41,9 @@ int brightness_current = 100;
 float generate_brightness_exposure_time = 12000;
 int generate_brightness_model = 1;
  
+float max_camera_exposure_ = 28000;
+float min_camera_exposure_ = 6000;
+
 SystemConfigDataStruct system_config_settings_machine_;
 
 bool readSystemConfig()
@@ -60,6 +63,8 @@ bool set_camera_version(int version)
     case DFX_800:
     {
         cuda_set_camera_version(DFX_800);
+        max_camera_exposure_ = 60000;
+        min_camera_exposure_ = 6000;
         return true;
     }
     break;
@@ -68,6 +73,8 @@ bool set_camera_version(int version)
     {
 
         cuda_set_camera_version(DFX_1800);
+        max_camera_exposure_ = 28000;
+        min_camera_exposure_ = 6000;
         return true;
     }
     break;
@@ -835,6 +842,9 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
 
 //    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
 
+    //关闭额外拍摄亮度图
+    camera.setGenerateBrightnessParam(1,generate_brightness_exposure_time);
+
     for(int i= 0;i< led_current_list.size();i++)
     {
         int led_current = led_current_list[i];
@@ -843,7 +853,21 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
         std::cout << "set led: " << led_current << std::endl;
  
         float exposure = camera_exposure_list[i];
-        LOG(INFO)<<"Set Camera Exposure Time: "<<exposure<<"\n";
+
+        if (exposure > max_camera_exposure_)
+        {
+            exposure = max_camera_exposure_;
+            LOG(INFO) << "Set Camera Exposure Time Error!"
+                      << "\n";
+        }
+        else if (exposure < min_camera_exposure_)
+        {
+            exposure = min_camera_exposure_;
+            LOG(INFO) << "Set Camera Exposure Time Error!"
+                      << "\n";
+        }
+
+        LOG(INFO) << "Set Camera Exposure Time: " << exposure << "\n";
 
         if(camera.setScanExposure(exposure))
         {
@@ -855,6 +879,9 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
         camera.captureFrame04ToGpu();   
         parallel_cuda_copy_result_to_hdr(i,18); 
     }
+
+    
+    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
 
 
     lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
@@ -869,8 +896,31 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
 
     parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
 
-    
-    /******************************************************************************/
+    /******************************************************************************************************/
+
+
+    switch (generate_brightness_model)
+    { 
+        case 2:
+            {
+                //发光，自定义曝光时间 
+                lc3010.enable_solid_field();
+                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
+                lc3010.disable_solid_field();
+            }
+        break;
+        case 3:
+            {
+                //不发光，自定义曝光时间 
+                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
+            }
+        break;
+        
+        default:
+            break;
+    }
+  
+    /***************************************************************************************************/
     //send data
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
     int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
@@ -944,7 +994,8 @@ int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
  
 
 //    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
-
+    //关闭额外拍摄亮度图
+    camera.setGenerateBrightnessParam(1,generate_brightness_exposure_time);
     for(int i= 0;i< led_current_list.size();i++)
     {
         int led_current = led_current_list[i];
@@ -959,6 +1010,7 @@ int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
     }
 
     
+    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
  
 	cudaDeviceSynchronize();
@@ -1847,24 +1899,36 @@ int handle_cmd_set_param_camera_exposure(int client_sock)
         LOG(INFO)<<"send error, close this connection!\n";
     	return DF_FAILED;
     }
- 
 
-    if(exposure>= 6000 && exposure<= 60000)
-    { 
-        system_config_settings_machine_.Instance().config_param_.camera_exposure_time = exposure; 
-
-        LOG(INFO)<<"Set Camera Exposure Time: "<<exposure<<"\n";
-
-        if(camera.setScanExposure(exposure))
-        {
-            lc3010.set_camera_exposure(exposure);
-        } 
-
-    }
-    else
+    if(exposure> max_camera_exposure_)
     {
-        LOG(INFO)<<"Set Camera Exposure Time Error!"<<"\n";
+        exposure = max_camera_exposure_;
+        LOG(INFO) << "Set Camera Exposure Time Error!"
+                  << "\n";
     }
+    else if (exposure < min_camera_exposure_)
+    {
+        exposure = min_camera_exposure_;
+        LOG(INFO) << "Set Camera Exposure Time Error!"
+                  << "\n";
+    }
+
+    // if(exposure>= 6000 && exposure<= 60000)
+    // {
+    system_config_settings_machine_.Instance().config_param_.camera_exposure_time = exposure;
+
+    LOG(INFO) << "Set Camera Exposure Time: " << exposure << "\n";
+
+    if (camera.setScanExposure(exposure))
+    {
+        lc3010.set_camera_exposure(exposure);
+    }
+
+    // }
+    // else
+    // {
+    //     LOG(INFO)<<"Set Camera Exposure Time Error!"<<"\n";
+    // }
  
   
     return DF_SUCCESS;
@@ -1929,6 +1993,9 @@ int handle_cmd_set_param_generate_brightness(int client_sock)
     LOG(INFO)<<"generate_brightness_model: "<<generate_brightness_model<<"\n";
     LOG(INFO)<<"generate_brightness_exposure_time: "<<generate_brightness_exposure_time<<"\n";
 
+    
+    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+
   
     return DF_SUCCESS;
 }
@@ -1953,7 +2020,22 @@ int handle_cmd_set_param_mixed_hdr(int client_sock)
 
     int num = param[0];  
       //set led current
-    
+
+    for (int i = 0; i < num; i++)
+    {
+        int exposure = param[1 + i];
+
+        if (exposure > max_camera_exposure_)
+        {
+            exposure = max_camera_exposure_;
+        }
+        else if (exposure < min_camera_exposure_)
+        {
+            exposure = min_camera_exposure_;
+        }
+        param[1 + i] = exposure;
+    }
+
         if(0< num && num<= 6)
         {
  
@@ -2733,29 +2815,23 @@ int handle_commands(int client_sock)
 	    handle_cmd_get_brightness(client_sock);
 	    break;
 	case DF_CMD_GET_RAW:
-	    LOG(INFO)<<"DF_CMD_GET_RAW";
-    //	    camera.warmupCamera();
+	    LOG(INFO)<<"DF_CMD_GET_RAW"; 
 	    handle_cmd_get_raw(client_sock);
 	    break;
 	case DF_CMD_GET_RAW_TEST:
-	    LOG(INFO)<<"DF_CMD_GET_RAW_TEST";
-    //	    camera.warmupCamera();
+	    LOG(INFO)<<"DF_CMD_GET_RAW_TEST"; 
 	    handle_cmd_get_raw_02(client_sock);
 	    break;
 	case DF_CMD_GET_RAW_03:
-	    LOG(INFO)<<"DF_CMD_GET_RAW_03";
-    //	    camera.warmupCamera();
+	    LOG(INFO)<<"DF_CMD_GET_RAW_03"; 
 	    handle_cmd_get_raw_03(client_sock);
 	    break;
 	case DF_CMD_GET_FRAME_01:
-	    LOG(INFO)<<"DF_CMD_GET_FRAME_01";
-    //	    camera.warmupCamera();
-	    handle_cmd_get_frame_01(client_sock);
-        // handle_cmd_get_frame_03_more_exposure(client_sock);
+	    LOG(INFO)<<"DF_CMD_GET_FRAME_01"; 
+	    handle_cmd_get_frame_01(client_sock); 
 	    break;
     case DF_CMD_GET_FRAME_HDR:
-	    LOG(INFO)<<"DF_CMD_GET_FRAME_HDR"; 
-    	// handle_cmd_get_frame_03_more_exposure(client_sock);
+	    LOG(INFO)<<"DF_CMD_GET_FRAME_HDR";  
         if(1 == system_config_settings_machine_.Instance().firwmare_param_.hdr_model)
         {
             handle_cmd_get_frame_04_hdr_parallel(client_sock);
@@ -2767,8 +2843,7 @@ int handle_commands(int client_sock)
         break;
  
 	case DF_CMD_GET_FRAME_03:
-	    LOG(INFO)<<"DF_CMD_GET_FRAME_03";  
-    	// handle_cmd_get_frame_03(client_sock);
+	    LOG(INFO)<<"DF_CMD_GET_FRAME_03";   
     	handle_cmd_get_frame_03_parallel(client_sock); 
 	    break;
 	case DF_CMD_GET_REPETITION_FRAME_03:
@@ -2780,8 +2855,7 @@ int handle_commands(int client_sock)
     	handle_cmd_get_frame_04_parallel(client_sock); 
 	    break;
 	case DF_CMD_GET_POINTCLOUD:
-	    LOG(INFO)<<"DF_CMD_GET_POINTCLOUD";
-  //  	    camera.warmupCamera();
+	    LOG(INFO)<<"DF_CMD_GET_POINTCLOUD"; 
 	    handle_cmd_get_point_cloud(client_sock);
 	    break;
 	case DF_CMD_HEARTBEAT:
