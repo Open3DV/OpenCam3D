@@ -1,4 +1,4 @@
-#include "settings_file_function.h"
+ï»¿#include "settings_file_function.h"
 #include "qsettings.h"
 #include "qfile.h"
 #include <QJsonArray>
@@ -24,13 +24,13 @@ bool GuiConfigDataStruct::loadFromSettings(const QString& f)
 
 	//if (QFile::exists(f))
 	//{
-		QSettings settings(f, QSettings::IniFormat);
- 
-		instance_.low_z_value = settings.value("low_z_value", 400.0).toInt(); 
-		instance_.high_z_value = settings.value("high_z_value", 600.0).toInt();
-		instance_.ip = settings.value("ip", "").toString();
-		 
-		return true;
+	QSettings settings(f, QSettings::IniFormat);
+
+	instance_.low_z_value = settings.value("low_z_value", 400.0).toInt();
+	instance_.high_z_value = settings.value("high_z_value", 600.0).toInt();
+	instance_.ip = settings.value("ip", "").toString();
+
+	return true;
 	//}
 	//else
 	//{
@@ -45,7 +45,7 @@ bool GuiConfigDataStruct::saveToSettings(const QString& f)
 	settings.setValue("low_z_value", Instance().low_z_value);
 	settings.setValue("high_z_value", Instance().high_z_value);
 	settings.setValue("ip", Instance().ip);
-   
+
 	return true;
 }
 
@@ -71,7 +71,7 @@ SettingsFileFunction::~SettingsFileFunction()
 
 bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 {
-	//´ò¿ªÎÄ¼þ
+	//æ‰“å¼€æ–‡ä»¶
 	QFile file(path);
 	file.open(QIODevice::ReadOnly);
 	QByteArray data = file.readAll();
@@ -88,8 +88,8 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 
 	QJsonObject rootObject = jsonDocument.object();
 	QStringList rootKeys = rootObject.keys();
-	qDebug()<<"roots keys: " << rootKeys << "\r\n";
-	 
+	qDebug() << "roots keys: " << rootKeys << "\r\n";
+
 	//QStringList keys = rootObject.keys();
 	//for (int i = 0; i < keys.size(); i++)
 	//{
@@ -123,7 +123,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			QJsonArray j_array = firmware_Obj.value("mixed_exposure_param_list").toArray();
 
 			if (6 == j_array.size())
-			{ 
+			{
 				qDebug() << "mixed_exposure_param_list is:" << firmware_Obj.value("mixed_exposure_param_list").toArray();
 
 				for (int i = 0; i < 6; i++)
@@ -176,7 +176,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			qDebug() << "generate_brightness_model is:" << firmware_Obj.value("generate_brightness_model").toInt();
 			camera_config_.Instance().firwmare_param_.generate_brightness_model = firmware_Obj.value("generate_brightness_model").toInt();
 		}
-		
+
 		if (firmware_Obj.contains("generate_brightness_exposure") && firmware_Obj["generate_brightness_exposure"].isDouble())
 		{
 			qDebug() << "generate_brightness_exposure is:" << firmware_Obj.value("generate_brightness_exposure").toInt();
@@ -192,7 +192,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 		QJsonObject gui_Obj = rootObject["gui"].toObject();
 
 		if (gui_Obj.contains("low_z_value") && gui_Obj["low_z_value"].isDouble())
-		{ 
+		{
 			gui_config_.Instance().low_z_value = gui_Obj.value("low_z_value").toInt();
 		}
 
@@ -235,7 +235,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 
 	/*********************************************************************************************************************************/
 
-	
+
 
 	return true;
 }
@@ -243,7 +243,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 
 bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 {
-	  
+
 	QFile file(path);
 	if (!file.open(QIODevice::ReadWrite)) {
 		qDebug() << "File open error";
@@ -251,7 +251,7 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	else {
 		qDebug() << "File open!";
 	}
-	// Ê¹ÓÃQJsonObject¶ÔÏó²åÈë¼üÖµ¶Ô¡£
+	// ä½¿ç”¨QJsonObjectå¯¹è±¡æ’å…¥é”®å€¼å¯¹ã€‚
 	QJsonObject rootObject;
 
 
@@ -262,7 +262,7 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	jsonObject_firmware.insert("led_current", camera_config_.Instance().config_param_.led_current);
 	jsonObject_firmware.insert("camera_exposure_time", camera_config_.Instance().config_param_.camera_exposure_time);
 
-	QJsonArray exposure_param_array; 
+	QJsonArray exposure_param_array;
 	for (int i = 0; i < 6; i++)
 	{
 		exposure_param_array.append(camera_config_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
@@ -292,7 +292,7 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	jsonObject_firmware.insert("generate_brightness_model", camera_config_.Instance().firwmare_param_.generate_brightness_model);
 	jsonObject_firmware.insert("generate_brightness_exposure", camera_config_.Instance().firwmare_param_.generate_brightness_exposure);
 
-	// Ê¹ÓÃQJsonDocumentÉèÖÃ¸Ãjson¶ÔÏó
+	// ä½¿ç”¨QJsonDocumentè®¾ç½®è¯¥jsonå¯¹è±¡
 	QJsonDocument jsonDoc;
 	rootObject.insert("firmware", jsonObject_firmware);
 
@@ -302,7 +302,7 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	jsonObject_gui.insert("low_z_value", gui_config_.Instance().low_z_value);
 	jsonObject_gui.insert("high_z_value", gui_config_.Instance().high_z_value);
 	jsonObject_gui.insert("ip", gui_config_.Instance().ip);
-	jsonObject_gui.insert("use_hdr_model", gui_config_.Instance().use_hdr_model); 
+	jsonObject_gui.insert("use_hdr_model", gui_config_.Instance().use_hdr_model);
 	jsonObject_gui.insert("calibration_board", gui_config_.Instance().calibration_board);
 
 	rootObject.insert("gui", jsonObject_gui);
@@ -313,11 +313,11 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 
 	jsonDoc.setObject(rootObject);
 
-	// ½«jsonÒÔÎÄ±¾ÐÎÊ½Ð´ÈëÎÄ¼þ²¢¹Ø±ÕÎÄ¼þ¡£
+	// å°†jsonä»¥æ–‡æœ¬å½¢å¼å†™å…¥æ–‡ä»¶å¹¶å…³é—­æ–‡ä»¶ã€‚
 	file.write(jsonDoc.toJson());
 	file.close();
 
-	qDebug() << "Write to file: "<< path;
+	qDebug() << "Write to file: " << path;
 	return true;
 }
 

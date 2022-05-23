@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="triangulation.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="encode.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -50,6 +47,9 @@
     </ClCompile>
     <ClCompile Include="FilterModule.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="triangulation.cpp">
+      <Filter>资源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

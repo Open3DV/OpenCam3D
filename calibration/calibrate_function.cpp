@@ -37,7 +37,7 @@ void Calibrate_Function::setCalibrationBoard(int board_num)
 
 	case 40:
 	{
-		setBoardMessage(11, 7, 40, 20); 
+		setBoardMessage(11, 7, 40, 20);
 	}
 	break;
 	default:
@@ -93,7 +93,7 @@ double Calibrate_Function::computeLineError(std::vector<cv::Point2f> points, dou
 
 bool Calibrate_Function::saveMatTxt(cv::Mat mat, std::string path)
 {
-	if(mat.empty())
+	if (mat.empty())
 	{
 		return false;
 	}
@@ -105,13 +105,13 @@ bool Calibrate_Function::saveMatTxt(cv::Mat mat, std::string path)
 	std::ofstream stream(path, std::ios::trunc);
 
 	for (int r = 0; r < nr; r++)
-	{ 
-		for(int c = 0;c< nc;c++)
+	{
+		for (int c = 0; c < nc; c++)
 		{
-			stream << mat.at<double>(r, c)<<" ";
+			stream << mat.at<double>(r, c) << " ";
 		}
 
-		stream  << "\n";
+		stream << "\n";
 	}
 	stream.close();
 
@@ -129,9 +129,9 @@ bool Calibrate_Function::savePointsTxt(std::vector<cv::Point2f> points, std::str
 	//����txt 
 	std::ofstream stream(path, std::ios::trunc);
 
-	for(int i= 0;i< points.size();i++)
+	for (int i = 0; i < points.size(); i++)
 	{
-		stream << points[i].x<<" " << points[i].y << "\n";
+		stream << points[i].x << " " << points[i].y << "\n";
 	}
 	stream.close();
 
@@ -148,7 +148,7 @@ bool Calibrate_Function::writeCalibXml(cv::Mat camera_intrinsic, cv::Mat camera_
 	}
 
 	cv::FileStorage fswrite("./calib.xml", cv::FileStorage::WRITE);
-	
+
 	fswrite << "camera_intrinsic" << camera_intrinsic;
 	fswrite << "camera_distortion" << camera_distortion;
 	fswrite << "projector_instrinsic" << projector_instrinsic;
@@ -158,12 +158,12 @@ bool Calibrate_Function::writeCalibXml(cv::Mat camera_intrinsic, cv::Mat camera_
 
 	fswrite.release();
 
-	std::cout << "Write Calib Success!"<<std::endl;
+	std::cout << "Write Calib Success!" << std::endl;
 
 	return true;
 }
 
-bool Calibrate_Function::writeCalibTxt(cv::Mat camera_intrinsic, cv::Mat camera_distortion, cv::Mat projector_instrinsic, 
+bool Calibrate_Function::writeCalibTxt(cv::Mat camera_intrinsic, cv::Mat camera_distortion, cv::Mat projector_instrinsic,
 	cv::Mat projector_distortion, cv::Mat s_r, cv::Mat s_t, std::string path)
 {
 	if (!camera_intrinsic.data || !camera_distortion.data || !projector_instrinsic.data || !projector_distortion.data || !s_r.data || !s_t.data)
@@ -178,7 +178,7 @@ bool Calibrate_Function::writeCalibTxt(cv::Mat camera_intrinsic, cv::Mat camera_
 	stream << camera_intrinsic.at<double>(0, 0) << "\n";
 	stream << camera_intrinsic.at<double>(0, 1) << "\n";
 	stream << camera_intrinsic.at<double>(0, 2) << "\n";
-	stream << camera_intrinsic.at<double>(1, 0) << "\n"; 
+	stream << camera_intrinsic.at<double>(1, 0) << "\n";
 	stream << camera_intrinsic.at<double>(1, 1) << "\n";
 	stream << camera_intrinsic.at<double>(1, 2) << "\n";
 	stream << camera_intrinsic.at<double>(2, 0) << "\n";
@@ -244,7 +244,7 @@ bool Calibrate_Function::writeCalibTxt(cv::Mat camera_intrinsic, cv::Mat camera_
 	stream.close();
 
 	/*************************************************************************************************************************/
-	 
+
 	return true;
 
 }
@@ -331,7 +331,7 @@ double Calibrate_Function::calibrateStereo(std::vector<std::vector<cv::Point2f>>
 
 
 	/***********************************************************************************************************/
-	 
+
 
 
 	std::cout << "camera intrinsic: " << "\n" << s_camera_intrinsic << "\n";
@@ -347,7 +347,7 @@ double Calibrate_Function::calibrateStereo(std::vector<std::vector<cv::Point2f>>
 
 	/******************************************************************************************************************/
 
-	bool ret = writeCalibTxt(s_camera_intrinsic, s_camera_distortion, s_project_intrinsic, s_projector_distortion, _R, _T,path);
+	bool ret = writeCalibTxt(s_camera_intrinsic, s_camera_distortion, s_project_intrinsic, s_projector_distortion, _R, _T, path);
 	//writeCalibXml(s_camera_intrinsic, s_camera_distortion, s_project_intrinsic, s_projector_distortion, _R, _T);
 
 	if (ret)
@@ -382,11 +382,11 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 	}
 
 
-	if(dlp_points_list.size()< 6)
+	if (dlp_points_list.size() < 6)
 	{
 
-		std::cout << "Error: "  << std::endl;
-		std::cout << "Group Num: "<< dlp_points_list.size() << std::endl;
+		std::cout << "Error: " << std::endl;
+		std::cout << "Group Num: " << dlp_points_list.size() << std::endl;
 		return false;
 	}
 
@@ -396,7 +396,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 	int flag = 0;
 	/* ���б궨���� */
 	double err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
-		flag,cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
 
 	//std::cout << "First calibrate error: " << err_first << std::endl;
 
@@ -481,7 +481,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 			max_series = -1;
 			max_err = 0;
 
-			err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat, 
+			err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
 				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
 
 			//std::cout << "Dlp error: " << err_first << std::endl;
@@ -504,7 +504,7 @@ bool Calibrate_Function::bilinearInterpolationFeaturePoints(std::vector<cv::Poin
 	if (point_cloud.empty())
 		return false;
 
-	 
+
 	std::vector<cv::Mat> point_cloud_channels;
 	cv::split(point_cloud, point_cloud_channels);
 
@@ -696,7 +696,7 @@ bool Calibrate_Function::cameraPointsToDlp(std::vector<cv::Point2f> camera_point
 		double  hor_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_hor);
 		double  ver_val = Bilinear_interpolation(pos.x, pos.y, unwrap_map_ver);
 
-		if(hor_val< 0 || ver_val< 0)
+		if (hor_val < 0 || ver_val < 0)
 		{
 			ret = false;
 		}
@@ -741,7 +741,7 @@ std::vector<cv::Point3f> Calibrate_Function::generateSymmetricWorldFeature(float
 	for (int r = 0; r < board_size_.height; r++)
 	{
 		for (int c = 0; c < board_size_.width; c++)
-		{ 
+		{
 			objectCorners.push_back(cv::Point3f(width * c, height * r, 0.0f));
 		}
 	}
@@ -757,17 +757,17 @@ std::vector<cv::Point3f> Calibrate_Function::generateAsymmetricWorldFeature(floa
 		for (int c = 0; c < board_size_.width; c++)
 		{
 
-			if (0 == r% 2)
+			if (0 == r % 2)
 			{
 
-				objectCorners.push_back(cv::Point3f(width * c , height * r, 0.0f));
+				objectCorners.push_back(cv::Point3f(width * c, height * r, 0.0f));
 			}
 			else if (1 == r % 2)
 			{
 
 				objectCorners.push_back(cv::Point3f(width * c + 0.5 * width, height * r, 0.0f));
 			}
-			  
+
 		}
 	}
 
@@ -798,7 +798,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 	int flag = 0;
 
 	/* ���б궨���� */
-	double err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat, 
+	double err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
 		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
 
 	//std::cout << "First calibrate error: " << err_first<<std::endl;
@@ -884,7 +884,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 			max_series = -1;
 			max_err = 0;
 
-			err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat, 
+			err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
 				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
 
 			//std::cout  << "calibrate error: " << err_first << std::endl;
@@ -930,7 +930,7 @@ int Calibrate_Function::testOverExposure(cv::Mat img, std::vector<cv::Point2f> p
 bool Calibrate_Function::findCircleBoardFeature(cv::Mat img, std::vector<cv::Point2f>& points)
 {
 	std::vector<cv::Point2f> circle_points;
-	cv::Mat img_inv = inv_image(img); 
+	cv::Mat img_inv = inv_image(img);
 	bool found = cv::findCirclesGrid(img_inv, board_size_, circle_points, cv::CALIB_CB_ASYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING);
 
 	if (!found)

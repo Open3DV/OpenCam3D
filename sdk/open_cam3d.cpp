@@ -1,4 +1,4 @@
-#include "open_cam3d.h"
+ï»¿#include "open_cam3d.h"
 #include "socket_tcp.h"
 #include <assert.h>
 #include <iostream>
@@ -34,7 +34,7 @@ extern SOCKET g_sock;
 
 int (*p_OnDropped)(void*) = 0;
 
-int camera_version = 0;
+//int camera_version = 0;
 
 /**************************************************************************************************************/
 
@@ -76,12 +76,12 @@ std::time_t getTimeStamp(long long& msec)
 
 std::tm* gettm(long long timestamp)
 {
-	auto milli = timestamp + (long long)8 * 60 * 60 * 1000; //´Ë´¦×ª»¯Îª¶«°ËÇø±±¾©Ê±¼ä£¬Èç¹ûÊÇÆäËüÊ±ÇøĞèÒª°´ĞèÇóĞŞ¸Ä
+	auto milli = timestamp + (long long)8 * 60 * 60 * 1000; //æ­¤å¤„è½¬åŒ–ä¸ºä¸œå…«åŒºåŒ—äº¬æ—¶é—´ï¼Œå¦‚æœæ˜¯å…¶å®ƒæ—¶åŒºéœ€è¦æŒ‰éœ€æ±‚ä¿®æ”¹
 	auto mTime = std::chrono::milliseconds(milli);
 	auto tp = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>(mTime);
 	auto tt = std::chrono::system_clock::to_time_t(tp);
 	std::tm* now = std::gmtime(&tt);
-	//printf("%4dÄê%02dÔÂ%02dÈÕ %02d:%02d:%02d\n", now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+	//printf("%4då¹´%02dæœˆ%02dæ—¥ %02d:%02d:%02d\n", now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
 	return now;
 }
 
@@ -94,13 +94,13 @@ std::string get_timestamp()
 	auto t = getTimeStamp(msec);
 	//std::cout << "Millisecond timestamp is: " << t << std::endl;
 	auto time_ptr = gettm(t);
-	sprintf(time_str[0], "%02d", time_ptr->tm_year + 1900); //ÔÂ·İÒª¼Ó1
-	sprintf(time_str[1], "%02d", time_ptr->tm_mon + 1); //ÔÂ·İÒª¼Ó1
-	sprintf(time_str[2], "%02d", time_ptr->tm_mday);//Ìì
-	sprintf(time_str[3], "%02d", time_ptr->tm_hour);//Ê±
-	sprintf(time_str[4], "%02d", time_ptr->tm_min);// ·Ö
-	sprintf(time_str[5], "%02d", time_ptr->tm_sec);//Ê±
-	sprintf(time_str[6], "%02lld", msec);// ·Ö
+	sprintf(time_str[0], "%02d", time_ptr->tm_year + 1900); //æœˆä»½è¦åŠ 1
+	sprintf(time_str[1], "%02d", time_ptr->tm_mon + 1); //æœˆä»½è¦åŠ 1
+	sprintf(time_str[2], "%02d", time_ptr->tm_mday);//å¤©
+	sprintf(time_str[3], "%02d", time_ptr->tm_hour);//æ—¶
+	sprintf(time_str[4], "%02d", time_ptr->tm_min);// åˆ†
+	sprintf(time_str[5], "%02d", time_ptr->tm_sec);//æ—¶
+	sprintf(time_str[6], "%02lld", msec);// åˆ†
 	//for (int i = 0; i < 7; i++)
 	//{
 	//	std::cout << "time_str[" << i << "] is: " << time_str[i] << std::endl;
@@ -129,7 +129,7 @@ std::string get_timestamp()
 
 
 /***************************************************************************************************************************/
-//Íø¸ñµôÏß
+//ç½‘æ ¼æ‰çº¿
 int on_dropped(void* param)
 {
 	std::cout << "Network dropped!" << std::endl;
@@ -157,11 +157,11 @@ bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* transl
 			float x = point_cloud_map[3 * offset + 0] + translation[0];
 			float y = point_cloud_map[3 * offset + 1] + translation[1];
 			float z = point_cloud_map[3 * offset + 2] + translation[2];
-			 
+
 			point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z;
 			point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z;
 			point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z;
-  
+
 		}
 
 	}
@@ -170,49 +170,49 @@ bool transformPointcloudInv(float* point_cloud_map, float* rotate, float* transl
 	return true;
 }
 
- bool transformPointcloud(float* org_point_cloud_map, float* transform_point_cloud_map, float* rotate, float* translation)
+bool transformPointcloud(float* org_point_cloud_map, float* transform_point_cloud_map, float* rotate, float* translation)
 {
 
 
-	 int point_num = camera_height_ * camera_width_;
+	int point_num = camera_height_ * camera_width_;
 
-	 int nr = camera_height_;
-	 int nc = camera_width_;
+	int nr = camera_height_;
+	int nc = camera_width_;
 
-	#pragma omp parallel for
-	 for (int r = 0; r < nr; r++)
-	 {
+#pragma omp parallel for
+	for (int r = 0; r < nr; r++)
+	{
 
-		 for (int c = 0; c < nc; c++)
-		 {
- 
-			 int offset = r * camera_width_ + c;
+		for (int c = 0; c < nc; c++)
+		{
 
-			 float x = org_point_cloud_map[3 * offset + 0];
-			 float y = org_point_cloud_map[3 * offset + 1];
-			 float z = org_point_cloud_map[3 * offset + 2];
-			  
-			 //if (z > 0)
-			 //{
-				 transform_point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z + translation[0];
-				 transform_point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z + translation[1];
-				 transform_point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z + translation[2];
-				  
-			 //}
-			 //else
-			 //{
-				// point_cloud_map[3 * offset + 0] = 0;
-				// point_cloud_map[3 * offset + 1] = 0;
-				// point_cloud_map[3 * offset + 2] = 0;
-			 //}
+			int offset = r * camera_width_ + c;
 
+			float x = org_point_cloud_map[3 * offset + 0];
+			float y = org_point_cloud_map[3 * offset + 1];
+			float z = org_point_cloud_map[3 * offset + 2];
 
-		 }
+			//if (z > 0)
+			//{
+			transform_point_cloud_map[3 * offset + 0] = rotate[0] * x + rotate[1] * y + rotate[2] * z + translation[0];
+			transform_point_cloud_map[3 * offset + 1] = rotate[3] * x + rotate[4] * y + rotate[5] * z + translation[1];
+			transform_point_cloud_map[3 * offset + 2] = rotate[6] * x + rotate[7] * y + rotate[8] * z + translation[2];
 
-	 }
+			//}
+			//else
+			//{
+			   // point_cloud_map[3 * offset + 0] = 0;
+			   // point_cloud_map[3 * offset + 1] = 0;
+			   // point_cloud_map[3 * offset + 2] = 0;
+			//}
 
 
-	 return true;
+		}
+
+	}
+
+
+	return true;
 }
 
 bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
@@ -294,15 +294,15 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 /**************************************************************************************************************************/
 
 
-//º¯ÊıÃû£º DfConnect
-//¹¦ÄÜ£º Á¬½ÓÏà»ú
-//ÊäÈë²ÎÊı£º camera_id£¨Ïà»úid£©
-//Êä³ö²ÎÊı£º ÎŞ
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾Á¬½Ó³É¹¦;·µ»Ø-1±íÊ¾Á¬½ÓÊ§°Ü.
+//å‡½æ•°åï¼š DfConnect
+//åŠŸèƒ½ï¼š è¿æ¥ç›¸æœº
+//è¾“å…¥å‚æ•°ï¼š camera_idï¼ˆç›¸æœºidï¼‰
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè¿æ¥æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè¿æ¥å¤±è´¥.
 DF_SDK_API int DfConnect(const char* camera_id)
 {
 	/*******************************************************************************************************************/
-	//¹Ø±ÕlogÊä³ö
+	//å…³é—­logè¾“å‡º
 	el::Configurations conf;
 	conf.setToDefault();
 	conf.setGlobally(el::ConfigurationType::Format, "[%datetime{%H:%m:%s} | %level] %msg");
@@ -316,7 +316,7 @@ DF_SDK_API int DfConnect(const char* camera_id)
 
 	DfRegisterOnDropped(on_dropped);
 
-	
+
 	int ret = DfConnectNet(camera_id);
 	if (ret == DF_FAILED)
 	{
@@ -346,15 +346,15 @@ DF_SDK_API int DfConnect(const char* camera_id)
 	camera_width_ = width;
 	camera_height_ = height;
 
-	ret = DfGetCameraVersion(camera_version); 
+	//ret = DfGetCameraVersion(camera_version); 
 
-	if (ret == DF_FAILED)
-	{
-		return -1;
-	}
-	
+	//if (ret == DF_FAILED)
+	//{
+	//	return -1;
+	//}
 
-	//³õÊ¼»¯
+
+	//åˆå§‹åŒ–
 
 	camera_ip_ = camera_id;
 	connected_flag_ = true;
@@ -378,11 +378,11 @@ DF_SDK_API int DfConnect(const char* camera_id)
 	return 0;
 }
 
-//º¯ÊıÃû£º DfGetCameraResolution
-//¹¦ÄÜ£º »ñÈ¡Ïà»ú·Ö±æÂÊ
-//ÊäÈë²ÎÊı£º ÎŞ
-//Êä³ö²ÎÊı£º width(Í¼Ïñ¿í)¡¢height(Í¼Ïñ¸ß)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfGetCameraResolution
+//åŠŸèƒ½ï¼š è·å–ç›¸æœºåˆ†è¾¨ç‡
+//è¾“å…¥å‚æ•°ï¼š æ— 
+//è¾“å‡ºå‚æ•°ï¼š width(å›¾åƒå®½)ã€height(å›¾åƒé«˜)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–å‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–å‚æ•°å¤±è´¥.
 DF_SDK_API int DfGetCameraResolution(int* width, int* height)
 {
 	if (!connected)
@@ -397,11 +397,11 @@ DF_SDK_API int DfGetCameraResolution(int* width, int* height)
 	return 0;
 }
 
-//º¯ÊıÃû£º DfCaptureData
-//¹¦ÄÜ£º ²É¼¯Ò»Ö¡Êı¾İ²¢×èÈûÖÁ·µ»Ø×´Ì¬
-//ÊäÈë²ÎÊı£º exposure_num£¨ÆØ¹â´ÎÊı£©£º´óÓÚ1µÄÎª¶àÆØ¹âÄ£Ê½
-//Êä³ö²ÎÊı£º timestamp(Ê±¼ä´Á)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡²É¼¯Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfCaptureData
+//åŠŸèƒ½ï¼š é‡‡é›†ä¸€å¸§æ•°æ®å¹¶é˜»å¡è‡³è¿”å›çŠ¶æ€
+//è¾“å…¥å‚æ•°ï¼š exposure_numï¼ˆæ›å…‰æ¬¡æ•°ï¼‰ï¼šå¤§äº1çš„ä¸ºå¤šæ›å…‰æ¨¡å¼
+//è¾“å‡ºå‚æ•°ï¼š timestamp(æ—¶é—´æˆ³)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–é‡‡é›†æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 {
 
@@ -453,11 +453,11 @@ DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 	return 0;
 }
 
-//º¯ÊıÃû£º DfGetDepthData
-//¹¦ÄÜ£º ²É¼¯µãÔÆÊı¾İ²¢×èÈûÖÁ·µ»Ø½á¹û
-//ÊäÈë²ÎÊı£ºÎŞ
-//Êä³ö²ÎÊı£º depth(Éî¶ÈÍ¼)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetDepthData
+//åŠŸèƒ½ï¼š é‡‡é›†ç‚¹äº‘æ•°æ®å¹¶é˜»å¡è‡³è¿”å›ç»“æœ
+//è¾“å…¥å‚æ•°ï¼šæ— 
+//è¾“å‡ºå‚æ•°ï¼š depth(æ·±åº¦å›¾)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetDepthData(unsigned short* depth)
 {
 	if (!connected_flag_)
@@ -500,11 +500,11 @@ DF_SDK_API int DfGetDepthData(unsigned short* depth)
 }
 
 
-//º¯ÊıÃû£º DfGetBrightnessData
-//¹¦ÄÜ£º ²É¼¯µãÔÆÊı¾İ²¢×èÈûÖÁ·µ»Ø½á¹û
-//ÊäÈë²ÎÊı£ºÎŞ
-//Êä³ö²ÎÊı£º brightness(ÁÁ¶ÈÍ¼)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetBrightnessData
+//åŠŸèƒ½ï¼š é‡‡é›†ç‚¹äº‘æ•°æ®å¹¶é˜»å¡è‡³è¿”å›ç»“æœ
+//è¾“å…¥å‚æ•°ï¼šæ— 
+//è¾“å‡ºå‚æ•°ï¼š brightness(äº®åº¦å›¾)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetBrightnessData(unsigned char* brightness)
 {
 	if (!connected_flag_)
@@ -524,16 +524,16 @@ DF_SDK_API int DfGetBrightnessData(unsigned char* brightness)
 	return 0;
 }
 
-//º¯ÊıÃû£º DfGetStandardPlaneParam
-//¹¦ÄÜ£º »ñÈ¡»ù×¼Æ½Ãæ²ÎÊı
-//ÊäÈë²ÎÊı£ºÎŞ
-//Êä³ö²ÎÊı£º R(Ğı×ª¾ØÕó£º3*3)¡¢T(Æ½ÒÆ¾ØÕó£º3*1)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetStandardPlaneParam
+//åŠŸèƒ½ï¼š è·å–åŸºå‡†å¹³é¢å‚æ•°
+//è¾“å…¥å‚æ•°ï¼šæ— 
+//è¾“å‡ºå‚æ•°ï¼š R(æ—‹è½¬çŸ©é˜µï¼š3*3)ã€T(å¹³ç§»çŸ©é˜µï¼š3*1)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetStandardPlaneParam(float* R, float* T)
 {
 
 	LOG(INFO) << "DfGetStandardPlaneParam";
- 
+
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
@@ -558,7 +558,7 @@ DF_SDK_API int DfGetStandardPlaneParam(float* R, float* T)
 		{
 			close_socket(g_sock);
 			return DF_FAILED;
-		} 
+		}
 	}
 	else if (command == DF_CMD_REJECT)
 	{
@@ -571,26 +571,26 @@ DF_SDK_API int DfGetStandardPlaneParam(float* R, float* T)
 	close_socket(g_sock);
 
 
-	memcpy(R, plane_param, 9*4);
-	memcpy(T, plane_param+9, 3 * 4);
+	memcpy(R, plane_param, 9 * 4);
+	memcpy(T, plane_param + 9, 3 * 4);
 
-	delete [] plane_param;
+	delete[] plane_param;
 
 	return DF_SUCCESS;
-	  
+
 }
 
-//º¯ÊıÃû£º DfGetHeightMapDataBaseParam
-//¹¦ÄÜ£º »ñÈ¡Ğ£Õıµ½»ù×¼Æ½ÃæµÄ¸ß¶ÈÓ³ÉäÍ¼
-//ÊäÈë²ÎÊı£ºR(Ğı×ª¾ØÕó)¡¢T(Æ½ÒÆ¾ØÕó)
-//Êä³ö²ÎÊı£º height_map(¸ß¶ÈÓ³ÉäÍ¼)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
-DF_SDK_API int DfGetHeightMapDataBaseParam(float* R, float* T , float* height_map)
+//å‡½æ•°åï¼š DfGetHeightMapDataBaseParam
+//åŠŸèƒ½ï¼š è·å–æ ¡æ­£åˆ°åŸºå‡†å¹³é¢çš„é«˜åº¦æ˜ å°„å›¾
+//è¾“å…¥å‚æ•°ï¼šR(æ—‹è½¬çŸ©é˜µ)ã€T(å¹³ç§»çŸ©é˜µ)
+//è¾“å‡ºå‚æ•°ï¼š height_map(é«˜åº¦æ˜ å°„å›¾)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
+DF_SDK_API int DfGetHeightMapDataBaseParam(float* R, float* T, float* height_map)
 {
 	if (!connected_flag_)
 	{
 		return -1;
-	} 
+	}
 	//struct SystemConfigParam system_config_param;
 	//int ret_code = DfGetSystemConfigParam(system_config_param);
 	//if (0 != ret_code)
@@ -608,12 +608,12 @@ DF_SDK_API int DfGetHeightMapDataBaseParam(float* R, float* T , float* height_ma
 	}
 
 	//memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
-	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, R, T);
+	transformPointcloud((float*)point_cloud_buf_, (float*)trans_point_cloud_buf_, R, T);
 
 
 	int nr = camera_height_;
 	int nc = camera_width_;
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int r = 0; r < nr; r++)
 	{
 		for (int c = 0; c < nc; c++)
@@ -639,11 +639,11 @@ DF_SDK_API int DfGetHeightMapDataBaseParam(float* R, float* T , float* height_ma
 	return 0;
 }
 
-//º¯ÊıÃû£º DfGetHeightMapData
-//¹¦ÄÜ£º ²É¼¯µãÔÆÊı¾İ²¢×èÈûÖÁ·µ»Ø½á¹û
-//ÊäÈë²ÎÊı£ºÎŞ
-//Êä³ö²ÎÊı£º height_map(¸ß¶ÈÓ³ÉäÍ¼)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetHeightMapData
+//åŠŸèƒ½ï¼š é‡‡é›†ç‚¹äº‘æ•°æ®å¹¶é˜»å¡è‡³è¿”å›ç»“æœ
+//è¾“å…¥å‚æ•°ï¼šæ— 
+//è¾“å‡ºå‚æ•°ï¼š height_map(é«˜åº¦æ˜ å°„å›¾)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetHeightMapData(float* height_map)
 {
 	if (!connected_flag_)
@@ -660,7 +660,7 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 		return -1;
 	}
 
-	LOG(INFO) << "Transform Pointcloud:"; 
+	LOG(INFO) << "Transform Pointcloud:";
 
 	if (!transform_pointcloud_flag_)
 	{
@@ -669,20 +669,20 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 	}
 
 	//memcpy(trans_point_cloud_buf_, point_cloud_buf_, pointcloud_buf_size_);
-	transformPointcloud((float*)point_cloud_buf_,(float*)trans_point_cloud_buf_, system_config_param.standard_plane_external_param, &system_config_param.standard_plane_external_param[9]);
-	 
+	transformPointcloud((float*)point_cloud_buf_, (float*)trans_point_cloud_buf_, system_config_param.standard_plane_external_param, &system_config_param.standard_plane_external_param[9]);
+
 
 	int nr = camera_height_;
-	int nc = camera_width_; 
-	#pragma omp parallel for
+	int nc = camera_width_;
+#pragma omp parallel for
 	for (int r = 0; r < nr; r++)
-	{ 
+	{
 		for (int c = 0; c < nc; c++)
 		{
-			int offset = r * camera_width_ + c; 
+			int offset = r * camera_width_ + c;
 			if (depth_buf_[offset] > 0)
 			{
-				height_map[offset] = trans_point_cloud_buf_[offset*3+2];
+				height_map[offset] = trans_point_cloud_buf_[offset * 3 + 2];
 			}
 			else
 			{
@@ -700,11 +700,11 @@ DF_SDK_API int DfGetHeightMapData(float* height_map)
 	return 0;
 }
 
-//º¯ÊıÃû£º DfGetPointcloudData
-//¹¦ÄÜ£º ²É¼¯µãÔÆÊı¾İ²¢×èÈûÖÁ·µ»Ø½á¹û
-//ÊäÈë²ÎÊı£ºÎŞ
-//Êä³ö²ÎÊı£º point_cloud(µãÔÆ)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetPointcloudData
+//åŠŸèƒ½ï¼š é‡‡é›†ç‚¹äº‘æ•°æ®å¹¶é˜»å¡è‡³è¿”å›ç»“æœ
+//è¾“å…¥å‚æ•°ï¼šæ— 
+//è¾“å‡ºå‚æ•°ï¼š point_cloud(ç‚¹äº‘)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetPointcloudData(float* point_cloud)
 {
 	if (!connected_flag_)
@@ -718,21 +718,21 @@ DF_SDK_API int DfGetPointcloudData(float* point_cloud)
 	{
 		depthTransformPointcloud(depth_buf_, point_cloud_buf_);
 		transform_pointcloud_flag_ = true;
-	} 
+	}
 
 	memcpy(point_cloud, point_cloud_buf_, pointcloud_buf_size_);
-	 
+
 
 	LOG(INFO) << "Get Pointcloud!";
 
 	return 0;
 }
 
-//º¯ÊıÃû£º DfConnect
-//¹¦ÄÜ£º ¶Ï¿ªÏà»úÁ¬½Ó
-//ÊäÈë²ÎÊı£º camera_id£¨Ïà»úid£©
-//Êä³ö²ÎÊı£º ÎŞ
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾¶Ï¿ª³É¹¦;·µ»Ø-1±íÊ¾¶Ï¿ªÊ§°Ü.
+//å‡½æ•°åï¼š DfConnect
+//åŠŸèƒ½ï¼š æ–­å¼€ç›¸æœºè¿æ¥
+//è¾“å…¥å‚æ•°ï¼š camera_idï¼ˆç›¸æœºidï¼‰
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºæ–­å¼€æˆåŠŸ;è¿”å›-1è¡¨ç¤ºæ–­å¼€å¤±è´¥.
 DF_SDK_API int DfDisconnect(const char* camera_id)
 {
 	if (!connected_flag_)
@@ -753,11 +753,11 @@ DF_SDK_API int DfDisconnect(const char* camera_id)
 	return 0;
 }
 
-//º¯ÊıÃû£º DfGetCalibrationParam
-//¹¦ÄÜ£º »ñÈ¡Ïà»ú±ê¶¨²ÎÊı
-//ÊäÈë²ÎÊı£º ÎŞ
-//Êä³ö²ÎÊı£º calibration_param£¨Ïà»ú±ê¶¨²ÎÊı½á¹¹Ìå£©
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡±ê¶¨²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡±ê¶¨²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfGetCalibrationParam
+//åŠŸèƒ½ï¼š è·å–ç›¸æœºæ ‡å®šå‚æ•°
+//è¾“å…¥å‚æ•°ï¼š æ— 
+//è¾“å‡ºå‚æ•°ï¼š calibration_paramï¼ˆç›¸æœºæ ‡å®šå‚æ•°ç»“æ„ä½“ï¼‰
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°å¤±è´¥.
 DF_SDK_API int DfGetCalibrationParam(struct CalibrationParam* calibration_param)
 {
 	if (!connected_flag_)
@@ -869,14 +869,14 @@ int HeartBeat_loop()
 DF_SDK_API int DfConnectNet(const char* ip)
 {
 	camera_id_ = ip;
-	LOG(INFO) << "start connection: " <<ip;
+	LOG(INFO) << "start connection: " << ip;
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
 		close_socket(g_sock);
 		return DF_FAILED;
 	}
-	 
+
 
 	LOG(INFO) << "sending connection cmd";
 	ret = send_command(DF_CMD_CONNECT, g_sock);
@@ -892,7 +892,7 @@ DF_SDK_API int DfConnectNet(const char* ip)
 	{
 		if (command == DF_CMD_OK)
 		{
-			LOG(INFO) << "Recieved connection ok" ;
+			LOG(INFO) << "Recieved connection ok";
 			ret = recv_buffer((char*)&token, sizeof(token), g_sock);
 			if (ret == DF_SUCCESS)
 			{
@@ -907,7 +907,7 @@ DF_SDK_API int DfConnectNet(const char* ip)
 				return DF_SUCCESS;
 			}
 		}
-		else if(command == DF_CMD_REJECT)
+		else if (command == DF_CMD_REJECT)
 		{
 			LOG(INFO) << "connection rejected";
 			close_socket(g_sock);
@@ -924,7 +924,7 @@ DF_SDK_API int DfConnectNet(const char* ip)
 
 DF_SDK_API int DfDisconnectNet()
 {
-	LOG(INFO) <<"token "<<token<< " try to disconnection";
+	LOG(INFO) << "token " << token << " try to disconnection";
 
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
@@ -961,7 +961,7 @@ DF_SDK_API int DfDisconnectNet()
 	return close_socket(g_sock);
 }
 
-  
+
 
 DF_SDK_API int GetBrightness(unsigned char* brightness, int brightness_buf_size)
 {
@@ -981,7 +981,7 @@ DF_SDK_API int GetBrightness(unsigned char* brightness, int brightness_buf_size)
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-		LOG(INFO) << "token checked ok" ;
+		LOG(INFO) << "token checked ok";
 		ret = recv_buffer((char*)brightness, brightness_buf_size, g_sock);
 		if (ret == DF_FAILED)
 		{
@@ -1025,7 +1025,7 @@ DF_SDK_API int DfGetCameraData(
 
 	if (point_cloud)
 	{
-		assert(point_cloud_buf_size >= image_size * sizeof(short)*3);
+		assert(point_cloud_buf_size >= image_size * sizeof(short) * 3);
 		send_command(DF_CMD_GET_POINTCLOUD, g_sock);
 		ret = recv_buffer((char*)point_cloud, point_cloud_buf_size, g_sock);
 		if (ret == DF_FAILED)
@@ -1171,7 +1171,7 @@ DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 		close_socket(g_sock);
 		return DF_FAILED;
 	}
-	 
+
 
 	ret = send_command(DF_CMD_GET_FRAME_03, g_sock);
 	ret = send_buffer((char*)&token, sizeof(token), g_sock);
@@ -1491,7 +1491,7 @@ DF_SDK_API int DfGetCameraRawData01(unsigned char* raw, int raw_buf_size)
 {
 	if (raw)
 	{
-		LOG(INFO) << "Get Raw 01" ;
+		LOG(INFO) << "Get Raw 01";
 		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 72);
 		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 		if (ret == DF_FAILED)
@@ -1552,7 +1552,7 @@ DF_SDK_API int DfGetDeviceTemperature(float& temperature)
 	}
 	else if (command == DF_CMD_REJECT)
 	{
-		close_socket(g_sock); 
+		close_socket(g_sock);
 		return DF_FAILED;
 	}
 
@@ -1624,7 +1624,7 @@ DF_SDK_API int DfDisableCheckerboard(float& temperature)
 	return DF_SUCCESS;
 }
 // --------------------------------------------------------------
-DF_SDK_API int DfLoadPatternData(int buildDataSize, char *LoadBuffer)
+DF_SDK_API int DfLoadPatternData(int buildDataSize, char* LoadBuffer)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
@@ -1662,7 +1662,7 @@ DF_SDK_API int DfLoadPatternData(int buildDataSize, char *LoadBuffer)
 	return DF_SUCCESS;
 }
 
-DF_SDK_API int DfProgramPatternData(char *org_buffer, char *back_buffer, unsigned int pattern_size)
+DF_SDK_API int DfProgramPatternData(char* org_buffer, char* back_buffer, unsigned int pattern_size)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
@@ -1862,11 +1862,11 @@ DF_SDK_API int DfGetCalibrationParam(struct CameraCalibParam& calibration_param)
 	return DF_SUCCESS;
 }
 
-//º¯ÊıÃû£º DfSetCalibrationLookTable
-//¹¦ÄÜ£ºÉèÖÃ±ê¶¨²ÎÊı½Ó¿Ú
-//ÊäÈë²ÎÊı£ºcalibration_param£¨±ê¶¨²ÎÊı£©,rotate_x¡¢rotate_y, rectify_r1, mapping
-//Êä³ö²ÎÊı£ºÎŞ
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾Á¬½Ó³É¹¦;·µ»Ø-1±íÊ¾Á¬½ÓÊ§°Ü.
+//å‡½æ•°åï¼š DfSetCalibrationLookTable
+//åŠŸèƒ½ï¼šè®¾ç½®æ ‡å®šå‚æ•°æ¥å£
+//è¾“å…¥å‚æ•°ï¼šcalibration_paramï¼ˆæ ‡å®šå‚æ•°ï¼‰,rotate_xã€rotate_y, rectify_r1, mapping
+//è¾“å‡ºå‚æ•°ï¼šæ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè¿æ¥æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè¿æ¥å¤±è´¥.
 DF_SDK_API int DfSetCalibrationLookTable(const struct CameraCalibParam& calibration_param, float* rotate_x,
 	float* rotate_y, float* rectify_r1, float* mapping)
 {
@@ -1889,11 +1889,11 @@ DF_SDK_API int DfSetCalibrationLookTable(const struct CameraCalibParam& calibrat
 			close_socket(g_sock);
 			return DF_FAILED;
 		}
-		 
+
 		/*****************************************************************/
 
-		LOG(INFO) << "start send_buffer rotate_x size: "<< 1920 * 1200 * sizeof(float);
-		ret = send_buffer((char*)(rotate_x), 1920*1200*sizeof(float), g_sock);
+		LOG(INFO) << "start send_buffer rotate_x size: " << 1920 * 1200 * sizeof(float);
+		ret = send_buffer((char*)(rotate_x), 1920 * 1200 * sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -1970,11 +1970,11 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 }
 
 /*****************************************************************************************************/
-	//º¯ÊıÃû£º DfGetParamOffset
-	//¹¦ÄÜ£º »ñÈ¡²¹³¥²ÎÊı
-	//ÊäÈë²ÎÊı£ºÎŞ
-	//Êä³ö²ÎÊı£ºoffset(²¹³¥Öµ)
-	//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+	//å‡½æ•°åï¼š DfGetParamOffset
+	//åŠŸèƒ½ï¼š è·å–è¡¥å¿å‚æ•°
+	//è¾“å…¥å‚æ•°ï¼šæ— 
+	//è¾“å‡ºå‚æ•°ï¼šoffset(è¡¥å¿å€¼)
+	//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetParamOffset(float& offset)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2012,11 +2012,11 @@ DF_SDK_API int DfGetParamOffset(float& offset)
 	return DF_SUCCESS;
 }
 
-	//º¯ÊıÃû£º DfSetParamOffset
-	//¹¦ÄÜ£º ÉèÖÃ²¹³¥²ÎÊı
-	//ÊäÈë²ÎÊı£ºoffset(²¹³¥Öµ)
-	//Êä³ö²ÎÊı£º ÎŞ
-	//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfSetParamOffset
+//åŠŸèƒ½ï¼š è®¾ç½®è¡¥å¿å‚æ•°
+//è¾“å…¥å‚æ•°ï¼šoffset(è¡¥å¿å€¼)
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfSetParamOffset(float offset)
 {
 
@@ -2061,45 +2061,45 @@ DF_SDK_API int DfSetParamOffset(float offset)
 	return DF_SUCCESS;
 }
 
-	//º¯ÊıÃû£º DfSetParamCameraExposure
-	//¹¦ÄÜ£º ÉèÖÃÏà»úÆØ¹âÊ±¼ä
-	//ÊäÈë²ÎÊı£ºexposure(Ïà»úÆØ¹âÊ±¼ä)
-	//Êä³ö²ÎÊı£º ÎŞ
-	//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfSetParamCameraExposure
+//åŠŸèƒ½ï¼š è®¾ç½®ç›¸æœºæ›å…‰æ—¶é—´
+//è¾“å…¥å‚æ•°ï¼šexposure(ç›¸æœºæ›å…‰æ—¶é—´)
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfSetParamCameraExposure(float exposure)
 {
 
-	float min_exposure = 0;
-	float max_exposure = 0;
+	//float min_exposure = 0;
+	//float max_exposure = 0;
 
-	switch (camera_version)
-	{
-	case 800:
-	{
-		min_exposure = 6000;
-		max_exposure = 60000;
-	}
-	break;
+	//switch (camera_version)
+	//{
+	//case 800:
+	//{
+	//	min_exposure = 6000;
+	//	max_exposure = 60000;
+	//}
+	//break;
 
-	case 1800:
-	{
-		min_exposure = 6000;
-		max_exposure = 28000;
-	}
-	break;
+	//case 1800:
+	//{
+	//	min_exposure = 6000;
+	//	max_exposure = 28000;
+	//}
+	//break;
 
-	default:
-		break;
-	}
+	//default:
+	//	break;
+	//}
 
-	if (exposure < min_exposure)
-	{
-		exposure = min_exposure;
-	}
-	else if (exposure > max_exposure)
-	{
-		exposure = max_exposure;
-	}
+	//if (exposure < min_exposure)
+	//{
+	//	exposure = min_exposure;
+	//}
+	//else if (exposure > max_exposure)
+	//{
+	//	exposure = max_exposure;
+	//}
 
 	//if (exposure < 6000 || exposure> 60000)
 	//{
@@ -2119,7 +2119,7 @@ DF_SDK_API int DfSetParamCameraExposure(float exposure)
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-  
+
 		ret = send_buffer((char*)(&exposure), sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
@@ -2142,11 +2142,11 @@ DF_SDK_API int DfSetParamCameraExposure(float exposure)
 	return DF_SUCCESS;
 }
 
-//º¯ÊıÃû£º DfGetParamCameraExposure
-//¹¦ÄÜ£º »ñÈ¡Ïà»úÆØ¹âÊ±¼ä
-//ÊäÈë²ÎÊı£º ÎŞ
-//Êä³ö²ÎÊı£ºexposure(Ïà»úÆØ¹âÊ±¼ä)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetParamCameraExposure
+//åŠŸèƒ½ï¼š è·å–ç›¸æœºæ›å…‰æ—¶é—´
+//è¾“å…¥å‚æ•°ï¼š æ— 
+//è¾“å‡ºå‚æ•°ï¼šexposure(ç›¸æœºæ›å…‰æ—¶é—´)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetParamCameraExposure(float& exposure)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2161,13 +2161,13 @@ DF_SDK_API int DfGetParamCameraExposure(float& exposure)
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-		 
+
 		ret = recv_buffer((char*)(&exposure), sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
 			return DF_FAILED;
-		} 
+		}
 	}
 	else if (command == DF_CMD_REJECT)
 	{
@@ -2184,11 +2184,11 @@ DF_SDK_API int DfGetParamCameraExposure(float& exposure)
 	return DF_SUCCESS;
 }
 
-	//º¯ÊıÃû£º DfSetParamGenerateBrightness
-	//¹¦ÄÜ£º ÉèÖÃÉú³ÉÁÁ¶ÈÍ¼²ÎÊı
-	//ÊäÈë²ÎÊı£ºmodel(1:ÓëÌõÎÆÍ¼Í¬²½Á¬ĞøÆØ¹â¡¢2£ºµ¥¶À·¢¹âÆØ¹â¡¢3£º²»·¢¹âµ¥¶ÀÆØ¹â)¡¢exposure(ÁÁ¶ÈÍ¼ÆØ¹âÊ±¼ä)
-	//Êä³ö²ÎÊı£º ÎŞ
-	//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfSetParamGenerateBrightness
+//åŠŸèƒ½ï¼š è®¾ç½®ç”Ÿæˆäº®åº¦å›¾å‚æ•°
+//è¾“å…¥å‚æ•°ï¼šmodel(1:ä¸æ¡çº¹å›¾åŒæ­¥è¿ç»­æ›å…‰ã€2ï¼šå•ç‹¬å‘å…‰æ›å…‰ã€3ï¼šä¸å‘å…‰å•ç‹¬æ›å…‰)ã€exposure(äº®åº¦å›¾æ›å…‰æ—¶é—´)
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfSetParamGenerateBrightness(int model, float exposure)
 {
 	if (exposure < 20 || exposure> 1000000)
@@ -2208,8 +2208,8 @@ DF_SDK_API int DfSetParamGenerateBrightness(int model, float exposure)
 	int command;
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
-	{ 
-		ret = send_buffer((char*)(&model), sizeof(int) , g_sock);
+	{
+		ret = send_buffer((char*)(&model), sizeof(int), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
@@ -2238,11 +2238,11 @@ DF_SDK_API int DfSetParamGenerateBrightness(int model, float exposure)
 	return DF_SUCCESS;
 }
 
-//º¯ÊıÃû£º DfGetParamGenerateBrightness
-//¹¦ÄÜ£º »ñÈ¡Éú³ÉÁÁ¶ÈÍ¼²ÎÊı
-//ÊäÈë²ÎÊı£º ÎŞ
-//Êä³ö²ÎÊı£ºmodel(1:ÓëÌõÎÆÍ¼Í¬²½Á¬ĞøÆØ¹â¡¢2£ºµ¥¶À·¢¹âÆØ¹â¡¢3£º²»·¢¹âµ¥¶ÀÆØ¹â)¡¢exposure(ÁÁ¶ÈÍ¼ÆØ¹âÊ±¼ä)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetParamGenerateBrightness
+//åŠŸèƒ½ï¼š è·å–ç”Ÿæˆäº®åº¦å›¾å‚æ•°
+//è¾“å…¥å‚æ•°ï¼š æ— 
+//è¾“å‡ºå‚æ•°ï¼šmodel(1:ä¸æ¡çº¹å›¾åŒæ­¥è¿ç»­æ›å…‰ã€2ï¼šå•ç‹¬å‘å…‰æ›å…‰ã€3ï¼šä¸å‘å…‰å•ç‹¬æ›å…‰)ã€exposure(äº®åº¦å›¾æ›å…‰æ—¶é—´)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetParamGenerateBrightness(int& model, float& exposure)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2257,7 +2257,7 @@ DF_SDK_API int DfGetParamGenerateBrightness(int& model, float& exposure)
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-  
+
 		ret = recv_buffer((char*)(&model), sizeof(int), g_sock);
 		if (ret == DF_FAILED)
 		{
@@ -2271,7 +2271,7 @@ DF_SDK_API int DfGetParamGenerateBrightness(int& model, float& exposure)
 			close_socket(g_sock);
 			return DF_FAILED;
 		}
- 
+
 	}
 	else if (command == DF_CMD_REJECT)
 	{
@@ -2289,11 +2289,11 @@ DF_SDK_API int DfGetParamGenerateBrightness(int& model, float& exposure)
 }
 
 
-	//º¯ÊıÃû£º DfSetParamStandardPlaneExternal
-	//¹¦ÄÜ£º ÉèÖÃ»ù×¼Æ½ÃæµÄÍâ²Î
-	//ÊäÈë²ÎÊı£ºR(Ğı×ª¾ØÕó£º3*3)¡¢T(Æ½ÒÆ¾ØÕó£º3*1)
-	//Êä³ö²ÎÊı£º ÎŞ
-	//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfSetParamStandardPlaneExternal
+//åŠŸèƒ½ï¼š è®¾ç½®åŸºå‡†å¹³é¢çš„å¤–å‚
+//è¾“å…¥å‚æ•°ï¼šR(æ—‹è½¬çŸ©é˜µï¼š3*3)ã€T(å¹³ç§»çŸ©é˜µï¼š3*1)
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfSetParamStandardPlaneExternal(float* R, float* T)
 {
 
@@ -2310,18 +2310,18 @@ DF_SDK_API int DfSetParamStandardPlaneExternal(float* R, float* T)
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-   
-		float plane_param[12];
-		 
-		memcpy(plane_param, R, 9 * sizeof(float));
-		memcpy(plane_param + 9,T, 3 * sizeof(float));
 
-		ret = send_buffer((char*)(plane_param), sizeof(float)*12, g_sock);
-	 
+		float plane_param[12];
+
+		memcpy(plane_param, R, 9 * sizeof(float));
+		memcpy(plane_param + 9, T, 3 * sizeof(float));
+
+		ret = send_buffer((char*)(plane_param), sizeof(float) * 12, g_sock);
+
 
 		if (ret == DF_FAILED)
 		{
-			close_socket(g_sock); 
+			close_socket(g_sock);
 			return DF_FAILED;
 		}
 	}
@@ -2342,11 +2342,11 @@ DF_SDK_API int DfSetParamStandardPlaneExternal(float* R, float* T)
 
 }
 
-//º¯ÊıÃû£º DfGetParamStandardPlaneExternal
-//¹¦ÄÜ£º »ñÈ¡»ù×¼Æ½ÃæµÄÍâ²Î
-//ÊäÈë²ÎÊı£ºÎŞ
-//Êä³ö²ÎÊı£º R(Ğı×ª¾ØÕó£º3*3)¡¢T(Æ½ÒÆ¾ØÕó£º3*1)
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡Êı¾İ³É¹¦;·µ»Ø-1±íÊ¾²É¼¯Êı¾İÊ§°Ü.
+//å‡½æ•°åï¼š DfGetParamStandardPlaneExternal
+//åŠŸèƒ½ï¼š è·å–åŸºå‡†å¹³é¢çš„å¤–å‚
+//è¾“å…¥å‚æ•°ï¼šæ— 
+//è¾“å‡ºå‚æ•°ï¼š R(æ—‹è½¬çŸ©é˜µï¼š3*3)ã€T(å¹³ç§»çŸ©é˜µï¼š3*1)
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ•°æ®æˆåŠŸ;è¿”å›-1è¡¨ç¤ºé‡‡é›†æ•°æ®å¤±è´¥.
 DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2369,13 +2369,13 @@ DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T)
 		ret = recv_buffer((char*)(plane_param), sizeof(float) * 12, g_sock);
 		if (ret == DF_FAILED)
 		{
-			close_socket(g_sock);  
+			close_socket(g_sock);
 			return DF_FAILED;
 		}
 
 		memcpy(R, plane_param, 9 * sizeof(float));
 		memcpy(T, plane_param + 9, 3 * sizeof(float));
-		   
+
 	}
 	else if (command == DF_CMD_REJECT)
 	{
@@ -2392,11 +2392,11 @@ DF_SDK_API int DfGetParamStandardPlaneExternal(float* R, float* T)
 	return DF_SUCCESS;
 }
 
-//º¯ÊıÃû£º DfSetParamMixedHdr
-//¹¦ÄÜ£º ÉèÖÃ»ìºÏ¶àÆØ¹â²ÎÊı£¨×î´óÆØ¹â´ÎÊıÎª6´Î£©
-//ÊäÈë²ÎÊı£º num£¨ÆØ¹â´ÎÊı£©¡¢exposure_param[6]£¨6¸öÆØ¹â²ÎÊı¡¢Ç°num¸öÓĞĞ§£©¡¢led_param[6]£¨6¸öledÁÁ¶È²ÎÊı¡¢Ç°num¸öÓĞĞ§£©
-//Êä³ö²ÎÊı£º ÎŞ
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡±ê¶¨²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡±ê¶¨²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfSetParamMixedHdr
+//åŠŸèƒ½ï¼š è®¾ç½®æ··åˆå¤šæ›å…‰å‚æ•°ï¼ˆæœ€å¤§æ›å…‰æ¬¡æ•°ä¸º6æ¬¡ï¼‰
+//è¾“å…¥å‚æ•°ï¼š numï¼ˆæ›å…‰æ¬¡æ•°ï¼‰ã€exposure_param[6]ï¼ˆ6ä¸ªæ›å…‰å‚æ•°ã€å‰numä¸ªæœ‰æ•ˆï¼‰ã€led_param[6]ï¼ˆ6ä¸ªledäº®åº¦å‚æ•°ã€å‰numä¸ªæœ‰æ•ˆï¼‰
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°å¤±è´¥.
 DF_SDK_API int DfSetParamMixedHdr(int num, int exposure_param[6], int led_param[6])
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2439,11 +2439,11 @@ DF_SDK_API int DfSetParamMixedHdr(int num, int exposure_param[6], int led_param[
 	return DF_SUCCESS;
 }
 
-//º¯ÊıÃû£º DfGetParamMixedHdr
-//¹¦ÄÜ£º »ñÈ¡»ìºÏ¶àÆØ¹â²ÎÊı£¨×î´óÆØ¹â´ÎÊıÎª6´Î£©
-//ÊäÈë²ÎÊı£º ÎŞ
-//Êä³ö²ÎÊı£º num£¨ÆØ¹â´ÎÊı£©¡¢exposure_param[6]£¨6¸öÆØ¹â²ÎÊı¡¢Ç°num¸öÓĞĞ§£©¡¢led_param[6]£¨6¸öledÁÁ¶È²ÎÊı¡¢Ç°num¸öÓĞĞ§£©
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡±ê¶¨²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡±ê¶¨²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfGetParamMixedHdr
+//åŠŸèƒ½ï¼š è·å–æ··åˆå¤šæ›å…‰å‚æ•°ï¼ˆæœ€å¤§æ›å…‰æ¬¡æ•°ä¸º6æ¬¡ï¼‰
+//è¾“å…¥å‚æ•°ï¼š æ— 
+//è¾“å‡ºå‚æ•°ï¼š numï¼ˆæ›å…‰æ¬¡æ•°ï¼‰ã€exposure_param[6]ï¼ˆ6ä¸ªæ›å…‰å‚æ•°ã€å‰numä¸ªæœ‰æ•ˆï¼‰ã€led_param[6]ï¼ˆ6ä¸ªledäº®åº¦å‚æ•°ã€å‰numä¸ªæœ‰æ•ˆï¼‰
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°å¤±è´¥.
 DF_SDK_API int DfGetParamMixedHdr(int& num, int exposure_param[6], int led_param[6])
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2458,7 +2458,7 @@ DF_SDK_API int DfGetParamMixedHdr(int& num, int exposure_param[6], int led_param
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-		int param[13]; 
+		int param[13];
 
 		ret = recv_buffer((char*)(param), sizeof(int) * 13, g_sock);
 		if (ret == DF_FAILED)
@@ -2489,11 +2489,11 @@ DF_SDK_API int DfGetParamMixedHdr(int& num, int exposure_param[6], int led_param
 }
 
 
-//º¯ÊıÃû£º DfSetParamHdr
-//¹¦ÄÜ£º ÉèÖÃ¶àÆØ¹â²ÎÊı£¨×î´óÆØ¹â´ÎÊıÎª6´Î£©
-//ÊäÈë²ÎÊı£º num£¨ÆØ¹â´ÎÊı£©¡¢exposure_param[6]£¨6¸öÆØ¹â²ÎÊı¡¢Ç°num¸öÓĞĞ§£©
-//Êä³ö²ÎÊı£º ÎŞ
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡±ê¶¨²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡±ê¶¨²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfSetParamHdr
+//åŠŸèƒ½ï¼š è®¾ç½®å¤šæ›å…‰å‚æ•°ï¼ˆæœ€å¤§æ›å…‰æ¬¡æ•°ä¸º6æ¬¡ï¼‰
+//è¾“å…¥å‚æ•°ï¼š numï¼ˆæ›å…‰æ¬¡æ•°ï¼‰ã€exposure_param[6]ï¼ˆ6ä¸ªæ›å…‰å‚æ•°ã€å‰numä¸ªæœ‰æ•ˆï¼‰
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°å¤±è´¥.
 DF_SDK_API int DfSetParamHdr(int num, int exposure_param[6])
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2511,7 +2511,7 @@ DF_SDK_API int DfSetParamHdr(int num, int exposure_param[6])
 		int param[7];
 		param[0] = num;
 
-		memcpy(param+1, exposure_param, sizeof(int)*6);
+		memcpy(param + 1, exposure_param, sizeof(int) * 6);
 
 		ret = send_buffer((char*)(param), sizeof(int) * 7, g_sock);
 		if (ret == DF_FAILED)
@@ -2536,11 +2536,11 @@ DF_SDK_API int DfSetParamHdr(int num, int exposure_param[6])
 }
 
 
-//º¯ÊıÃû£º DfGetParamHdr
-//¹¦ÄÜ£º ÉèÖÃ¶àÆØ¹â²ÎÊı£¨×î´óÆØ¹â´ÎÊıÎª6´Î£©
-//ÊäÈë²ÎÊı£º ÎŞ
-//Êä³ö²ÎÊı£º num£¨ÆØ¹â´ÎÊı£©¡¢exposure_param[6]£¨6¸öÆØ¹â²ÎÊı¡¢Ç°num¸öÓĞĞ§£©
-//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡±ê¶¨²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡±ê¶¨²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfGetParamHdr
+//åŠŸèƒ½ï¼š è®¾ç½®å¤šæ›å…‰å‚æ•°ï¼ˆæœ€å¤§æ›å…‰æ¬¡æ•°ä¸º6æ¬¡ï¼‰
+//è¾“å…¥å‚æ•°ï¼š æ— 
+//è¾“å‡ºå‚æ•°ï¼š numï¼ˆæ›å…‰æ¬¡æ•°ï¼‰ã€exposure_param[6]ï¼ˆ6ä¸ªæ›å…‰å‚æ•°ã€å‰numä¸ªæœ‰æ•ˆï¼‰
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°å¤±è´¥.
 DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2555,8 +2555,8 @@ DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-		int param[7]; 
-		 
+		int param[7];
+
 		ret = recv_buffer((char*)(param), sizeof(int) * 7, g_sock);
 		if (ret == DF_FAILED)
 		{
@@ -2565,7 +2565,7 @@ DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 		}
 
 
-		memcpy(exposure_param, param+1, sizeof(int) * 6);
+		memcpy(exposure_param, param + 1, sizeof(int) * 6);
 		num = param[0];
 
 	}
@@ -2585,11 +2585,11 @@ DF_SDK_API int DfGetParamHdr(int& num, int exposure_param[6])
 }
 
 
-	//º¯ÊıÃû£º DfSetParamLedCurrent
-	//¹¦ÄÜ£º ÉèÖÃLEDµçÁ÷
-	//ÊäÈë²ÎÊı£º led£¨µçÁ÷Öµ£©
-	//Êä³ö²ÎÊı£º ÎŞ
-	//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡±ê¶¨²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡±ê¶¨²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfSetParamLedCurrent
+//åŠŸèƒ½ï¼š è®¾ç½®LEDç”µæµ
+//è¾“å…¥å‚æ•°ï¼š ledï¼ˆç”µæµå€¼ï¼‰
+//è¾“å‡ºå‚æ•°ï¼š æ— 
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°å¤±è´¥.
 DF_SDK_API int DfSetParamLedCurrent(int led)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2627,11 +2627,11 @@ DF_SDK_API int DfSetParamLedCurrent(int led)
 }
 
 
-	//º¯ÊıÃû£º DfGetParamLedCurrent
-	//¹¦ÄÜ£º ÉèÖÃLEDµçÁ÷
-	//ÊäÈë²ÎÊı£º ÎŞ
-	//Êä³ö²ÎÊı£º led£¨µçÁ÷Öµ£©
-	//·µ»ØÖµ£º ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾»ñÈ¡±ê¶¨²ÎÊı³É¹¦;·µ»Ø-1±íÊ¾»ñÈ¡±ê¶¨²ÎÊıÊ§°Ü.
+//å‡½æ•°åï¼š DfGetParamLedCurrent
+//åŠŸèƒ½ï¼š è®¾ç½®LEDç”µæµ
+//è¾“å…¥å‚æ•°ï¼š æ— 
+//è¾“å‡ºå‚æ•°ï¼š ledï¼ˆç”µæµå€¼ï¼‰
+//è¿”å›å€¼ï¼š ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè·å–æ ‡å®šå‚æ•°å¤±è´¥.
 DF_SDK_API int DfGetParamLedCurrent(int& led)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -2668,11 +2668,11 @@ DF_SDK_API int DfGetParamLedCurrent(int& led)
 	return DF_SUCCESS;
 }
 
-//º¯ÊıÃû£º  DfGetCameraVersion
-//¹¦ÄÜ£º    »ñÈ¡Ïà»úĞÍºÅ
-//ÊäÈë²ÎÊı£ºÎŞ
-//Êä³ö²ÎÊı£ºĞÍºÅ£¨800¡¢1800£©
-//·µ»ØÖµ£º  ÀàĞÍ£¨int£©:·µ»Ø0±íÊ¾Á¬½Ó³É¹¦;·µ»Ø-1±íÊ¾Á¬½ÓÊ§°Ü.
+//å‡½æ•°åï¼š  DfGetCameraVersion
+//åŠŸèƒ½ï¼š    è·å–ç›¸æœºå‹å·
+//è¾“å…¥å‚æ•°ï¼šæ— 
+//è¾“å‡ºå‚æ•°ï¼šå‹å·ï¼ˆ800ã€1800ï¼‰
+//è¿”å›å€¼ï¼š  ç±»å‹ï¼ˆintï¼‰:è¿”å›0è¡¨ç¤ºè¿æ¥æˆåŠŸ;è¿”å›-1è¡¨ç¤ºè¿æ¥å¤±è´¥.
 DF_SDK_API int DfGetCameraVersion(int& version)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);

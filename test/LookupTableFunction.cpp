@@ -5,7 +5,7 @@
 //#include "FileIoFunction.h" 
 
 LookupTableFunction::LookupTableFunction()
-{ 
+{
 	image_size_.width = 1920;
 	image_size_.height = 1200;
 
@@ -209,11 +209,11 @@ bool LookupTableFunction::generateGridMapping(cv::Mat rotate_x, cv::Mat rotate_y
 
 	cv::Mat interpolation_map(table_rows, table_cols, CV_64FC1, cv::Scalar(-2));
 
-std::cout<<"interpolation_map!"<<std::endl;
+	std::cout << "interpolation_map!" << std::endl;
 	int nr = rotate_x.rows;
 	int nc = rotate_x.cols;
-std::cout<<nr<<std::endl;
-std::cout<<nc<<std::endl;
+	std::cout << nr << std::endl;
+	std::cout << nc << std::endl;
 
 	for (int r = 0; r < nr; r++)
 	{
@@ -222,20 +222,20 @@ std::cout<<nc<<std::endl;
 
 		for (int c = 0; c < nc; c++)
 		{
-			int m_r = 2000 * (ptr_y[c] + 1); 
- 
-			if (m_r >= table_rows || m_r< 0)
+			int m_r = 2000 * (ptr_y[c] + 1);
+
+			if (m_r >= table_rows || m_r < 0)
 			{
 				// std::cout << "error m_r: " << m_r << std::endl;
 			}
 			else
-			{ 
+			{
 				interpolation_map.at<double>(m_r, c) = ptr_x[c];
 			}
 
 		}
 	}
- 
+
 	//��ֵ
 
 	for (int r = 1; r < interpolation_map.rows - 1; r++)
@@ -278,7 +278,7 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 	cv::stereoRectify(camera_intrinsic_, camera_distortion_, project_intrinsic_, projector_distortion_,
 		image_size_, rotation_matrix_, translation_matrix_,
 		R1, R2, P1, P2, Q);
-		
+
 	int nr = image_size_.height;
 	int nc = image_size_.width;
 
@@ -297,7 +297,7 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 
 	cv::Mat mapping;
 	generateGridMapping(xR_undistort_map_x, xR_undistort_map_y, mapping);
- 
+
 
 	single_pattern_mapping_ = mapping.clone();
 	xL_rotate_x_ = xL_undistort_map_x.clone();
@@ -306,7 +306,7 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 
 	xL_rotate_x = xL_undistort_map_x.clone();
 	xL_rotate_y = xL_undistort_map_y.clone();
-	rectify_R1 = R1.clone(); 
+	rectify_R1 = R1.clone();
 	pattern_mapping = mapping.clone();
 
 
@@ -315,7 +315,7 @@ bool LookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_ro
 
 /******************************************************************************************************/
 
-bool LookupTableFunction::readTableFloat(std::string dir_path,cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping)
+bool LookupTableFunction::readTableFloat(std::string dir_path, cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping)
 {
 
 	/****************************************************************************************************************************/
@@ -325,7 +325,7 @@ bool LookupTableFunction::readTableFloat(std::string dir_path,cv::Mat& xL_rotate
 		return false;
 	}
 
-	if(!readBinMappingFloat(4000, 2000, dir_path + "/single_pattern_mapping.bin", single_pattern_mapping_))
+	if (!readBinMappingFloat(4000, 2000, dir_path + "/single_pattern_mapping.bin", single_pattern_mapping_))
 	{
 		return false;
 	}
@@ -341,7 +341,7 @@ bool LookupTableFunction::readTableFloat(std::string dir_path,cv::Mat& xL_rotate
 	}
 	/****************************************************************************************************************************/
 
- 
+
 
 	if (!single_pattern_mapping_.data || !xL_rotate_x_.data || !xL_rotate_y_.data)
 	{
@@ -350,15 +350,15 @@ bool LookupTableFunction::readTableFloat(std::string dir_path,cv::Mat& xL_rotate
 
 	xL_rotate_x = xL_rotate_x_.clone();
 	xL_rotate_y = xL_rotate_y_.clone();
-	rectify_R1 = R_1_.clone(); 
+	rectify_R1 = R_1_.clone();
 	pattern_mapping = single_pattern_mapping_.clone();
- 
+
 	return true;
 }
 
 bool LookupTableFunction::readTable(std::string dir_path, int rows, int cols)
 {
-	 
+
 	//single_pattern_mapping_ = readmapping(4000, 2000, "../config_files/single_pattern_mapping.txt");
 	//xL_rotate_x_ = readmapping(rows, cols, "../config_files/combine_xL_rotate_x_cam1_iter.txt");
 	//xL_rotate_y_ = readmapping(rows, cols, "../config_files/combine_xL_rotate_y_cam1_iter.txt");
@@ -373,7 +373,7 @@ bool LookupTableFunction::readTable(std::string dir_path, int rows, int cols)
 		return false;
 	}
 
-	if(!readBinMapping(4000, 2000, dir_path + "/single_pattern_mapping.bin", single_pattern_mapping_))
+	if (!readBinMapping(4000, 2000, dir_path + "/single_pattern_mapping.bin", single_pattern_mapping_))
 	{
 		return false;
 	}
@@ -393,7 +393,7 @@ bool LookupTableFunction::readTable(std::string dir_path, int rows, int cols)
 	cv::Mat test_xL_rotate_x_ = xL_rotate_x_.clone();
 	cv::Mat test_xL_rotate_y_ = xL_rotate_y_.clone();
 	cv::Mat test_R_1_ = R_1_.clone();
-	 
+
 
 	//xR_rotate_x_ = readmapping(rows, cols, "../config_files/combine_xR_rotate_x_cam1_iter.txt");
 	//xR_rotate_y_ = readmapping(rows, cols, "../config_files/combine_xR_rotate_y_cam1_iter.txt");
@@ -444,7 +444,7 @@ void LookupTableFunction::setCalibData(struct CameraCalibParam calib_param)
 	cv::Mat projector_distortion = cv::Mat(1, 5, CV_32F, calib_param.projector_distortion);
 
 	cv::Mat rotation_matrix = cv::Mat(3, 3, CV_32F, calib_param.rotation_matrix);
-	cv::Mat translation_matrix = cv::Mat(3, 1, CV_32F, calib_param.translation_matrix); 
+	cv::Mat translation_matrix = cv::Mat(3, 1, CV_32F, calib_param.translation_matrix);
 
 	camera_intrinsic.convertTo(camera_intrinsic, CV_64F);
 	camera_distortion.convertTo(camera_distortion, CV_64F);
@@ -588,20 +588,20 @@ bool LookupTableFunction::readCalibXml(std::string path)
 
 	return true;
 
- 
- 
+
+
 }
 
 
 void LookupTableFunction::setRebuildValueB(double  b)
-{ 
+{
 	value_b_ = b;
 
 }
 
-bool LookupTableFunction::getRebuildValueB(double &b) 
+bool LookupTableFunction::getRebuildValueB(double& b)
 {
-	if(!translation_matrix_.data)
+	if (!translation_matrix_.data)
 	{
 		return false;
 	}
@@ -620,9 +620,9 @@ bool LookupTableFunction::TestReadBinMapping(int rows, int cols, std::string map
 		std::cout << "error" << std::endl;
 		return false;
 	}
-	while (inFile.read((char*)map.data, sizeof(double)* rows*cols)) { //һֱ�����ļ�����
+	while (inFile.read((char*)map.data, sizeof(double) * rows * cols)) { //һֱ�����ļ�����
 		int readedBytes = inFile.gcount(); //���ղŶ��˶����ֽ�
-		std::cout << readedBytes  << std::endl;
+		std::cout << readedBytes << std::endl;
 	}
 	inFile.close();
 
@@ -634,18 +634,18 @@ bool LookupTableFunction::TestReadBinMapping(int rows, int cols, std::string map
 bool LookupTableFunction::saveBinMappingFloat(std::string mapping_file, cv::Mat out_map)
 {
 	std::ofstream outFile(mapping_file, std::ios::out | std::ios::binary);
-	 
-	outFile.write((char*)out_map.data, sizeof(float)* out_map.rows* out_map.cols);
+
+	outFile.write((char*)out_map.data, sizeof(float) * out_map.rows * out_map.cols);
 	outFile.close();
 	return 0;
 }
 
 
 bool LookupTableFunction::saveBinMapping(std::string mapping_file, cv::Mat out_map)
-{ 
+{
 	std::ofstream outFile(mapping_file, std::ios::out | std::ios::binary);
-	 
-	outFile.write((char*)out_map.data, sizeof(double)* out_map.rows* out_map.cols);
+
+	outFile.write((char*)out_map.data, sizeof(double) * out_map.rows * out_map.cols);
 	outFile.close();
 	return 0;
 }
@@ -653,7 +653,7 @@ bool LookupTableFunction::saveBinMapping(std::string mapping_file, cv::Mat out_m
 
 bool LookupTableFunction::readBinMappingFloat(int rows, int cols, std::string mapping_file, cv::Mat& out_map)
 {
-	cv::Mat map(rows, cols, CV_32F, cv::Scalar(0)); 
+	cv::Mat map(rows, cols, CV_32F, cv::Scalar(0));
 	std::ifstream inFile(mapping_file, std::ios::in | std::ios::binary); //�����ƶ���ʽ��
 	if (!inFile) {
 		std::cout << "error" << std::endl;
@@ -689,7 +689,7 @@ bool LookupTableFunction::readBinMapping(int rows, int cols, std::string mapping
 
 	//return true;
 
-	cv::Mat map(rows, cols, CV_64F, cv::Scalar(0)); 
+	cv::Mat map(rows, cols, CV_64F, cv::Scalar(0));
 	std::ifstream inFile(mapping_file, std::ios::in | std::ios::binary); //�����ƶ���ʽ��
 	if (!inFile) {
 		std::cout << "error" << std::endl;
@@ -711,8 +711,8 @@ cv::Mat LookupTableFunction::readmapping(int rows, int cols, std::string mapping
 	cv::Mat m = cv::Mat(rows, cols, CV_64F);
 	std::ifstream in(mapping_file);
 	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++) { 
-			in >> m.at<double>(i, j); 
+		for (int j = 0; j < cols; j++) {
+			in >> m.at<double>(i, j);
 			//cout << m.at<double>(i, j) << endl;
 		}
 	}
@@ -720,7 +720,7 @@ cv::Mat LookupTableFunction::readmapping(int rows, int cols, std::string mapping
 
 }
 
-double LookupTableFunction::Bilinear_interpolation(double x, double y, cv::Mat &mapping)
+double LookupTableFunction::Bilinear_interpolation(double x, double y, cv::Mat& mapping)
 {
 
 	int x1 = floor(x);
@@ -731,7 +731,7 @@ double LookupTableFunction::Bilinear_interpolation(double x, double y, cv::Mat &
 	//row-y,col-x
 
 	if (x1 == 1919) {
-		double out = mapping.at<double>(y1,x1);
+		double out = mapping.at<double>(y1, x1);
 		return out;
 	}
 	else {
@@ -744,11 +744,11 @@ double LookupTableFunction::Bilinear_interpolation(double x, double y, cv::Mat &
 
 		return out;
 	}
-	 
+
 
 }
 
-double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b) 
+double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b)
 {
 
 
@@ -762,7 +762,7 @@ double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double 
 }
 
 
-bool LookupTableFunction::mat_float_to_double(cv::Mat org_mat, cv::Mat &dst_mat)
+bool LookupTableFunction::mat_float_to_double(cv::Mat org_mat, cv::Mat& dst_mat)
 {
 	if (!org_mat.data)
 	{
@@ -780,11 +780,11 @@ bool LookupTableFunction::mat_float_to_double(cv::Mat org_mat, cv::Mat &dst_mat)
 	cv::Mat dst(rows, cols, CV_64F, cv::Scalar(0));
 
 
-	for (int r = 0; r< rows; r++)
+	for (int r = 0; r < rows; r++)
 	{
 		float* ptr_o = org_mat.ptr<float>(r);
 		double* ptr_d = dst.ptr<double>(r);
-		for (int c = 0; c< cols; c++)
+		for (int c = 0; c < cols; c++)
 		{
 			ptr_d[c] = (double)ptr_o[c];
 		}
@@ -797,14 +797,14 @@ bool LookupTableFunction::mat_float_to_double(cv::Mat org_mat, cv::Mat &dst_mat)
 	return true;
 }
 
-bool LookupTableFunction::mat_double_to_float(cv::Mat org_mat, cv::Mat &dst_mat)
+bool LookupTableFunction::mat_double_to_float(cv::Mat org_mat, cv::Mat& dst_mat)
 {
-	if(!org_mat.data)
+	if (!org_mat.data)
 	{
 		return false;
 	}
 
-	if(org_mat.type() != CV_64F)
+	if (org_mat.type() != CV_64F)
 	{
 		return false;
 	}
@@ -815,11 +815,11 @@ bool LookupTableFunction::mat_double_to_float(cv::Mat org_mat, cv::Mat &dst_mat)
 	cv::Mat dst(rows, cols, CV_32F, cv::Scalar(0));
 
 
-	for(int r= 0; r< rows; r++)
+	for (int r = 0; r < rows; r++)
 	{
 		double* ptr_o = org_mat.ptr<double>(r);
 		float* ptr_d = dst.ptr<float>(r);
-		for(int c= 0;c< cols;c++)
+		for (int c = 0; c < cols; c++)
 		{
 			ptr_d[c] = (float)ptr_o[c];
 		}
@@ -858,7 +858,7 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 		return false;
 	}
 
-	if(!single_pattern_mapping_.data || !xL_rotate_x_.data || !xL_rotate_y_.data)
+	if (!single_pattern_mapping_.data || !xL_rotate_x_.data || !xL_rotate_y_.data)
 	{
 		std::cout << "Please read table first!";
 		return false;
@@ -880,7 +880,7 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 	deep_map = all_deep_map.clone();
 
 
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int Yc = 0; Yc < nr; Yc++) {
 		double* ptr_x = unwrap_map_x.ptr<double>(Yc);
 		double* ptr_d = deep_map.ptr<double>(Yc);
@@ -905,10 +905,10 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 }
 
 
-bool LookupTableFunction::generate_pointcloud(cv::Mat z, cv::Mat& mask, cv::Mat &map_xyz)
+bool LookupTableFunction::generate_pointcloud(cv::Mat z, cv::Mat& mask, cv::Mat& map_xyz)
 {
 
-	if(!z.data)
+	if (!z.data)
 	{
 		return false;
 	}
@@ -946,8 +946,8 @@ bool LookupTableFunction::generate_pointcloud(cv::Mat z, cv::Mat& mask, cv::Mat 
 
 	//#pragma omp parallel for
 	for (int yc = 0; yc < img_height; yc++) {
-		pix_pointer_z = (double*)(row_pointer_z + yc*width_step_float);
-		pix_pointer_mask = row_pointer_mask + yc*width_step_uchar;
+		pix_pointer_z = (double*)(row_pointer_z + yc * width_step_float);
+		pix_pointer_mask = row_pointer_mask + yc * width_step_uchar;
 		cv::Vec3d* ptr_xyz = xyz_mat.ptr<cv::Vec3d>(yc);
 
 		for (int xc = 0; xc < img_width; xc++) {
@@ -955,13 +955,13 @@ bool LookupTableFunction::generate_pointcloud(cv::Mat z, cv::Mat& mask, cv::Mat 
 			cv::Point3d point;
 			if (*pix_pointer_mask != 0) {
 				double xcr = Bilinear_interpolation(xc, yc, xL_rotate_x);
-				double ycr = Bilinear_interpolation(xc, yc, xL_rotate_y); 
+				double ycr = Bilinear_interpolation(xc, yc, xL_rotate_y);
 
 				point.x = (*pix_pointer_z) * xcr * R1_t1 + (*pix_pointer_z) * ycr * R1_t2 + (*pix_pointer_z) * R1_t3;
 				point.y = (*pix_pointer_z) * xcr * R1_t4 + (*pix_pointer_z) * ycr * R1_t5 + (*pix_pointer_z) * R1_t6;
 				point.z = (*pix_pointer_z) * xcr * R1_t7 + (*pix_pointer_z) * ycr * R1_t8 + (*pix_pointer_z) * R1_t9;
-				
-					
+
+
 				if (point.z > min_low_z_ && point.z < max_max_z_)
 				{
 					ptr_xyz[xc][0] = point.x;

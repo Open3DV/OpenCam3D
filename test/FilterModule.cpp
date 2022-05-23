@@ -1,4 +1,4 @@
-#include "FilterModule.h"
+Ôªø#include "FilterModule.h"
 #include <iostream>
 
 
@@ -12,7 +12,7 @@ FilterModule::~FilterModule()
 }
 
 
-bool FilterModule::RadiusOutlierRemoval(cv::Mat &point_cloud_map, cv::Mat &mask, double radius, int points_num)
+bool FilterModule::RadiusOutlierRemoval(cv::Mat& point_cloud_map, cv::Mat& mask, double radius, int points_num)
 {
 	if (!point_cloud_map.data)
 		return false;
@@ -24,21 +24,21 @@ bool FilterModule::RadiusOutlierRemoval(cv::Mat &point_cloud_map, cv::Mat &mask,
 
 	//int rest_num = findNearPointsnum(point_cloud_map, mask, cv::Point(808, 630), radius);
 	//#pragma omp parallel for
-	for(int r= 0;r< nr;r++)
+	for (int r = 0; r < nr; r++)
 	{
 		cv::Vec3d* ptr_p = point_cloud_map.ptr<cv::Vec3d>(r);
 		uchar* ptr_m = mask.ptr<uchar>(r);
 		//uchar* ptr_r = result_mask.ptr<uchar>(r);
 
-		for(int c = 0;c< nc;c++)
+		for (int c = 0; c < nc; c++)
 		{
-			if(ptr_m[c] > 0)
+			if (ptr_m[c] > 0)
 			{
-				int num= findNearPointsnum(point_cloud_map, mask, cv::Point(c, r), radius); 
+				int num = findNearPointsnum(point_cloud_map, mask, cv::Point(c, r), radius);
 
-				if(num> points_num)
+				if (num > points_num)
 				{
-					ptr_m[c] = 255; 
+					ptr_m[c] = 255;
 
 				}
 				else
@@ -58,8 +58,8 @@ bool FilterModule::RadiusOutlierRemoval(cv::Mat &point_cloud_map, cv::Mat &mask,
 
 
 /***************************************************************************************************************/
-//œ‡¡⁄µ„æ‡¿Î∂®0.4mm
-int FilterModule::findNearPointsnum(cv::Mat &point_cloud_map, cv::Mat &mask, cv::Point pos, double radius)
+//Áõ∏ÈÇªÁÇπË∑ùÁ¶ªÂÆö0.4mm
+int FilterModule::findNearPointsnum(cv::Mat& point_cloud_map, cv::Mat& mask, cv::Point pos, double radius)
 {
 	if (!point_cloud_map.data)
 		return -1;
@@ -67,7 +67,7 @@ int FilterModule::findNearPointsnum(cv::Mat &point_cloud_map, cv::Mat &mask, cv:
 	int nr = point_cloud_map.rows;
 	int nc = point_cloud_map.cols;
 
-	int w = radius *2.5;
+	int w = radius * 2.5;
 
 	int s_r = pos.y - w;
 	int s_c = pos.x - w;
@@ -75,16 +75,16 @@ int FilterModule::findNearPointsnum(cv::Mat &point_cloud_map, cv::Mat &mask, cv:
 	int e_r = pos.y + w;
 	int e_c = pos.x + w;
 
-	if(s_r< 0)
+	if (s_r < 0)
 	{
 		s_r = 0;
 	}
-	if(s_c < 0)
+	if (s_c < 0)
 	{
 		s_c = 0;
 	}
 
-	if(e_r>= nr)
+	if (e_r >= nr)
 	{
 		e_r = nr - 1;
 	}
@@ -104,21 +104,21 @@ int FilterModule::findNearPointsnum(cv::Mat &point_cloud_map, cv::Mat &mask, cv:
 	int num = 0;
 
 	cv::Vec3d p_0 = point_cloud_map.at<cv::Vec3d>(pos.y, pos.x);
- 
-	for(int r= s_r;r<= e_r;r++)
+
+	for (int r = s_r; r <= e_r; r++)
 	{
 		cv::Vec3d* ptr_p = point_cloud_map.ptr<cv::Vec3d>(r);
 		uchar* ptr_m = mask.ptr<uchar>(r);
 
-		for(int c= s_c;c<= e_c;c++)
+		for (int c = s_c; c <= e_c; c++)
 		{
-			if(ptr_m[c] > 0)
+			if (ptr_m[c] > 0)
 			{
 				double dist = computePointsDistance(p_0, ptr_p[c]);
 
 				//std::cout << c << " , " << r << " : " << dist << " ; "<<std::endl;
 
-				if(radius> dist)
+				if (radius > dist)
 				{
 					num++;
 				}
@@ -165,7 +165,7 @@ double FilterModule::computePointsDistance(cv::Vec3d p0, cv::Vec3d p1)
 
 	//std::cout << p_d[0] << " , " << p_d[1] << " , " << p_d[2] << std::endl;
 
-	double val = sqrt(p_d[0]*p_d[0] + p_d[1] *p_d[1] + p_d[2] * p_d[2]);
+	double val = sqrt(p_d[0] * p_d[0] + p_d[1] * p_d[1] + p_d[2] * p_d[2]);
 
 
 	//std::cout << val << std::endl;
@@ -177,14 +177,14 @@ double FilterModule::computePointsDistance(cv::Point3f p0, cv::Point3f p1)
 {
 	cv::Point3f p_d = p1 - p0;
 
-	return sqrt(p_d.x*p_d.x + p_d.y*p_d.y + p_d.z*p_d.z);
+	return sqrt(p_d.x * p_d.x + p_d.y * p_d.y + p_d.z * p_d.z);
 }
 
 double FilterModule::computePointsDistance(cv::Point3d p0, cv::Point3d p1)
 {
-	cv::Point3d p_d = p1 - p0; 
+	cv::Point3d p_d = p1 - p0;
 
-	return sqrt(p_d.x*p_d.x + p_d.y*p_d.y + p_d.z*p_d.z);
+	return sqrt(p_d.x * p_d.x + p_d.y * p_d.y + p_d.z * p_d.z);
 }
 
 
@@ -192,7 +192,7 @@ double FilterModule::computePointsDistance(cv::Point2f p0, cv::Point2f p1)
 {
 	cv::Point2f p_d = p1 - p0;
 
-	return sqrt(p_d.x*p_d.x + p_d.y*p_d.y);
+	return sqrt(p_d.x * p_d.x + p_d.y * p_d.y);
 }
 
 
