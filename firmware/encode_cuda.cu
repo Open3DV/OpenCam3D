@@ -1847,9 +1847,46 @@ __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned
 		float a = c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset];
 		float b = s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset];
 
+
+		int over_num = 0;
+		if(d_in_0[offset]>= 255)
+		{
+			over_num++;
+		}
+		if (d_in_1[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_2[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_3[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_4[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_5[offset] >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 3)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
   
-		confidence[offset] = std::sqrt(a*a + b*b);
-		d_out[offset] = DF_PI + std::atan2(a, b);
+		// confidence[offset] = std::sqrt(a*a + b*b);
+		// d_out[offset] = DF_PI + std::atan2(a, b);
 	}
 }
 
@@ -1867,9 +1904,36 @@ __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigne
 		float a = d_in_3[offset] - d_in_1[offset];
 		float b = d_in_0[offset] - d_in_2[offset];
 
-  
-		confidence[offset] = std::sqrt(a*a + b*b);
-		d_out[offset] = DF_PI + std::atan2(a, b);
+		int over_num = 0;
+		if(d_in_0[offset]>= 255)
+		{
+			over_num++;
+		}
+		if (d_in_1[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_2[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_3[offset] >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 1)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
+
+
 
 
 
@@ -1916,7 +1980,7 @@ __global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * 
 
 		float unwrap_value =  2*DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
 		float err = unwrap_value - (rate * d_in_wrap_abs[idy * img_width + idx]);
-		if(abs(err)> 0.8)
+		if(abs(err)> 1.2)
 		{
 			d_out[idy * img_width + idx] = -10.0; 
 		}
@@ -2250,13 +2314,13 @@ bool generate_pointcloud_base_table()
 												image_height_,image_width_,d_baseline_,d_point_cloud_map_,d_depth_map_);
 
 
-	// LOG(INFO)<<"remove start:";
+	LOG(INFO)<<"remove start:";
 	cuda_filter_radius_outlier_removal << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_mask_,0.8,4); 
 	cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_);
 
 
-    // cudaDeviceSynchronize();
-	// LOG(INFO)<<"remove finished!";
+    cudaDeviceSynchronize();
+	LOG(INFO)<<"remove finished!";
 }
  
 
