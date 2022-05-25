@@ -2053,12 +2053,17 @@ int handle_cmd_set_param_bilateral_filter(int client_sock)
 
 
     if (1 == param[0])
-    {  
+    {   
         if (3 == param[1] || 5 == param[1] || 7 == param[1] || 9 == param[1] || 11 == param[1])
-        {
-            system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d == param[1];
+        { 
+        system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d = param[1];
         }
     }
+
+    
+    LOG(INFO)<<"Use Bilateral Filter: "<<system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter;
+    LOG(INFO)<<"Bilateral Filter param: "<<system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d;
+         
 
     return DF_SUCCESS;
 }
