@@ -1970,11 +1970,115 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 }
 
 /*****************************************************************************************************/
-	//函数名： DfGetParamOffset
-	//功能： 获取补偿参数
-	//输入参数：无
-	//输出参数：offset(补偿值)
-	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+//函数名： DfSetParamBilateralFilter
+//功能： 设置双边滤波参数
+//输入参数： use（开关：1为开、0为关）、param_d（平滑系数：3、5、7、9、11）
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfSetParamBilateralFilter(int use, int param_d)
+{
+	if (use != 1 && use != 0)
+	{
+		std::cout << "use param should be 1 or 0:  " << use << std::endl;
+		return DF_FAILED;
+	}
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_BILATERAL_FILTER, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = send_buffer((char*)(&use), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		ret = send_buffer((char*)(&param_d), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamBilateralFilter
+//功能： 获取混合多曝光参数（最大曝光次数为6次）
+//输入参数： 无
+//输出参数： use（开关：1为开、0为关）、param_d（平滑系数：3、5、7、9、11）
+//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
+DF_SDK_API int DfGetParamBilateralFilter(int& use, int& param_d)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_BILATERAL_FILTER, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = recv_buffer((char*)(&use), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		ret = recv_buffer((char*)(&param_d), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamOffset
+//功能： 获取补偿参数
+//输入参数：无
+//输出参数：offset(补偿值)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 DF_SDK_API int DfGetParamOffset(float& offset)
 {
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);

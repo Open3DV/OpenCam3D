@@ -116,6 +116,7 @@ bool CameraCaptureGui::initializeFunction()
 
 
 	connect(ui.checkBox_hdr, SIGNAL(toggled(bool)), this, SLOT(do_checkBox_toggled_hdr(bool)));
+	connect(ui.checkBox_bilateral_filter, SIGNAL(toggled(bool)), this, SLOT(do_checkBox_toggled_bilateral_filter(bool)));
 
 	connect(ui.pushButton_connect, SIGNAL(clicked()), this, SLOT(do_pushButton_connect()));
 	connect(ui.pushButton_capture_one_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_one_frame()));
@@ -369,7 +370,6 @@ void CameraCaptureGui::undateSystemConfigUiData()
 		break;
 	}
 
-
 }
 
 void CameraCaptureGui::setUiData()
@@ -379,6 +379,16 @@ void CameraCaptureGui::setUiData()
 	ui.lineEdit_ip->setText(processing_gui_settings_data_.Instance().ip);
 
 	ui.checkBox_hdr->setChecked(processing_gui_settings_data_.Instance().use_hdr_model);
+
+	if (1 == firmware_config_param_.use_bilateral_filter)
+	{
+		ui.checkBox_bilateral_filter->setChecked(true);
+	}
+	else if (0 == firmware_config_param_.use_bilateral_filter)
+	{
+		ui.checkBox_bilateral_filter->setChecked(false);
+	}
+
 	//ui.spinBox_exposure_num->setDisabled(true);
 	//ui.spinBox_led->setDisabled(true);
 }
@@ -651,6 +661,12 @@ bool CameraCaptureGui::setCameraConfigParam()
 		return false;
 	}
 
+	ret_code = DfSetParamBilateralFilter(firmware_config_param_.use_bilateral_filter, firmware_config_param_.bilateral_filter_param_d);
+	if (0 != ret_code)
+	{
+		qDebug() << "Set Bilateral Filter Param Error;";
+		return false;
+	}
 	return true;
 }
 
@@ -1889,6 +1905,26 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 
 /*********************************************************************************************************************************/
 //HDR显示
+
+void CameraCaptureGui::do_checkBox_toggled_bilateral_filter(bool state)
+{
+	if (state)
+	{
+		firmware_config_param_.use_bilateral_filter = 1;
+	}
+	else
+	{
+		firmware_config_param_.use_bilateral_filter = 0;
+	}
+
+	if (connected_flag_)
+	{
+		qDebug() << "bilateral_filter_param_d: " << firmware_config_param_.bilateral_filter_param_d;
+		DfSetParamBilateralFilter(firmware_config_param_.use_bilateral_filter, firmware_config_param_.bilateral_filter_param_d);
+
+	}
+}
+
 
 void CameraCaptureGui::do_checkBox_toggled_hdr(bool state)
 {

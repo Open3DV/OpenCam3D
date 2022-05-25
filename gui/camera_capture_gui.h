@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <QWidget>
 #include "ui_camera_capture_gui.h"
@@ -24,9 +24,9 @@ class CameraCaptureGui : public QWidget
 	Q_OBJECT
 
 public:
-	CameraCaptureGui(QWidget *parent = Q_NULLPTR);
+	CameraCaptureGui(QWidget* parent = Q_NULLPTR);
 	~CameraCaptureGui();
-	 
+
 	bool setShowImages(cv::Mat brightness, cv::Mat depth);
 
 	void setGuiSettingData(GuiConfigDataStruct& settings_data_);
@@ -35,10 +35,10 @@ public:
 
 	bool loadSettingData(QString path);
 
-	void setUiData(); 
+	void setUiData();
 
 	bool connectCamera(QString ip);
-	
+
 	bool stopCapturingOneFrameBaseThread();
 
 	void captureOneFrameBaseThread(bool hdr);
@@ -51,28 +51,28 @@ public:
 
 	bool initializeFunction();
 
-	bool saveOneFrameData(QString path_name); 
+	bool saveOneFrameData(QString path_name);
 
-	void addLogMessage(QString str); 
+	void addLogMessage(QString str);
 
-	//¸üĞÂ¶àÆØ¹â²ÎÊı
+	//æ›´æ–°å¤šæ›å…‰å‚æ•°
 	void updateManyExposureParam();
 
 	bool manyExposureParamHasChanged();
 
 	bool isConnect();
-	 
+
 	bool setCameraConfigParam();
 
 	bool getCameraConfigParam();
 
 	void sleep(int sectime);
 
-	bool getShowCalibrationMessage(struct SystemConfigParam &config_param, struct CameraCalibParam &calibration_param);
+	bool getShowCalibrationMessage(struct SystemConfigParam& config_param, struct CameraCalibParam& calibration_param);
 
 	void getGuiConfigParam(struct GuiConfigDataStruct& gui_param);
 
-	//¸üĞÂÉú³ÉÁÁ¶ÈÍ¼²ÎÊı
+	//æ›´æ–°ç”Ÿæˆäº®åº¦å›¾å‚æ•°
 	void updateGenerateBrightnessParam();
 
 	void setCalibrationBoard(int flag);
@@ -80,7 +80,7 @@ public:
 private:
 	bool showImage();
 
-	bool setImage(cv::Mat img); 
+	bool setImage(cv::Mat img);
 
 	bool renderHeightImage(cv::Mat height);
 
@@ -94,13 +94,13 @@ private:
 
 	bool bilinearInterpolationFeaturePoints(std::vector<cv::Point2f> feature_points, std::vector<cv::Point3f>& point_3d, cv::Mat point_cloud);
 
-	 
+
 signals:
 	void send_temperature_update(float val);
 
 	void send_images_update();
 
-public slots: 
+public slots:
 
 	void do_timeout_capture_slot();
 
@@ -123,13 +123,15 @@ private slots:
 
 	void do_QRadioButton_toggled_generate_brightness_darkness(bool state);
 
-	void add_exposure_item(int row,int exposure,int led);
+	void add_exposure_item(int row, int exposure, int led);
 
-	bool remove_exposure_item(int row);  
+	bool remove_exposure_item(int row);
 
 	double get_exposure_item_value(int row);
 
 private slots:
+	void do_checkBox_toggled_bilateral_filter(bool state);
+
 	void do_checkBox_toggled_hdr(bool state);
 
 	void do_spin_exposure_num_changed(int val);
@@ -137,8 +139,8 @@ private slots:
 	void do_spin_min_z_changed(int val);
 
 	void do_spin_max_z_changed(int val);
-	  
-	void do_pushButton_capture_one_frame(); 
+
+	void do_pushButton_capture_one_frame();
 
 	void do_pushButton_test_accuracy();
 
@@ -147,7 +149,7 @@ private slots:
 	void do_pushButton_capture_continuous();
 
 	void do_spin_led_current_changed(int val);
-	   
+
 	void do_spin_camera_exposure_changed(int val);
 
 	void do_spin_generate_brightness_exposure_changed(int val);
@@ -157,7 +159,7 @@ private slots:
 
 	void do_pushButton_open_folder();
 
-	 
+
 
 private:
 	Ui::CameraCaptureGui ui;
@@ -169,7 +171,7 @@ private:
 	bool capturing_flag_;
 	bool camera_setting_flag_;
 
-	//6¸öexposureÊäÈë¿ò
+	//6ä¸ªexposureè¾“å…¥æ¡†
 	std::vector<QSpinBox*> exposure_time_list_;
 	std::vector<QSpinBox*> led_current_list_;
 
@@ -196,27 +198,27 @@ private:
 	GuiConfigDataStruct processing_gui_settings_data_;
 	SettingsFileFunction config_system_param_machine_;
 
-	//Ïà»úÏµÍ³ÅäÖÃ²ÎÊı
+	//ç›¸æœºç³»ç»Ÿé…ç½®å‚æ•°
 	struct SystemConfigParam system_config_param_;
 	struct FirmwareConfigParam firmware_config_param_;
-	//Ïà»ú±ê¶¨²ÎÊı
+	//ç›¸æœºæ ‡å®šå‚æ•°
 	struct CameraCalibParam camera_calibration_param_;
 
 	QString last_path_;
 	QString sys_path_;
-	 
-	QThread* capture_thread_; 
+
+	QThread* capture_thread_;
 
 	bool start_timer_flag_;
-	QTimer capture_timer_; 
+	QTimer capture_timer_;
 	QString camera_ip_;
- 
+
 	std::vector<cv::Point3f> center_points_list_;
 	std::vector<float> rms_list_;
 	std::vector<std::vector<float>> plane_list_;
 	std::vector<std::vector<cv::Point3f>> feature_points_list_;
 
-	//Éú³ÉÁÁ¶ÈÍ¼Ä£Ê½
+	//ç”Ÿæˆäº®åº¦å›¾æ¨¡å¼
 	int generate_brightness_model_;
 	float generate_brightness_exposure_;
 
