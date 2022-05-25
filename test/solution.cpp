@@ -1,4 +1,4 @@
-#ifdef _WIN32  
+﻿#ifdef _WIN32  
 #include <windows.h>
 #include <io.h>
 #elif __linux 
@@ -44,13 +44,13 @@ bool DfSolution::setCameraVersion(int version)
 	switch (version)
 	{
 	case DFX_800:
-	{  
+	{
 		return true;
 	}
 	break;
 
 	case DFX_1800:
-	{  
+	{
 		return true;
 	}
 	break;
@@ -87,7 +87,7 @@ bool DfSolution::savePatterns(std::string dir, std::vector<cv::Mat> patterns)
 	std::string mkdir_cmd = std::string("mkdir ") + folderPath;
 	system(mkdir_cmd.c_str());
 
-  
+
 	//std::cout << mkdir_cmd << std::endl;
 
 	for (int i = 0; i < patterns.size(); i++)
@@ -97,7 +97,7 @@ bool DfSolution::savePatterns(std::string dir, std::vector<cv::Mat> patterns)
 		ss << std::setw(2) << std::setfill('0') << i;
 		std::string filename = folderPath + "\\pattern_" + ss.str() + ".bmp";
 		bool ret = cv::imwrite(filename, image);
-		std::cout << "save: " << filename <<" "<< ret << std::endl;
+		std::cout << "save: " << filename << " " << ret << std::endl;
 	}
 
 	return true;
@@ -136,9 +136,9 @@ bool DfSolution::readCameraCalibData(std::string path, struct CameraCalibParam& 
 		myfile >> I[i];
 		//std::cout << I[i] << std::endl;
 
-	} 
+	}
 	myfile.close();
-	 
+
 
 	param.camera_intrinsic[0] = I[0];
 	param.camera_intrinsic[1] = I[1];
@@ -149,14 +149,14 @@ bool DfSolution::readCameraCalibData(std::string path, struct CameraCalibParam& 
 	param.camera_intrinsic[6] = I[6];
 	param.camera_intrinsic[7] = I[7];
 	param.camera_intrinsic[8] = I[8];
-	 
+
 	param.camera_distortion[0] = I[9];
 	param.camera_distortion[1] = I[10];
 	param.camera_distortion[2] = I[11];
 	param.camera_distortion[3] = I[12];
 	param.camera_distortion[4] = I[13];
 
-	 
+
 	param.projector_intrinsic[0] = I[14];
 	param.projector_intrinsic[1] = I[15];
 	param.projector_intrinsic[2] = I[16];
@@ -167,14 +167,14 @@ bool DfSolution::readCameraCalibData(std::string path, struct CameraCalibParam& 
 	param.projector_intrinsic[7] = I[21];
 	param.projector_intrinsic[8] = I[22];
 
-	 
+
 	param.projector_distortion[0] = I[23];
 	param.projector_distortion[1] = I[24];
 	param.projector_distortion[2] = I[25];
 	param.projector_distortion[3] = I[26];
 	param.projector_distortion[4] = I[27];
 
-	 
+
 	param.rotation_matrix[0] = I[28];
 	param.rotation_matrix[1] = I[29];
 	param.rotation_matrix[2] = I[30];
@@ -185,7 +185,7 @@ bool DfSolution::readCameraCalibData(std::string path, struct CameraCalibParam& 
 	param.rotation_matrix[7] = I[35];
 	param.rotation_matrix[8] = I[36];
 
-	
+
 	param.translation_matrix[0] = I[37];
 	param.translation_matrix[1] = I[38];
 	param.translation_matrix[2] = I[39];
@@ -196,7 +196,7 @@ bool DfSolution::readCameraCalibData(std::string path, struct CameraCalibParam& 
 }
 
 
- 
+
 
 bool DfSolution::getCameraCalibData(std::string ip, struct CameraCalibParam& param)
 {
@@ -207,7 +207,7 @@ bool DfSolution::getCameraCalibData(std::string ip, struct CameraCalibParam& par
 	{
 		return 0;
 	}
-	 
+
 	//struct CameraCalibParam calibration_param;
 	//DfGetCalibrationParam(calibration_param);
 
@@ -245,7 +245,7 @@ bool DfSolution::captureMixedVariableWavelengthPatterns(std::string ip, std::vec
 	unsigned char* raw_buf = new unsigned char[(long)(image_size * capture_num)];
 
 	ret = DfGetCameraRawData03(raw_buf, image_size * capture_num);
-	 
+
 
 	patterns.clear();
 
@@ -253,7 +253,7 @@ bool DfSolution::captureMixedVariableWavelengthPatterns(std::string ip, std::vec
 	{
 		std::stringstream ss;
 		cv::Mat image(1200, 1920, CV_8UC1, raw_buf + (long)(image_size * i));
- 
+
 		patterns.push_back(image.clone());
 	}
 
@@ -265,7 +265,7 @@ bool DfSolution::captureMixedVariableWavelengthPatterns(std::string ip, std::vec
 }
 
 /**************************************************************************/
- 
+
 
 void  DfSolution::getFiles(std::string path, std::vector<std::string>& files)
 {
@@ -300,23 +300,23 @@ void  DfSolution::getFiles(std::string path, std::vector<std::string>& files)
 		_findclose(hFile);
 	}
 
- 
+
 #elif __linux
-	DIR *pDir;
-    struct dirent* ptr;
-    if(!(pDir = opendir(path.c_str())))
-        return;
-    while((ptr = readdir(pDir))!=0) {
-        if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0)
-            files.push_back(path + "/" + ptr->d_name);
-    }
-    closedir(pDir);
+	DIR* pDir;
+	struct dirent* ptr;
+	if (!(pDir = opendir(path.c_str())))
+		return;
+	while ((ptr = readdir(pDir)) != 0) {
+		if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0)
+			files.push_back(path + "/" + ptr->d_name);
+	}
+	closedir(pDir);
 
 #endif 
- 
+
 
 }
- 
+
 
 bool DfSolution::readImages(std::string dir, std::vector<cv::Mat>& patterns)
 {
@@ -346,9 +346,9 @@ bool DfSolution::readImages(std::string dir, std::vector<cv::Mat>& patterns)
 		//}
 
 		//path +=  std::to_string(i) + "_p.bmp";
- 
 
-	 
+
+
 		cv::Mat img = cv::imread(path, 0);
 		if (img.empty())
 		{
@@ -496,9 +496,9 @@ bool DfSolution::testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, st
 
 		return false;
 
-	} 
+	}
 
-	cv::Mat texture_map = patterns[30]; 
+	cv::Mat texture_map = patterns[30];
 	cv::Mat undistort_img;
 	reconstruct_machine_.undistortedImage(texture_map, undistort_img);
 	texture_map = undistort_img.clone();
@@ -517,10 +517,10 @@ bool DfSolution::testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, st
 
 
 
-	std::vector<cv::Mat> deep_channels; 
-	cv::split(deep_map, deep_channels); 
-	cv::Mat depth_map; 
-	deep_channels[2].convertTo(depth_map, CV_32F); 
+	std::vector<cv::Mat> deep_channels;
+	cv::split(deep_map, deep_channels);
+	cv::Mat depth_map;
+	deep_channels[2].convertTo(depth_map, CV_32F);
 	cv::medianBlur(depth_map, depth_map, 3);
 
 
@@ -561,7 +561,7 @@ bool DfSolution::testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, st
 
 	double diff = precision_machine.computeTwoPointSetDistance(world_points, transform_points);
 
-	std::cout << "�������: "<< diff<< " mm" << std::endl;
+	std::cout << "�������: " << diff << " mm" << std::endl;
 
 	if (diff > 0.1)
 	{
@@ -572,10 +572,10 @@ bool DfSolution::testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, st
 			std::cout << "�궨������ˣ�" << std::endl;
 			std::cout << "�����ͶӰ���ȣ�" << std::endl;
 		}
-	} 
+	}
 	else
 	{
-		std::cout << "����ڲκϸ�" << std::endl; 
+		std::cout << "����ڲκϸ�" << std::endl;
 	}
 	/****************************************************************************************************/
 
@@ -586,28 +586,28 @@ bool DfSolution::testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, st
 	cv::cvtColor(undistort_img, draw_color_img, cv::COLOR_GRAY2BGR);
 	cv::drawChessboardCorners(draw_color_img, board_size, undist_circle_points, found);
 
- 
+
 	cv::Mat render_brightness;
-	renderBrightnessImage(texture_map, render_brightness); 
+	renderBrightnessImage(texture_map, render_brightness);
 	err_map.convertTo(err_map, CV_32F);
 	/*********************************************************************************/
 
 
 	std::string work_path_ = err_map_path + "/test_calibration_param";
 
-	 
+
 	std::string save_draw_board_dir = work_path_ + "_draw_board.bmp";
 	std::string save_brightness_dir = work_path_ + "_brightness.bmp";
 
-	 
+
 	cv::imwrite(save_brightness_dir, render_brightness);
 	cv::imwrite(save_draw_board_dir, draw_color_img);
-	 
+
 	std::cout << "save image: " << save_brightness_dir << std::endl;
 	std::cout << "save image: " << save_draw_board_dir << std::endl;
 
 	return true;
-	 
+
 }
 
 
@@ -651,14 +651,14 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 	std::vector<cv::Mat> hor_patterns_img_4(hor_patterns_img.begin(), hor_patterns_img.begin() + hor_patterns_num);
 
 	std::vector<cv::Mat> ver_patterns_img_6(ver_patterns_img.begin() + ver_pstterns_num - 6, ver_patterns_img.begin() + ver_pstterns_num);
-  
 
-	DF_Encode encode_machine_; 
+
+	DF_Encode encode_machine_;
 	ret = encode_machine_.computePhaseBaseFourStep(ver_patterns_img_4, ver_wrap_img_4, test_mask_, ver_confidence_map_4);
 	ret = encode_machine_.computePhaseBaseFourStep(hor_patterns_img_4, hor_wrap_img_4, test_mask_, hor_confidence_map_4);
 
 
-	ret = encode_machine_.computePhaseBaseSixStep(ver_patterns_img_6, ver_wrap_img_6, test_mask_, ver_confidence_map_6); 
+	ret = encode_machine_.computePhaseBaseSixStep(ver_patterns_img_6, ver_wrap_img_6, test_mask_, ver_confidence_map_6);
 
 	std::vector<double> variable_wrap_rate;
 	variable_wrap_rate.push_back(8);
@@ -674,10 +674,10 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 	std::vector<cv::Mat> select_ver_wrap_img = ver_wrap_img_4;
 	std::vector<cv::Mat> select_hor_wrap_img = hor_wrap_img_4;
 
-	select_ver_wrap_img.push_back(ver_wrap_img_6[0]); 
+	select_ver_wrap_img.push_back(ver_wrap_img_6[0]);
 
 
-	cv::Mat unwrap_hor, unwrap_ver; 
+	cv::Mat unwrap_hor, unwrap_ver;
 	float ver_period_num = 1;
 
 	for (int r_i = 0; r_i < variable_wrap_rate.size(); r_i++)
@@ -719,7 +719,7 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 	unwrap_ver /= ver_period;
 	unwrap_hor /= hor_period;
 
-	encode_machine_.selectMaskBaseConfidence(ver_confidence_map_6, confidence_val, unwrap_mask); 
+	encode_machine_.selectMaskBaseConfidence(ver_confidence_map_6, confidence_val, unwrap_mask);
 
 
 	encode_machine_.maskMap(unwrap_mask, unwrap_ver);
@@ -727,7 +727,7 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 
 
 
-	cv::Mat deep_map; 
+	cv::Mat deep_map;
 	DF_Reconstruct reconstruct_machine_;
 	reconstruct_machine_.setCalibData(calib_param);
 
@@ -755,7 +755,7 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 
 	if (err_value > 0.1)
 	{
-		std::cout << "����ڲξ��Ȳ�����" << std::endl; 
+		std::cout << "����ڲξ��Ȳ�����" << std::endl;
 	}
 	else
 	{
@@ -778,19 +778,19 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 
 
 	std::string work_path_ = err_map_path + "/test_calibration_param";
-	 
+
 
 	std::string save_err_tiff = work_path_ + "_err.tiff";
 	std::string save_color_err_tiff = work_path_ + "_color_err.tiff";
-	std::string save_brightness_dir = work_path_ + "_brightness.bmp"; 
+	std::string save_brightness_dir = work_path_ + "_brightness.bmp";
 
-  
 
-	cv::imwrite(save_err_tiff, err_map); 
+
+	cv::imwrite(save_err_tiff, err_map);
 	cv::imwrite(save_brightness_dir, render_brightness);
 	cv::imwrite(save_color_err_tiff, gray_err_map);
 
-	std::cout << "save image: " << save_err_tiff<<std::endl;
+	std::cout << "save image: " << save_err_tiff << std::endl;
 	std::cout << "save image: " << save_brightness_dir << std::endl;
 	std::cout << "save image: " << save_color_err_tiff << std::endl;
 
@@ -816,10 +816,10 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	cv::Mat R1;
 	cv::Mat pattern_mapping;
 	lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
-	 
+
 	//lookup_table_machine_.readTable("../", 1200, 1920);
 
-	 
+
 	endTime = clock();//��ʱ����
 	std::cout << "The run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
@@ -958,12 +958,12 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	//	}
 
 	//}
-	 
+
 	cv::Mat texture_map = patterns[18];
 	cv::Mat undistort_img;
 	lookup_table_machine_.undistortedImage(texture_map, undistort_img);
 	texture_map = undistort_img.clone();
-	   
+
 	cv::Mat z_map_table;
 	//����ؽ���deep_map ��ͨ��Ϊx y z��ͨ����double ����
 	lookup_table_machine_.rebuildData(unwrap_ver, 1, z_map_table, unwrap_mask);
@@ -973,18 +973,19 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	std::vector<cv::Point3f> points_cloud;
 	ret = lookup_table_machine_.generate_pointcloud(z_map_table, unwrap_mask, deep_map_table);
 
-	 
-	//startTime = clock();//��ʱ��ʼ   
-	//FilterModule filter_machine;
+
+	startTime = clock();//��ʱ��ʼ   
+	FilterModule filter_machine;
 	//filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.8, 4);
-	//endTime = clock();//��ʱ����
-	//std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+	filter_machine.statisticOutlierRemoval(deep_map_table, 6, 1);
+	endTime = clock();//��ʱ����
+	std::cout << "statisticOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	/*********************************************************************************/
 
 	std::string work_path_ = pointcloud_path + "/test";
 
-	 
+
 	std::vector<cv::Mat> deep_channels;
 	cv::split(deep_map_table, deep_channels);
 	cv::Mat z_map;
@@ -1017,7 +1018,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 }
 
 
-bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param,std::string pointcloud_path)
+bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path)
 {
 
 	if (31 != patterns.size())
@@ -1028,7 +1029,7 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	bool ret = true;
 
 	int ver_pstterns_num = 18;
-	int hor_patterns_num = 12;  
+	int hor_patterns_num = 12;
 
 	int nr = patterns[0].rows;
 	int nc = patterns[0].cols;
@@ -1152,7 +1153,7 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	DF_Reconstruct reconstruct_machine_;
 	reconstruct_machine_.setCalibData(calib_param);
 	reconstruct_machine_.setCameraVersion(camera_version_);
-	 
+
 	cv::Mat err_map;
 
 	ret = reconstruct_machine_.rebuildData(unwrap_ver, unwrap_hor, 1, deep_map, err_map);
@@ -1163,25 +1164,25 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 		return false;
 
 	}
- 
+
 
 	clock_t startTime, endTime;
 	startTime = clock();//��ʱ��ʼ   
 	FilterModule filter_machine;
-	filter_machine.RadiusOutlierRemoval(deep_map, unwrap_mask, 0.8, 4);  
+	filter_machine.RadiusOutlierRemoval(deep_map, unwrap_mask, 0.8, 4);
 	endTime = clock();//��ʱ����
 	std::cout << "RadiusOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	cv::Mat color_err_map;
 	cv::Mat gray_err_map;
-	renderErrorMap(err_map, color_err_map, gray_err_map,  0., 0.1);
+	renderErrorMap(err_map, color_err_map, gray_err_map, 0., 0.1);
 
 	AnalyseError analyse_err_machine;
 
 	double err_value = analyse_err_machine.computeError(err_map);
 	std::cout << "calibrate err: " << err_value << std::endl;
 
-	cv::Mat texture_map = patterns[30];  
+	cv::Mat texture_map = patterns[30];
 
 	cv::Mat undistort_img;
 	reconstruct_machine_.undistortedImage(texture_map, undistort_img);
@@ -1189,11 +1190,11 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 
 	err_map.convertTo(err_map, CV_32F);
 	/*********************************************************************************/
-	 
 
-	std::string work_path_ =  pointcloud_path + "/test";
 
-	 
+	std::string work_path_ = pointcloud_path + "/test";
+
+
 
 	std::vector<cv::Mat> deep_channels;
 
@@ -1208,10 +1209,10 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 	std::string save_depth_tiff = work_path_ + "_depth.tiff";
 	std::string save_points_dir = work_path_ + "_points.xyz";
 	std::string save_depth_txt_dir = work_path_ + "_depth.txt";
-	std::string save_confidence_dir = work_path_ +  "_confidence.bmp";
-	std::string save_depth_dir = work_path_ +  "_depth.bmp";
-	std::string save_brightness_dir = work_path_  + "_brightness.bmp";
-	std::string save_points_z_dir = work_path_   + "point_z.tiff";
+	std::string save_confidence_dir = work_path_ + "_confidence.bmp";
+	std::string save_depth_dir = work_path_ + "_depth.bmp";
+	std::string save_brightness_dir = work_path_ + "_brightness.bmp";
+	std::string save_points_z_dir = work_path_ + "point_z.tiff";
 
 	cv::Mat color_map, grey_map;
 	MapToColor(deep_map, color_map, grey_map, 400, 800);
@@ -1221,18 +1222,18 @@ bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<
 
 	cv::imwrite(save_err_tiff, err_map);
 	cv::imwrite(save_depth_tiff, depth_map);
-	cv::imwrite(save_brightness_dir, texture_map); 
+	cv::imwrite(save_brightness_dir, texture_map);
 	cv::imwrite(save_depth_dir, color_map);
 	SavePointToTxt(deep_map, save_points_dir, texture_map);
 	//file_io_machine.saveDepthMapToTxt(deep_map, save_depth_txt_dir);
 
 	std::cout << "pointcloud: " << save_points_dir;
- 
+
 	return true;
 
 
 }
- 
 
- 
- 
+
+
+
