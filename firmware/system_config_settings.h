@@ -43,9 +43,9 @@ struct FirmwareConfigParam
 	int mixed_led_param_list[6];
 	int mixed_exposure_num;
 	//1:光强融合多曝光模式、2：曝光时间-光强融合多曝光模式
-	int hdr_model;
- 
-
+	int hdr_model; 
+	int use_bilateral_filter;
+	int bilateral_filter_param_d;  
 };
 
 

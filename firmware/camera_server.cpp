@@ -43,6 +43,7 @@ int generate_brightness_model = 1;
  
 float max_camera_exposure_ = 28000;
 float min_camera_exposure_ = 6000;
+ 
 
 SystemConfigDataStruct system_config_settings_machine_;
 
@@ -920,6 +921,16 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
             break;
     }
   
+
+    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    { 
+        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+        LOG(INFO) << "Bilateral";
+    }
+
     /***************************************************************************************************/
     //send data
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
@@ -1016,7 +1027,17 @@ int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
 	cudaDeviceSynchronize();
     parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
 
-    
+    /************************************************************************************/
+
+    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    { 
+        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+        LOG(INFO) << "Bilateral";
+    }
+
     /******************************************************************************/
     //send data
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
@@ -1334,54 +1355,55 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
  
     LOG(INFO)<<"Reconstruct Frame04 Finished!";
 
- 
-    // cv::Mat pointcloud_map(1200,1920,CV_32FC3,cv::Scalar(-2));
-    // reconstruct_copy_pointcloud_from_cuda_memory((float*)pointcloud_map.data);  
-    // cv::Mat depth_mat(1200,1920,CV_32FC1,depth_map);
+    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    { 
+        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+        LOG(INFO) << "Bilateral";
+    }
 
-    // cv::imwrite("./depth_map.tiff",depth_mat);
-    // cv::imwrite("./pointcloud_map.tiff",pointcloud_map);
-    
+
+
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+    int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
     printf("depth ret=%d\n", ret);
 
-    if(ret == DF_FAILED)
+    if (ret == DF_FAILED)
     {
         printf("send error, close this connection!\n");
-	// delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
-	
-	return DF_FAILED;
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
     }
-    
+
     printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
     printf("brightness ret=%d\n", ret);
 
-    LOG(INFO)<<"Send Frame04";
+    LOG(INFO) << "Send Frame04";
 
     float temperature = read_temperature(0);
-    
-    LOG(INFO)<<"temperature: "<<temperature<<" deg";
 
-    if(ret == DF_FAILED)
+    LOG(INFO) << "temperature: " << temperature << " deg";
+
+    if (ret == DF_FAILED)
     {
         printf("send error, close this connection!\n");
-	// delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
-	
-	return DF_FAILED;
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
     }
     printf("frame sent!\n");
     // delete [] buffer;
-    delete [] depth_map;
-    delete [] brightness;
+    delete[] depth_map;
+    delete[] brightness;
     return DF_SUCCESS;
-    
-
 }
    
 
@@ -2000,6 +2022,72 @@ int handle_cmd_set_param_generate_brightness(int client_sock)
     return DF_SUCCESS;
 }
 
+
+//设置双边滤波参数
+int handle_cmd_set_param_bilateral_filter(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+
+    int param[2];
+
+    int ret = recv_buffer(client_sock, (char*)(&param[0]), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+ 
+
+    ret = recv_buffer(client_sock, (char*)(&param[1]), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter = param[0];
+
+
+    if (1 == param[0])
+    {  
+        if (3 == param[1] || 5 == param[1] || 7 == param[1] || 9 == param[1] || 11 == param[1])
+        {
+            system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d == param[1];
+        }
+    }
+
+    return DF_SUCCESS;
+}
+
+//获取双边滤波参数
+int handle_cmd_get_param_bilateral_filter(int client_sock)
+{
+   if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+     
+    int ret = send_buffer(client_sock, (char*)(&system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter), sizeof(int) );
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+ 
+    ret = send_buffer(client_sock, (char*)(&system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+ 
+
+    return DF_SUCCESS;
+}
 
 //设置混合多曝光参数
 int handle_cmd_set_param_mixed_hdr(int client_sock)
@@ -2994,6 +3082,14 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_PARAM_CAMERA_VERSION:
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_VERSION";   
     	handle_cmd_get_param_camera_version(client_sock);
+	    break;
+	case DF_CMD_SET_PARAM_BILATERAL_FILTER:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_BILATERAL_FILTER";   
+    	handle_cmd_set_param_bilateral_filter(client_sock);
+	    break;
+	case DF_CMD_GET_PARAM_BILATERAL_FILTER:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_BILATERAL_FILTER";   
+    	handle_cmd_get_param_bilateral_filter(client_sock);
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
