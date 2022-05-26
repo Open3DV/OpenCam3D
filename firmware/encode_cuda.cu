@@ -2223,7 +2223,7 @@ __global__ void cuda_removal_points_base_mask(uint32_t img_height, uint32_t img_
 }
 
 //滤波
-__global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,uchar* remove_mask,float radius,int threshold)
+__global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,uchar* remove_mask,float dot_spacing, float radius,int threshold)
 {
  	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y; 
@@ -2238,7 +2238,7 @@ __global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t
 		{
 			remove_mask[serial_id] = 255;
 
-			int w = radius * 2.5;
+			int w = 1 + radius / dot_spacing;
 
 			int s_r = idy - w;
 			int s_c = idx - w;
@@ -2314,13 +2314,13 @@ bool generate_pointcloud_base_table()
 												image_height_,image_width_,d_baseline_,d_point_cloud_map_,d_depth_map_);
 
 
-	LOG(INFO)<<"remove start:";
-	cuda_filter_radius_outlier_removal << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_mask_,0.8,4); 
-	cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_);
+	// LOG(INFO)<<"remove start:";
+	// //相机像素为5.4um、焦距12mm。dot_spacing = 5.4*distance/12000 mm，典型值0.54mm（1200） 
+	// cuda_filter_radius_outlier_removal << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_mask_,0.5,2,4); 
+	// cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_); 
 
-
-    cudaDeviceSynchronize();
-	LOG(INFO)<<"remove finished!";
+    // cudaDeviceSynchronize();
+	// LOG(INFO)<<"remove finished!";
 }
  
 
