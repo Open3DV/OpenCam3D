@@ -748,7 +748,7 @@ double LookupTableFunction::Bilinear_interpolation(double x, double y, cv::Mat& 
 
 }
 
-double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b)
+double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b, double& disparity)
 {
 
 
@@ -757,6 +757,15 @@ double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double 
 	double Xpr = Bilinear_interpolation(Xp, (Ycr + 1) * 2000, single_pattern_mapping);
 	double delta_X = std::abs(Xcr - Xpr);
 	double Z = b / delta_X;
+
+
+	disparity = delta_X * 1000;
+
+	//if (disparity < 50 || disparity> 85)
+	//{
+	//	Z = -10;
+	//}
+
 	return Z;
 
 }
@@ -879,20 +888,24 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 	cv::Mat all_deep_map = cv::Mat(nr, nc, CV_64F, cv::Scalar(0));
 	deep_map = all_deep_map.clone();
 
+	cv::Mat disparity_map = cv::Mat(nr, nc, CV_64F, cv::Scalar(0));
 
 #pragma omp parallel for
 	for (int Yc = 0; Yc < nr; Yc++) {
 		double* ptr_x = unwrap_map_x.ptr<double>(Yc);
 		double* ptr_d = deep_map.ptr<double>(Yc);
 		uchar* ptr_m = mask.ptr<uchar>(Yc);
+		double* ptr_disparity = disparity_map.ptr<double>(Yc);
 
 		for (int Xc = 0; Xc < nc; Xc++) {
 			//����Xp��������
 			double Xp = dlp_width_ * ptr_x[Xc] / phase_max;
+			double d = 0;
 			//��Ҫ��mask������������Ƿ���Ҫ
 			if (ptr_m[Xc] == 255 && Xp > 0) {
 				//������ȣ���Ҫ�õ�����ĵ�����꣬����λ�õ���Xp���꣬������������ֵ����ľ����Ӳ�����õ���b
-				ptr_d[Xc] = depth_per_point_6patterns_combine(Xc, Yc, Xp, xL_rotate_x, xL_rotate_y, single_pattern_mapping, b);
+				ptr_d[Xc] = depth_per_point_6patterns_combine(Xc, Yc, Xp, xL_rotate_x, xL_rotate_y, single_pattern_mapping, b, d);
+				ptr_disparity[Xc] = d;
 			}
 			else {
 				ptr_d[Xc] = 0;
