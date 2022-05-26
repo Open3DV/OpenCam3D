@@ -680,8 +680,11 @@ __global__ void parallel_cuda_merge_hdr_6(const float*  depth_map_0,const float*
 			// brightness[offset] = brightness_2[offset];
 			depth_map[offset] = depth_map_5[offset];
 		}
-
-
+		//没有深度则用最亮的深度值
+		if (depth_map[offset] <= 0)
+		{
+			depth_map[offset] = depth_map_0[offset];
+		}
 	}
 }
 
@@ -738,8 +741,11 @@ __global__ void parallel_cuda_merge_hdr_5(const float*  depth_map_0,const float*
 			// brightness[offset] = brightness_2[offset];
 			depth_map[offset] = depth_map_4[offset];
 		}
-
-
+		//没有深度则用最亮的深度值
+		if (depth_map[offset] <= 0)
+		{
+			depth_map[offset] = depth_map_0[offset];
+		}
 	}
 }
 
@@ -789,8 +795,11 @@ __global__ void parallel_cuda_merge_hdr_4(const float*  depth_map_0,const float*
 				// brightness[offset] = brightness_2[offset];
 				depth_map[offset] = depth_map_3[offset];
 			}
-	
-	
+			//没有深度则用最亮的深度值
+			if (depth_map[offset] <= 0)
+			{
+				depth_map[offset] = depth_map_0[offset];
+			}
 		}
 	}
 
@@ -832,7 +841,11 @@ __global__ void parallel_cuda_merge_hdr_3(const float*  depth_map_0,const float*
 				// brightness[offset] = brightness_2[offset];
 				depth_map[offset] = depth_map_2[offset];
 			}
-	
+				//没有深度则用最亮的深度值
+			if(depth_map[offset]<= 0)
+			{
+				depth_map[offset] = depth_map_0[offset];
+			}
 	
 		}
 	}
@@ -865,6 +878,12 @@ __global__ void parallel_cuda_merge_hdr_2(const float*  depth_map_0,const float*
 			{
 				// brightness[offset] = brightness_1[offset];
 				depth_map[offset] = depth_map_1[offset];
+			}
+
+			//没有深度则用最亮的深度值
+			if(depth_map[offset]<= 0)
+			{
+				depth_map[offset] = depth_map_0[offset];
 			}
 
 		}
