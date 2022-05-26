@@ -9,7 +9,7 @@ public:
 	FilterModule();
 	~FilterModule();
 
-	bool RadiusOutlierRemoval(cv::Mat& point_cloud_map, cv::Mat& mask, double radius, int points_num);
+	bool RadiusOutlierRemoval(cv::Mat& point_cloud_map, cv::Mat& mask, double dot_spacing, double radius, int points_num);
 
 	bool statisticOutlierRemoval(cv::Mat& point_cloud_map, int num_neighbors, double threshold_radio);
 private:
@@ -24,7 +24,7 @@ private:
 
 	double computePointsDistance(cv::Point2f p0, cv::Point2f p1);
 
-	int findNearPointsnum(cv::Mat& point_cloud_map, cv::Mat& mask, cv::Point pos, double radius);
+	int findNearPointsnum(cv::Mat& point_cloud_map, cv::Mat& mask, cv::Point pos, double dot_spacing, double radius);
 
 	bool statisticRegion(cv::Mat& point_cloud_map, cv::Point pos, int num_neighbors, double threshold_radio);
 

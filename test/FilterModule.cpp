@@ -96,7 +96,7 @@ bool FilterModule::computeNormalDistribution(cv::Mat& point_cloud_map, int num_n
 	return true;
 }
 
-bool FilterModule::RadiusOutlierRemoval(cv::Mat& point_cloud_map, cv::Mat& mask, double radius, int points_num)
+bool FilterModule::RadiusOutlierRemoval(cv::Mat& point_cloud_map, cv::Mat& mask, double dot_spacing, double radius, int points_num)
 {
 	if (!point_cloud_map.data)
 		return false;
@@ -118,7 +118,7 @@ bool FilterModule::RadiusOutlierRemoval(cv::Mat& point_cloud_map, cv::Mat& mask,
 		{
 			if (ptr_m[c] > 0)
 			{
-				int num = findNearPointsnum(point_cloud_map, mask, cv::Point(c, r), radius);
+				int num = findNearPointsnum(point_cloud_map, mask, cv::Point(c, r), dot_spacing, radius);
 
 				if (num > points_num)
 				{
@@ -336,8 +336,8 @@ bool FilterModule::statisticRegion(cv::Mat& point_cloud_map, cv::Point pos, int 
 	}
 }
 
-//相邻点距离定0.4mm
-int FilterModule::findNearPointsnum(cv::Mat& point_cloud_map, cv::Mat& mask, cv::Point pos, double radius)
+//相机像素为5.4um、焦距12mm。dot_spacing = 5.4*distance/12000 mm，典型值0.54mm（1200） 
+int FilterModule::findNearPointsnum(cv::Mat& point_cloud_map, cv::Mat& mask, cv::Point pos, double dot_spacing, double radius)
 {
 	if (!point_cloud_map.data)
 		return -1;
@@ -345,7 +345,7 @@ int FilterModule::findNearPointsnum(cv::Mat& point_cloud_map, cv::Mat& mask, cv:
 	int nr = point_cloud_map.rows;
 	int nc = point_cloud_map.cols;
 
-	int w = radius * 2.5;
+	int w = 1 + radius / dot_spacing;
 
 	int s_r = pos.y - w;
 	int s_c = pos.x - w;
