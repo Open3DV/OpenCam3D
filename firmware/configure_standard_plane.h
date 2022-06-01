@@ -1,6 +1,3 @@
-#ifndef OPENVSLAM_DATA_FRAME_STATISTICS_H
-#define OPENVSLAM_DATA_FRAME_STATISTICS_H
-
 #pragma once 
 #include <iostream> 
 #include <opencv2/imgcodecs.hpp>
@@ -75,5 +72,4 @@ private:
 	struct CameraCalibParam camera_calibration_param_;
  
 };
-
-#endif
+ 

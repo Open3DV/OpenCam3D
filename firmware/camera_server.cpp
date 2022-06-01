@@ -22,6 +22,7 @@
 #include "version.h"
 #include "configure_standard_plane.h"
 #include "../test/LookupTableFunction.h" 
+#include "configure_auto_exposure.h"
 
 INITIALIZE_EASYLOGGINGPP 
 
@@ -441,6 +442,68 @@ int handle_cmd_disconnect(int client_sock)
 	    return DF_FAILED;
 	}
     }
+    return DF_SUCCESS;
+}
+
+
+
+int handle_cmd_set_auto_exposure_base_board(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int buffer_size = 1920 * 1200;
+    char *buffer = new char[buffer_size];
+
+    ConfigureAutoExposure auto_exposure_machine;
+    float average_pixel = 0;
+    float over_exposure_rate = 0;
+
+
+    cv::Mat brightness_mat(1200,1920,CV_8U,cv::Scalar(0));
+
+    float current_exposure = system_config_settings_machine_.Instance().config_param_.camera_exposure_time;
+
+    //发光，自定义曝光时间
+    lc3010.enable_solid_field();
+    bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data);
+
+    auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
+
+    lc3010.disable_solid_field();
+
+    return DF_SUCCESS;
+}
+
+int handle_cmd_set_auto_exposure_base_roi(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int buffer_size = 1920 * 1200;
+    char *buffer = new char[buffer_size];
+
+    ConfigureAutoExposure auto_exposure_machine;
+    float average_pixel = 0;
+    float over_exposure_rate = 0;
+
+
+    cv::Mat brightness_mat(1200,1920,CV_8U,cv::Scalar(0));
+
+    float current_exposure = system_config_settings_machine_.Instance().config_param_.camera_exposure_time;
+
+    //发光，自定义曝光时间
+    lc3010.enable_solid_field();
+    bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data);
+
+    auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
+
+    lc3010.disable_solid_field();
+
     return DF_SUCCESS;
 }
 
@@ -1362,9 +1425,15 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
         cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
         memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
         LOG(INFO) << "Bilateral";
+
+
     }
 
-
+    cv::Mat brightness_mat(1200, 1920, CV_8UC1, brightness);
+    float average_pixel = 0;
+    float over_exposure_rate = 0;
+    ConfigureAutoExposure auto_exposure_machine;
+    auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
     int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
@@ -3095,6 +3164,14 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_PARAM_BILATERAL_FILTER:
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_BILATERAL_FILTER";   
     	handle_cmd_get_param_bilateral_filter(client_sock);
+	    break;
+	case DF_CMD_SET_AUTO_EXPOSURE_BASE_ROI:
+	    LOG(INFO)<<"DF_CMD_SET_AUTO_EXPOSURE_BASE_ROI";   
+    	handle_cmd_set_auto_exposure_base_roi(client_sock);
+	    break;
+	case DF_CMD_SET_AUTO_EXPOSURE_BASE_BOARD:
+	    LOG(INFO)<<"DF_CMD_SET_AUTO_EXPOSURE_BASE_BOARD";   
+    	handle_cmd_set_auto_exposure_base_board(client_sock);
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
