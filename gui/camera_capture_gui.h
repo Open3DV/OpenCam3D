@@ -27,6 +27,8 @@ public:
 	CameraCaptureGui(QWidget* parent = Q_NULLPTR);
 	~CameraCaptureGui();
 
+	void setOnDrop(int (*p_function)(void*));
+
 	bool setShowImages(cv::Mat brightness, cv::Mat depth);
 
 	void setGuiSettingData(GuiConfigDataStruct& settings_data_);
@@ -226,4 +228,7 @@ private:
 
 	int calibration_board_flag_;
 	int camera_version_;
+
+
+	int (*m_p_OnDropped_)(void*);
 };
