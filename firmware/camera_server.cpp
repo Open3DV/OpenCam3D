@@ -2948,6 +2948,82 @@ int handle_get_firmware_version(int client_sock)
     
     return DF_SUCCESS;
 }
+
+bool check_trigger_line()
+{
+    bool ret = false;
+    char* buffer = new char[1920*1200];
+
+    lc3010.pattern_mode_brightness();
+    ret = camera.CaptureSelfTest();
+
+    delete [] buffer;
+
+    return ret;
+}
+
+void self_test(char *test_out)
+{
+    // check the network
+    if( read_bandwidth() < 1000) {
+        sprintf(test_out, "The network failure -- bandwidth less than 1000Mb.");
+        return;
+    }
+
+    // check usb camera
+    if (GXInitLib() != GX_STATUS_SUCCESS)
+    {
+        sprintf(test_out, "The camera failure -- driver installed not porperly.");
+        return;
+    }
+
+    uint32_t nDeviceNum = 0;
+    GX_STATUS status = GXUpdateDeviceList(&nDeviceNum, 1000);
+    if ((status != GX_STATUS_SUCCESS) || (nDeviceNum <= 0))
+    {
+        sprintf(test_out, "The camera failure -- device not connected.");
+        return;
+    }
+
+    // check projector i2c
+    int version= 0;
+    lc3010.read_dmd_device_id(version);
+    if ((version != 800) && (version != 1800))
+    {
+        sprintf(test_out, "The projector failure -- communication error.");
+        return;
+    }
+
+    // check trigger-line
+    if (check_trigger_line() == false) {
+        sprintf(test_out, "The camera failure -- trigger-line not connected.");
+        return;
+    }
+
+    sprintf(test_out, "Self-test OK.");
+}
+
+int handle_cmd_self_test(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"self test!";
+
+    char test[500] = {'\0'};
+    self_test(test);
+    int ret = send_buffer(client_sock, test, sizeof(test));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
+
 /*****************************************************************************************/
 int handle_commands(int client_sock)
 {
@@ -3172,6 +3248,9 @@ int handle_commands(int client_sock)
 	case DF_CMD_SET_AUTO_EXPOSURE_BASE_BOARD:
 	    LOG(INFO)<<"DF_CMD_SET_AUTO_EXPOSURE_BASE_BOARD";   
     	handle_cmd_set_auto_exposure_base_board(client_sock);
+	case DF_CMD_SELF_TEST:
+	    LOG(INFO)<<"DF_CMD_SELF_TEST";   
+    	handle_cmd_self_test(client_sock);
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";

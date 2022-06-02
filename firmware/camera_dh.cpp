@@ -707,38 +707,75 @@ bool CameraDh::captureSingleImage(char* buffer)
     return true;
 }
 
+bool CameraDh::CaptureSelfTest()
+{
+    bool ret = false;
+    switchToScanMode();
+
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
+    LOG(INFO) << "SetEnum status 1 = " << status;
+
+    status = GXStreamOn(hDevice_);
+    LOG(INFO) << "StreamOn status 2 = " << status;
+
+    if (status == GX_STATUS_SUCCESS)
+    {
+        lc3010.start_pattern_sequence();
+
+        LOG(INFO) << "self-test start to receive one image";
+        
+        PGX_FRAME_BUFFER pFrameBuffer;
+        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+        LOG(INFO) << "DQBuf status 3 = " << status;
+
+        if (status == GX_STATUS_SUCCESS)
+        {
+            if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
+            {
+                ret = true;
+            }
+            status = GXQBuf(hDevice_, pFrameBuffer);
+            LOG(INFO) << "QBuf status 4 = " << status;
+        }
+    }
+
+    status = GXStreamOff(hDevice_);
+    LOG(INFO) << "StreamOff status 5 = " << status;
+
+    return ret;
+}
 
 bool CameraDh::captureRawTest(int num,char* buffer)
 {
     switchToScanMode();
 
-    //�� �� GXDQBuf �� �� �� �� ��
     PGX_FRAME_BUFFER pFrameBuffer;
-    //�� ��
     GX_STATUS status = GX_STATUS_SUCCESS;
     status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
     status = GXStreamOn(hDevice_);
+
     int n=0;
     if (status == GX_STATUS_SUCCESS)
     {
-	lc3010.start_pattern_sequence();
-	for (int i=0; i<num; i++)
-	{
-	    LOG(INFO)<<"receiving "<<i<<"th image";
+        lc3010.start_pattern_sequence();
+        for (int i=0; i<num; i++)
+        {
+            LOG(INFO)<<"receiving "<<i<<"th image";
             status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
-	    LOG(INFO)<<"status="<<status;
+            LOG(INFO)<<"status="<<status;
             if (status == GX_STATUS_SUCCESS)
             {
                 if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
                 {
                     int img_rows = pFrameBuffer->nHeight;
                     int img_cols = pFrameBuffer->nWidth;
-		    int img_size = img_rows*img_cols;
-		    memcpy(buffer+img_size*i, pFrameBuffer->pImgBuf, img_size);
-	        }
+                    int img_size = img_rows*img_cols;
+                    memcpy(buffer+img_size*i, pFrameBuffer->pImgBuf, img_size);
+                }
                 status = GXQBuf(hDevice_, pFrameBuffer);
             }
-	}
+        }
     }
     else
     {
