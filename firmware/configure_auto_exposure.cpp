@@ -124,13 +124,13 @@ bool ConfigureAutoExposure::evaluateBrightnessParam(cv::Mat brightness_mat, cv::
 	int good_points = light_points - over_exposure_points;
 
 	float good_rate = 100.0 * good_points / all_points;
-	LOG(INFO) << "good_rate: " << good_rate;
+	// LOG(INFO) << "good_rate: " << good_rate;
 
 	over_exposure_rate = 100.0 * over_exposure_points / all_points;
-	LOG(INFO) << "over_exposure_rate: " << over_exposure_rate;
+	// LOG(INFO) << "over_exposure_rate: " << over_exposure_rate;
 
 	average_pixel = sum_pixels / all_points;
-	LOG(INFO) << "average_pixel: " << average_pixel;
+	// LOG(INFO) << "average_pixel: " << average_pixel;
 
 	return true;
 }

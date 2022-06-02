@@ -239,7 +239,7 @@ bool CameraDh::captureFrame04ToGpu()
         for (int i = 0; i < 19; i++)
         {
             LOG(INFO) << "receiving " << i << "th image";
-            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000000);
+            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
             LOG(INFO) << "status=" << status;
             if (status == GX_STATUS_SUCCESS)
             {
@@ -680,7 +680,7 @@ bool CameraDh::captureSingleImage(char* buffer)
     if (status == GX_STATUS_SUCCESS)
     {
 	    status = GXSendCommand(hDevice_, GX_COMMAND_TRIGGER_SOFTWARE);
-        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000000);
+        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
         if (status == GX_STATUS_SUCCESS)
         {
             if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
