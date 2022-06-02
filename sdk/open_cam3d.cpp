@@ -1737,6 +1737,39 @@ DF_SDK_API int DfGetNetworkBandwidth(int& speed)
 	close_socket(g_sock);
 	return DF_SUCCESS;
 }
+
+// --------------------------------------------------------------
+DF_SDK_API int DfSelfTest(char* pTest, int length)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SELF_TEST, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer(pTest, length, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
 // --------------------------------------------------------------
 DF_SDK_API int DfGetFirmwareVersion(char* pVersion, int length)
 {
