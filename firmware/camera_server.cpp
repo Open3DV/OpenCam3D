@@ -477,6 +477,249 @@ int handle_cmd_set_auto_exposure_base_board(int client_sock)
     return DF_SUCCESS;
 }
 
+int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int buffer_size = 1920 * 1200;
+    char *buffer = new char[buffer_size];
+
+    ConfigureAutoExposure auto_exposure_machine;
+    float average_pixel = 0;
+    float over_exposure_rate = 0;
+
+    float high_max_over_rate = 1.0;
+    float high_min_over_rate = 0.7;
+
+    float low_max_over_rate = 0.3;
+    float low_min_over_rate = 0.2;
+ 
+    cv::Mat brightness_mat(1200,1920,CV_8U,cv::Scalar(0));
+
+
+    int current_exposure = (min_camera_exposure_ + max_camera_exposure_)/2;
+
+    int adjust_exposure_val = current_exposure;
+
+    int low_limit_exposure = min_camera_exposure_;
+    int high_limit_exposure = max_camera_exposure_;
+
+    //电流值设置到最大
+    if (brightness_current < 1023 && current_exposure != min_camera_exposure_)
+    {
+        brightness_current = 1023;
+        lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current);
+        system_config_settings_machine_.Instance().config_param_.led_current = brightness_current;
+    }
+
+    //发光，自定义曝光时间
+    lc3010.enable_solid_field();
+    bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+    auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
+
+
+    int iterations_num = 0;
+    while(iterations_num< 16)
+    {
+        if(average_pixel> 127.5 && average_pixel < 128.5)
+        {
+            break;
+        }
+
+        if(average_pixel<= 127.5)
+        {
+            //偏暗
+            low_limit_exposure = current_exposure;
+            adjust_exposure_val /= 2;
+            current_exposure = current_exposure + adjust_exposure_val;
+        }
+        else if(average_pixel >= 128.5)
+        {
+            //偏亮
+            high_limit_exposure = current_exposure;
+            adjust_exposure_val /= 2;
+            current_exposure = current_exposure - adjust_exposure_val;
+
+        }
+
+        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+        auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
+
+        iterations_num++;
+
+        LOG(INFO) << "adjust_exposure_val: " << adjust_exposure_val;
+        LOG(INFO) << "current_exposure: " << current_exposure;
+        LOG(INFO) << "low_limit_exposure: " << low_limit_exposure;
+        LOG(INFO) << "high_limit_exposure: " << high_limit_exposure;
+        LOG(INFO) << "iterations_num: " << iterations_num;
+        LOG(INFO) << "over_exposure_rate: " << over_exposure_rate;
+        LOG(INFO) << "average_pixel: " << average_pixel;
+        LOG(INFO) << "";
+    }
+    
+    /**************************************************************************************************/
+
+    if(average_pixel> 127.5 && average_pixel < 128.5)
+    {
+
+        //根据过曝光情况调整
+        if (over_exposure_rate < low_min_over_rate)
+        {
+            //需要加亮
+            low_limit_exposure = current_exposure;
+            high_limit_exposure = max_camera_exposure_;
+            current_exposure = (high_limit_exposure - low_limit_exposure) / 2;
+            adjust_exposure_val = current_exposure;
+        }
+        else if (over_exposure_rate > high_max_over_rate)
+        {
+            //需要变暗
+            low_limit_exposure = min_camera_exposure_;
+            high_limit_exposure = current_exposure;
+            current_exposure = (high_limit_exposure - low_limit_exposure) / 2;
+            adjust_exposure_val = current_exposure;
+        }
+
+        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
+
+        
+        iterations_num = 0;
+        while (iterations_num < 16)
+        {
+            if (over_exposure_rate >= low_min_over_rate && over_exposure_rate < high_max_over_rate)
+            {
+                break;
+            }
+
+            if (over_exposure_rate < low_min_over_rate)
+            {
+                //偏暗
+                low_limit_exposure = current_exposure;
+                adjust_exposure_val /= 2;
+                current_exposure = current_exposure + adjust_exposure_val;
+            }
+            else if (over_exposure_rate >= high_max_over_rate)
+            {
+                //偏亮
+                high_limit_exposure = current_exposure;
+                adjust_exposure_val /= 2;
+                current_exposure = current_exposure - adjust_exposure_val;
+            }
+
+            capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
+
+            iterations_num++;
+
+            LOG(INFO) << "adjust_exposure_val: " << adjust_exposure_val;
+            LOG(INFO) << "current_exposure: " << current_exposure;
+            LOG(INFO) << "low_limit_exposure: " << low_limit_exposure;
+            LOG(INFO) << "high_limit_exposure: " << high_limit_exposure;
+            LOG(INFO) << "iterations_num: " << iterations_num;
+            LOG(INFO) << "over_exposure_rate: " << over_exposure_rate;
+            LOG(INFO) << "average_pixel: " << average_pixel;
+            LOG(INFO) << "";
+        }
+    }
+    else if(average_pixel>= 128.5)
+    {
+        //太亮、曝光时间设置成最小值、调整led值
+        current_exposure = min_camera_exposure_;
+
+        int low_limit_led = 0;
+        int high_limit_led = 1023;
+
+        int current_led = (high_limit_led - low_limit_led) / 2;
+        int adjust_led_val = current_led;
+
+        brightness_current = current_led;
+        lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
+
+        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
+
+        iterations_num = 0;
+        while (iterations_num < 10)
+        {
+            if (average_pixel > 127.5 && average_pixel < 128.5)
+            {
+                break;
+            }
+
+        if(average_pixel<= 127.5)
+        {
+            //偏暗
+            low_limit_led = current_led;
+            adjust_led_val /= 2;
+            current_led = current_led + adjust_led_val;
+        }
+        else if(average_pixel >= 128.5)
+        {
+            //偏亮
+            high_limit_led = current_led;
+            adjust_led_val /= 2;
+            current_led = current_led - adjust_led_val;
+
+        }
+
+        brightness_current = current_led;
+        lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
+        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+        auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
+
+        iterations_num++;
+
+        LOG(INFO) << "adjust_led_val: " << adjust_led_val;
+        LOG(INFO) << "current_exposure: " << current_exposure;
+        LOG(INFO) << "low_limit_led: " << low_limit_exposure;
+        LOG(INFO) << "high_limit_led: " << high_limit_led;
+        LOG(INFO) << "iterations_num: " << iterations_num;
+        LOG(INFO) << "over_exposure_rate: " << over_exposure_rate;
+        LOG(INFO) << "average_pixel: " << average_pixel;
+        LOG(INFO) << "";
+        }
+
+    }
+    else if(average_pixel< 127.5)
+    {
+        //太暗，曝光设置成最大值
+        current_exposure = max_camera_exposure_;
+        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+    }
+
+    /***************************************************************************************************/
+
+    
+    lc3010.disable_solid_field();
+
+    system_config_settings_machine_.Instance().config_param_.led_current = brightness_current;
+
+    int auto_exposure = current_exposure;
+    int auto_led = brightness_current;
+
+    int ret = send_buffer(client_sock, (char*)(&auto_exposure), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+ 
+    ret = send_buffer(client_sock, (char*)(&auto_led), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+
+
+    return DF_SUCCESS;
+
+}
+
 int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -3522,7 +3765,7 @@ int handle_commands(int client_sock)
 	    break;
 	case DF_CMD_SET_AUTO_EXPOSURE_BASE_ROI:
 	    LOG(INFO)<<"DF_CMD_SET_AUTO_EXPOSURE_BASE_ROI";   
-    	handle_cmd_set_auto_exposure_base_roi_pid(client_sock);
+    	handle_cmd_set_auto_exposure_base_roi_half(client_sock);
 	    break;
 	case DF_CMD_SET_AUTO_EXPOSURE_BASE_BOARD:
 	    LOG(INFO)<<"DF_CMD_SET_AUTO_EXPOSURE_BASE_BOARD";   
