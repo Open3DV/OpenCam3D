@@ -23,9 +23,10 @@
 #include "configure_standard_plane.h"
 #include "../test/LookupTableFunction.h" 
 #include "configure_auto_exposure.h"
+#include <JetsonGPIO.h>
 
-INITIALIZE_EASYLOGGINGPP 
-
+INITIALIZE_EASYLOGGINGPP
+#define OUTPUT_PIN     12       // BOARD pin 32, BCM pin 12
 
 std::random_device rd;
 std::mt19937 rand_num(rd());
@@ -3560,6 +3561,9 @@ int handle_commands(int client_sock)
         return DF_FAILED;
     }
 
+    // set led indicator
+	GPIO::output(OUTPUT_PIN, GPIO::HIGH); 
+
     switch(command)
     {
 	case DF_CMD_CONNECT:
@@ -3780,6 +3784,9 @@ int handle_commands(int client_sock)
 	    break;
     }
 
+    // close led indicator
+	GPIO::output(OUTPUT_PIN, GPIO::LOW); 
+
     close(client_sock);
     return DF_SUCCESS;
 }
@@ -3787,6 +3794,10 @@ int handle_commands(int client_sock)
 int init()
 {
     // readSystemConfig();
+
+    // init led indicator
+	GPIO::setmode(GPIO::BCM);                       // BCM mode
+	GPIO::setup(OUTPUT_PIN, GPIO::OUT, GPIO::LOW); // output pin, set to HIGH level
 
     brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
 
@@ -3803,7 +3814,6 @@ int init()
 			 param.rotation_matrix, 
 			 param.translation_matrix); 
 
-  
 	LookupTableFunction lookup_table_machine_; 
 	lookup_table_machine_.setCalibData(param);
 
@@ -3836,8 +3846,6 @@ int init()
         float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
         reconstruct_set_baseline(b);
     }
-
-
 
     float temperature_val = read_temperature(0); 
     LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
@@ -3877,6 +3885,7 @@ int main()
     }
 
     close(server_sock);
+	GPIO::cleanup();
 
     return 0;
 }
