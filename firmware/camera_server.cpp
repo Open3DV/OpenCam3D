@@ -1951,11 +1951,11 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
 
     }
 
-    cv::Mat brightness_mat(1200, 1920, CV_8UC1, brightness);
-    float average_pixel = 0;
-    float over_exposure_rate = 0;
-    ConfigureAutoExposure auto_exposure_machine;
-    auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
+    // cv::Mat brightness_mat(1200, 1920, CV_8UC1, brightness);
+    // float average_pixel = 0;
+    // float over_exposure_rate = 0;
+    // ConfigureAutoExposure auto_exposure_machine;
+    // auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
     int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
@@ -3791,7 +3791,8 @@ int init()
     brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
 
     camera.openCamera();
-    camera.warmupCamera();
+    // camera.warmupCamera();
+    camera.switchToScanMode();
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
     cuda_malloc_memory();
     int ret = read_calib_param();
