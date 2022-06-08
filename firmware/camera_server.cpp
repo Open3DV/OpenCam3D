@@ -3547,6 +3547,27 @@ int handle_cmd_self_test(int client_sock)
     return DF_SUCCESS;
 }
 
+int handle_get_projector_temperature(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"get projector temperature!";
+
+    float temperature = get_projector_temperature();
+    int ret = send_buffer(client_sock, (char*)(&temperature), sizeof(temperature));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
+
+
 /*****************************************************************************************/
 int handle_commands(int client_sock)
 {
@@ -3777,6 +3798,10 @@ int handle_commands(int client_sock)
 	case DF_CMD_SELF_TEST:
 	    LOG(INFO)<<"DF_CMD_SELF_TEST";   
     	handle_cmd_self_test(client_sock);
+	    break;
+	case DF_CMD_GET_PROJECTOR_TEMPERATURE:
+	    LOG(INFO)<<"DF_CMD_GET_PROJECTOR_TEMPERATURE";
+	    handle_get_projector_temperature(client_sock);
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
