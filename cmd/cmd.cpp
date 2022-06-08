@@ -106,6 +106,9 @@ open_cam3d.exe --get-camera-version --ip 192.168.x.x\n\
 27.Self-test: \n\
 open_cam3d.exe --self-test --ip 192.168.x.x\n\
 \n\
+28.Get projector temperature: \n\
+open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
+\n\
 ";
 
 void help_with_version(const char* help);
@@ -142,6 +145,7 @@ int get_network_bandwidth(const char* ip);
 int get_firmware_version(const char* ip);
 int get_camera_version(const char* ip);
 int self_test(const char* ip);
+int get_projector_temperature(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -183,6 +187,7 @@ enum opt_set
 	OFFSET,
 	GET_CAMERA_VERSION,
 	SELF_TEST,
+	GET_PROJECTOR_TEMPERATURE
 };
 
 static struct option long_options[] =
@@ -222,6 +227,7 @@ static struct option long_options[] =
 	{"set-offset-param",no_argument,NULL,SET_OFFSET},
 	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION},
 	{"self-test",no_argument,NULL,SELF_TEST},
+	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE},
 };
 
 
@@ -382,6 +388,9 @@ int main(int argc, char* argv[])
 	break;
 	case SELF_TEST:
 		self_test(camera_id);
+		break;
+	case GET_PROJECTOR_TEMPERATURE:
+		get_projector_temperature(camera_id);
 		break;
 	default:
 		break;
@@ -1376,6 +1385,24 @@ int self_test(const char* ip)
 	char test[500] = { '\0' };
 	DfSelfTest(test, sizeof(test));
 	std::cout << "Self-test: " << test << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int get_projector_temperature(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	float temperature = 0;
+	DfGetProjectorTemperature(temperature);
+	std::cout << "Projector temperature: " << temperature << std::endl;
 
 	DfDisconnectNet();
 	return 1;

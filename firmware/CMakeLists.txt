@@ -9,7 +9,6 @@ set(OPENCV_DIR /home/dexforce/OpenCam3D/3rdparty)
 
 message(${PROJECT_SOURCE_DIR})
 
-  
 include_directories(${OPENCV_DIR}/linux-opencv-4.4.0/include)
 include_directories(${OPENCV_DIR}/linux-opencv-4.4.0/modules/core/include)
 include_directories(${OPENCV_DIR}/linux-opencv-4.4.0/modules/highgui/include)
@@ -25,7 +24,6 @@ include_directories(${OPENCV_DIR}/linux-opencv-4.4.0/modules/objdetect/include)
 include_directories(${OPENCV_DIR}/linux-opencv-4.4.0/modules/photo/include)
 include_directories(${OPENCV_DIR}/linux-opencv-4.4.0/modules/stitching/include)
 include_directories(${OPENCV_DIR}/linux-opencv-4.4.0/modules/video/include)
- 
 
 link_directories(${OPENCV_DIR}/linux-opencv-4.4.0/lib)
 link_libraries(${OPENCV_DIR}/linux-opencv-4.4.0/lib/libopencv_core.so.4.4)
@@ -42,6 +40,10 @@ link_libraries(${OPENCV_DIR}/linux-opencv-4.4.0/lib/libopencv_objdetect.so.4.4)
 link_libraries(${OPENCV_DIR}/linux-opencv-4.4.0/lib/libopencv_photo.so.4.4)
 link_libraries(${OPENCV_DIR}/linux-opencv-4.4.0/lib/libopencv_stitching.so.4.4)
 link_libraries(${OPENCV_DIR}/linux-opencv-4.4.0/lib/libopencv_video.so.4.4)
+
+include_directories(${OPENCV_DIR}/JetsonGPIO/include)
+link_directories(${OPENCV_DIR}/JetsonGPIO/lib)
+link_libraries(${OPENCV_DIR}/JetsonGPIO/lib/libJetsonGPIO.so.1)
 
 include_directories(/usr/local/cuda-10.2/targets/aarch64-linux/include/)
 link_libraries(/usr/lib/libgxiapi.so)

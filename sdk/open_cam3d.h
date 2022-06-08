@@ -462,3 +462,10 @@ DF_SDK_API int DfSetParamBilateralFilter(int use, int param_d);
 //输出参数： use（开关：1为开、0为关）、param_d（平滑系数：3、5、7、9、11）
 //返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
 DF_SDK_API int DfGetParamBilateralFilter(int& use, int& param_d);
+
+//函数名： DfGetProjectorTemperature
+//功能： 获取光机温度，以热敏电阻的阻值形式表示
+//输入参数：无
+//输出参数：阻值，单位千欧
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetProjectorTemperature(float& temperature);

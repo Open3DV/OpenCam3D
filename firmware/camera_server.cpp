@@ -23,9 +23,10 @@
 #include "configure_standard_plane.h"
 #include "../test/LookupTableFunction.h" 
 #include "configure_auto_exposure.h"
+#include <JetsonGPIO.h>
 
-INITIALIZE_EASYLOGGINGPP 
-
+INITIALIZE_EASYLOGGINGPP
+#define OUTPUT_PIN     12       // BOARD pin 32, BCM pin 12
 
 std::random_device rd;
 std::mt19937 rand_num(rd());
@@ -3546,6 +3547,27 @@ int handle_cmd_self_test(int client_sock)
     return DF_SUCCESS;
 }
 
+int handle_get_projector_temperature(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+
+    LOG(INFO)<<"get projector temperature!";
+
+    float temperature = lc3010.get_projector_temperature();
+    int ret = send_buffer(client_sock, (char*)(&temperature), sizeof(temperature));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+    
+    return DF_SUCCESS;
+}
+
+
 /*****************************************************************************************/
 int handle_commands(int client_sock)
 {
@@ -3559,6 +3581,9 @@ int handle_commands(int client_sock)
 	    close(client_sock);
         return DF_FAILED;
     }
+
+    // set led indicator
+	GPIO::output(OUTPUT_PIN, GPIO::HIGH); 
 
     switch(command)
     {
@@ -3774,11 +3799,18 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SELF_TEST";   
     	handle_cmd_self_test(client_sock);
 	    break;
+	case DF_CMD_GET_PROJECTOR_TEMPERATURE:
+	    LOG(INFO)<<"DF_CMD_GET_PROJECTOR_TEMPERATURE";
+	    handle_get_projector_temperature(client_sock);
+	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
         handle_cmd_unknown(client_sock);
 	    break;
     }
+
+    // close led indicator
+	GPIO::output(OUTPUT_PIN, GPIO::LOW); 
 
     close(client_sock);
     return DF_SUCCESS;
@@ -3787,6 +3819,10 @@ int handle_commands(int client_sock)
 int init()
 {
     // readSystemConfig();
+
+    // init led indicator
+	GPIO::setmode(GPIO::BCM);                       // BCM mode
+	GPIO::setup(OUTPUT_PIN, GPIO::OUT, GPIO::LOW); // output pin, set to HIGH level
 
     brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
 
@@ -3804,7 +3840,6 @@ int init()
 			 param.rotation_matrix, 
 			 param.translation_matrix); 
 
-  
 	LookupTableFunction lookup_table_machine_; 
 	lookup_table_machine_.setCalibData(param);
 
@@ -3837,8 +3872,6 @@ int init()
         float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
         reconstruct_set_baseline(b);
     }
-
-
 
     float temperature_val = read_temperature(0); 
     LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
@@ -3878,6 +3911,7 @@ int main()
     }
 
     close(server_sock);
+	GPIO::cleanup();
 
     return 0;
 }
