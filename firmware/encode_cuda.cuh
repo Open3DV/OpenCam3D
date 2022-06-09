@@ -167,6 +167,9 @@ __global__ void cuda_merge_hdr(const float*  depth_map_0,const float*  depth_map
 __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned char * const d_in_1, unsigned char * const d_in_2, unsigned char * const d_in_3,unsigned char* const d_in_4,unsigned char* const d_in_5,
 	uint32_t img_height, uint32_t img_width,float * const d_out, float * const confidence);
 
+__global__ void cuda_six_step_phase_shift_texture(float * const d_out, float * const confidence);
+
+__global__ void cuda_four_step_phase_shift_texture(int serial_flag,float * const d_out, float * const confidence);
 
 //kernel
 __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigned char * const d_in_1, unsigned char * const d_in_2, unsigned char * const d_in_3,

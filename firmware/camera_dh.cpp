@@ -292,10 +292,11 @@ bool CameraDh::captureFrame04ToGpu()
                 }
                 break;
                 case 18:
-                {   
-   
-                    parallel_cuda_compute_phase(3); 
+                {    
+                    parallel_cuda_compute_phase(3);  
                     parallel_cuda_unwrap_phase(3);   
+
+ 
 
                     // if (phase_compensate_value != 0)
                     // {
@@ -309,8 +310,8 @@ bool CameraDh::captureFrame04ToGpu()
                     // }
                     
                     generate_pointcloud_base_table();
-                    
-            LOG(INFO) << "generate_pointcloud_base_table";
+                    //  cudaDeviceSynchronize();
+                     LOG(INFO) << "generate_pointcloud_base_table";
 
 
 

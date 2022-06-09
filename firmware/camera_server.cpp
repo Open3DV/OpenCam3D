@@ -1937,6 +1937,7 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
   
     camera.copyBrightness((char*)brightness);
     // reconstruct_copy_brightness_from_cuda_memory(brightness); 
+    LOG(INFO)<<"copy depth";
     reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
  
     LOG(INFO)<<"Reconstruct Frame04 Finished!";
