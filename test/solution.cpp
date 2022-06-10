@@ -801,6 +801,61 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 }
 
 
+bool  DfSolution::findMaskBaseConfidence(cv::Mat confidence_map, int threshold, cv::Mat& mask)
+{
+	if (confidence_map.empty())
+	{
+		return true;
+	}
+
+	int nr = confidence_map.rows;
+	int nc = confidence_map.cols;
+
+
+	cv::Mat bin_map;
+
+	cv::threshold(confidence_map, bin_map, threshold, 255, cv::THRESH_BINARY);
+	bin_map.convertTo(bin_map, CV_8UC1);
+
+	std::vector<std::vector<cv::Point>> contours;
+
+	cv::findContours(
+		bin_map,
+		contours,
+		cv::noArray(),
+		cv::RETR_EXTERNAL,
+		cv::CHAIN_APPROX_SIMPLE
+	);
+
+	std::vector<cv::Point> max_contours;
+	int max_contours_size = 0;
+
+	for (int i = 0; i < contours.size(); i++)
+	{
+		if (contours[i].size() > max_contours_size)
+		{
+			max_contours_size = contours[i].size();
+			max_contours = contours[i];
+		}
+
+	}
+
+	contours.clear();
+	contours.push_back(max_contours);
+
+	cv::Mat show_contours(nr, nc, CV_8U, cv::Scalar(0));
+	cv::drawContours(show_contours, contours, -1, cv::Scalar(255), -1);
+
+	cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+	cv::Mat result;
+	cv::erode(show_contours, result, element);
+
+	mask = result.clone();
+
+
+	return true;
+}
+
 bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path)
 {
 	/***********************************************************************************/
@@ -906,6 +961,9 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	encode_machine_.selectMaskBaseConfidence(ver_confidence_map_6, confidence_val, unwrap_mask);
 	encode_machine_.maskMap(unwrap_mask, unwrap_ver);
 
+	cv::Mat confidence_mask;
+	findMaskBaseConfidence(ver_confidence_map_6, 15, confidence_mask);
+	encode_machine_.maskMap(confidence_mask, unwrap_ver);
 
 	cv::Mat texture_map = patterns[18];
 	cv::Mat undistort_img;
