@@ -28,6 +28,7 @@ void reconstruct_set_baseline(float b);
 void reconstruct_copy_talbe_to_cuda_memory(float* mapping,float* rotate_x,float* rotate_y,float* r_1);
 void reconstruct_copy_pointcloud_from_cuda_memory(float* pointcloud);
 void reconstruct_copy_depth_from_cuda_memory(float* depth);
+void reconstruct_copy_confidence_from_cuda_memory(float* confidence);
 void reconstruct_copy_brightness_from_cuda_memory(unsigned char* brightness);
 
 __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,float * const xL_rotate_y,float * const single_pattern_mapping,float * const R_1,float * const confidence_map,
