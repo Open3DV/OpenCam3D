@@ -30,6 +30,8 @@ public:
 
 	bool captureRawTest(int num,char* buffer);
 
+	bool CaptureSelfTest();
+
 	bool switchToSingleShotMode();
 
 	bool switchToScanMode();

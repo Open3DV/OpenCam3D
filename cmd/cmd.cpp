@@ -66,6 +66,7 @@ open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
 \n\
 14.Get Repetition Frame 03: \n\
 open_cam3d.exe --get-repetition-frame-03 --count 6 --ip 192.168.x.x --path ./frame03_repetition\n\
+\n\
 15.Load pattern data: \n\
 open_cam3d.exe --load-pattern-data --ip 192.168.x.x\n\
 \n\
@@ -105,6 +106,12 @@ open_cam3d.exe --get-camera-version --ip 192.168.x.x\n\
 27.Set Auto Exposure: \n\
 open_cam3d.exe --set-auto-exposure-roi  --ip 192.168.x.x\n\
 \n\
+28.Self-test: \n\
+open_cam3d.exe --self-test --ip 192.168.x.x\n\
+\n\
+29.Get projector temperature: \n\
+open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
+\n\
 ";
 
 void help_with_version(const char* help);
@@ -142,6 +149,8 @@ int get_firmware_version(const char* ip);
 int get_camera_version(const char* ip);
 int set_auto_exposure_base_roi(const char* ip);
 int set_auto_exposure_base_board(const char* ip);
+int self_test(const char* ip);
+int get_projector_temperature(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -181,9 +190,11 @@ enum opt_set
 	GET_CAMERA_EXPOSURE,
 	SET_OFFSET,
 	OFFSET,
-	GET_CAMERA_VERSION,
+	GET_CAMERA_VERSION, 
 	SET_AUTO_EXPOSURE_BASE_ROI,
-	SET_AUTO_EXPOSURE_BASE_BOARD,
+	SET_AUTO_EXPOSURE_BASE_BOARD, 
+	SELF_TEST,
+	GET_PROJECTOR_TEMPERATURE 
 };
 
 static struct option long_options[] =
@@ -221,9 +232,11 @@ static struct option long_options[] =
 	{"set-camera-exposure-param",no_argument,NULL,SET_CAMERA_EXPOSURE},
 	{"get-camera-exposure-param",no_argument,NULL,GET_CAMERA_EXPOSURE},
 	{"set-offset-param",no_argument,NULL,SET_OFFSET},
-	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION},
+	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION}, 
 	{"set-auto-exposure-roi",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_ROI},
-	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD},
+	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD}, 
+	{"self-test",no_argument,NULL,SELF_TEST},
+	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE}, 
 };
 
 
@@ -381,7 +394,7 @@ int main(int argc, char* argv[])
 	{
 		get_camera_version(camera_id);
 	}
-	break;
+	break; 
 	case SET_AUTO_EXPOSURE_BASE_ROI:
 	{
 		set_auto_exposure_base_roi(camera_id);
@@ -391,7 +404,13 @@ int main(int argc, char* argv[])
 	{
 		set_auto_exposure_base_board(camera_id);
 	}
-	break;
+	break; 
+	case SELF_TEST:
+		self_test(camera_id);
+		break;
+	case GET_PROJECTOR_TEMPERATURE:
+		get_projector_temperature(camera_id);
+		break; 
 	default:
 		break;
 	}
@@ -1416,5 +1435,40 @@ int get_camera_version(const char* ip)
 	DfDisconnectNet();
 
 	std::cout << "Camera Version: " << version << std::endl;
+	return 1;
+}
+
+int self_test(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED) {
+		return 0;
+	}
+
+	char test[500] = { '\0' };
+	DfSelfTest(test, sizeof(test));
+	std::cout << "Self-test: " << test << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int get_projector_temperature(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	float temperature = 0;
+	DfGetProjectorTemperature(temperature);
+	std::cout << "Projector temperature: " << temperature << std::endl;
+
+	DfDisconnectNet();
 	return 1;
 }

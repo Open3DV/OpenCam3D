@@ -1,7 +1,8 @@
 #include "camera_dh.h"
 #include "lightcrafter3010.h"
 #include "easylogging++.h"
-#include "encode_cuda.cuh"
+#include "encode_cuda.cuh" 
+#include <thread>
 
 extern LightCrafter3010 lc3010;
 
@@ -223,23 +224,22 @@ if (normal_phase.empty() || brightness.empty())
 
 bool CameraDh::captureFrame04ToGpu()
 {
-    switchToScanMode();
-  
+    // switchToScanMode();
+    // LOG(INFO) << "switchToScanMode";
+
     PGX_FRAME_BUFFER pFrameBuffer; 
     GX_STATUS status = GX_STATUS_SUCCESS;
-    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
-    status = GXStreamOn(hDevice_);
-
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON); 
+    status = GXStreamOn(hDevice_); 
  
-
     int n = 0;
     if (status == GX_STATUS_SUCCESS)
     {
-        lc3010.start_pattern_sequence();
+        lc3010.start_pattern_sequence(); 
         for (int i = 0; i < 19; i++)
         {
             LOG(INFO) << "receiving " << i << "th image";
-            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000000);
+            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
             LOG(INFO) << "status=" << status;
             if (status == GX_STATUS_SUCCESS)
             {
@@ -247,14 +247,16 @@ bool CameraDh::captureFrame04ToGpu()
                 {
                     int img_rows = pFrameBuffer->nHeight;
                     int img_cols = pFrameBuffer->nWidth;
-                    int img_size = img_rows * img_cols;
-                    // memcpy(buffer + img_size * i, pFrameBuffer->pImgBuf, img_size);
-                    parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,i);
+                    int img_size = img_rows * img_cols; 
+         
+                    parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,i); 
 
                     if(18 == i && 1 == generate_brigntness_model_)
                     {
-                        memcpy(brightness_buff_, pFrameBuffer->pImgBuf, img_size);
-                        status = GXStreamOff(hDevice_); 
+                        memcpy(brightness_buff_, pFrameBuffer->pImgBuf, img_size); 
+
+                        std::thread stop_thread(GXStreamOff,hDevice_);
+                        stop_thread.detach();  
                     }
                 }
 
@@ -265,40 +267,53 @@ bool CameraDh::captureFrame04ToGpu()
                 switch (i)
                 {
                 case 4:
-                {  
-                    parallel_cuda_compute_phase(0);
+                {    
+                    parallel_cuda_compute_phase(0);   
                 }
                 break;
                 case 8:
-                {  
-                    parallel_cuda_compute_phase(1);
-                    parallel_cuda_unwrap_phase(1);
+                {    
+                    parallel_cuda_compute_phase(1); 
+                }
+                break;
+                case 10:
+                {     
+                    parallel_cuda_unwrap_phase(1);  
                 }
                 break;
                 case 12:
-                {  
-                    parallel_cuda_compute_phase(2);
-                    parallel_cuda_unwrap_phase(2);
+                {    
+                    parallel_cuda_compute_phase(2); 
+                }
+                break;
+                case 15:
+                {     
+                    parallel_cuda_unwrap_phase(2);                  
                 }
                 break;
                 case 18:
-                {  
-                    parallel_cuda_compute_phase(3);
-                    parallel_cuda_unwrap_phase(3); 
-                    // cudaDeviceSynchronize();
+                {    
+                    parallel_cuda_compute_phase(3);  
+                    parallel_cuda_unwrap_phase(3);   
 
-                    if (phase_compensate_value != 0)
-                    {
-                        LOG(INFO) << "start offset";
-                        cv::Mat unwrap_map_x(1200, 1920, CV_32FC1, cv::Scalar(0));
-                        cv::Mat brightness_map(1200, 1920, CV_8UC1, brightness_buff_);
-                        parallel_cuda_copy_unwrap_phase_from_gpu(0, (float *)unwrap_map_x.data);
-                        compensatePhaseBaseScharr(unwrap_map_x, brightness_map, phase_compensate_value * 128);
-                        parallel_cuda_copy_unwrap_phase_to_gpu(0, (float *)unwrap_map_x.data); 
-                        LOG(INFO) << "finished offset";
-                    }
+ 
 
+                    // if (phase_compensate_value != 0)
+                    // {
+                    //     LOG(INFO) << "start offset";
+                    //     cv::Mat unwrap_map_x(1200, 1920, CV_32FC1, cv::Scalar(0));
+                    //     cv::Mat brightness_map(1200, 1920, CV_8UC1, brightness_buff_);
+                    //     parallel_cuda_copy_unwrap_phase_from_gpu(0, (float *)unwrap_map_x.data);
+                    //     compensatePhaseBaseScharr(unwrap_map_x, brightness_map, phase_compensate_value * 128);
+                    //     parallel_cuda_copy_unwrap_phase_to_gpu(0, (float *)unwrap_map_x.data); 
+                    //     LOG(INFO) << "finished offset";
+                    // }
+                    
                     generate_pointcloud_base_table();
+                    //  cudaDeviceSynchronize();
+                     LOG(INFO) << "generate_pointcloud_base_table";
+
+
 
                     switch (generate_brigntness_model_)
                     { 
@@ -312,7 +327,8 @@ bool CameraDh::captureFrame04ToGpu()
                             //发光，自定义曝光时间 
                             lc3010.enable_solid_field();
                             bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_,brightness_buff_);
-                            lc3010.disable_solid_field();
+                            lc3010.disable_solid_field();   
+                            switchToScanMode(); 
                              
                         }
                         break;
@@ -325,6 +341,7 @@ bool CameraDh::captureFrame04ToGpu()
                             switchToSingleShotMode();
                             //不发光，自定义曝光时间  
                             bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_,brightness_buff_); 
+                            switchToScanMode(); 
                         }
                         break;
                     
@@ -341,11 +358,16 @@ bool CameraDh::captureFrame04ToGpu()
                 }
  
             }
+            else
+            {
+                status = GXStreamOff(hDevice_); 
+                return false;
+            }
         }
     }
     else
     {
-        false;
+        return false;
     }
 
  
@@ -680,7 +702,7 @@ bool CameraDh::captureSingleImage(char* buffer)
     if (status == GX_STATUS_SUCCESS)
     {
 	    status = GXSendCommand(hDevice_, GX_COMMAND_TRIGGER_SOFTWARE);
-        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000000);
+        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
         if (status == GX_STATUS_SUCCESS)
         {
             if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
@@ -707,38 +729,75 @@ bool CameraDh::captureSingleImage(char* buffer)
     return true;
 }
 
+bool CameraDh::CaptureSelfTest()
+{
+    bool ret = false;
+    switchToScanMode();
+
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
+    LOG(INFO) << "SetEnum status 1 = " << status;
+
+    status = GXStreamOn(hDevice_);
+    LOG(INFO) << "StreamOn status 2 = " << status;
+
+    if (status == GX_STATUS_SUCCESS)
+    {
+        lc3010.start_pattern_sequence();
+
+        LOG(INFO) << "self-test start to receive one image";
+        
+        PGX_FRAME_BUFFER pFrameBuffer;
+        status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+        LOG(INFO) << "DQBuf status 3 = " << status;
+
+        if (status == GX_STATUS_SUCCESS)
+        {
+            if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
+            {
+                ret = true;
+            }
+            status = GXQBuf(hDevice_, pFrameBuffer);
+            LOG(INFO) << "QBuf status 4 = " << status;
+        }
+    }
+
+    status = GXStreamOff(hDevice_);
+    LOG(INFO) << "StreamOff status 5 = " << status;
+
+    return ret;
+}
 
 bool CameraDh::captureRawTest(int num,char* buffer)
 {
     switchToScanMode();
 
-    //�� �� GXDQBuf �� �� �� �� ��
     PGX_FRAME_BUFFER pFrameBuffer;
-    //�� ��
     GX_STATUS status = GX_STATUS_SUCCESS;
     status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
     status = GXStreamOn(hDevice_);
+
     int n=0;
     if (status == GX_STATUS_SUCCESS)
     {
-	lc3010.start_pattern_sequence();
-	for (int i=0; i<num; i++)
-	{
-	    LOG(INFO)<<"receiving "<<i<<"th image";
+        lc3010.start_pattern_sequence();
+        for (int i=0; i<num; i++)
+        {
+            LOG(INFO)<<"receiving "<<i<<"th image";
             status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
-	    LOG(INFO)<<"status="<<status;
+            LOG(INFO)<<"status="<<status;
             if (status == GX_STATUS_SUCCESS)
             {
                 if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
                 {
                     int img_rows = pFrameBuffer->nHeight;
                     int img_cols = pFrameBuffer->nWidth;
-		    int img_size = img_rows*img_cols;
-		    memcpy(buffer+img_size*i, pFrameBuffer->pImgBuf, img_size);
-	        }
+                    int img_size = img_rows*img_cols;
+                    memcpy(buffer+img_size*i, pFrameBuffer->pImgBuf, img_size);
+                }
                 status = GXQBuf(hDevice_, pFrameBuffer);
             }
-	}
+        }
     }
     else
     {

@@ -2,8 +2,12 @@
 #include <opencv2/core.hpp> 
 #include <opencv2/imgcodecs.hpp>
 #include <device_launch_parameters.h>
-//#include <device_functions.h>
+#include <device_functions.h>
+#include <cuda_texture_types.h>
+#include <texture_types.h>
+#include "cuda_runtime.h" 
 #include <cuda_runtime.h>
+
 #include <iostream>
 #include <stdint.h>
 #include <vector>  
@@ -49,15 +53,35 @@ unsigned char* d_repetition_patterns_list_[6*D_REPETITIONB_MAX_NUM];
 unsigned short* d_repetition_merge_patterns_list_[6];  
 /*****************************************************************************/
 
-unsigned char* d_patterns_list[36];
-unsigned char* d_brightness_;
-float* d_confidence_list[8];
-float* d_wrap_map_list[8];
-float* d_unwrap_map_list[2];
-float* d_point_cloud_map_;
-float* d_depth_map_;
-short* d_depth_map_short_;
-float* d_triangulation_error_map_;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_0;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_1;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_2;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_3;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_4;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_5;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_6;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_7;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_8;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_9;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_10;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_11;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_12;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_13;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_14;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_15;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_16;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_17;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_18;
+
+__device__ unsigned char* d_patterns_list[36];
+__device__ unsigned char* d_brightness_;
+__device__ float* d_confidence_list[8];
+__device__ float* d_wrap_map_list[8];
+__device__ float* d_unwrap_map_list[2];
+__device__ float* d_point_cloud_map_;
+__device__ float* d_depth_map_;
+__device__ short* d_depth_map_short_;
+__device__ float* d_triangulation_error_map_;
 
 unsigned char* d_mask_;
 /*********************************************************************************/
@@ -154,7 +178,7 @@ bool cuda_set_camera_version(int version)
 
 bool parallel_cuda_copy_signal_patterns(unsigned char* patterns_ptr,int serial_flag)
 {
-	CHECK(cudaMemcpyAsync(d_patterns_list[serial_flag], patterns_ptr, image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpyAsync(d_patterns_list[serial_flag], patterns_ptr, image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyHostToDevice)); 
 }
 
 bool parallel_cuda_copy_repetition_signal_patterns(unsigned char* patterns_ptr,int serial_flag)
@@ -240,33 +264,46 @@ bool parallel_cuda_compute_phase(int serial_flag)
 	{
 		case 0:
 		{ 
-			int i= 0;
-			cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 0;
+			// cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+
+				cuda_four_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> >(serial_flag,d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
 		}
 		break;
 		case 1:
 		{
 
-			int i= 4;
-			cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 4;
+			// cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+				
+				cuda_four_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> >(serial_flag,d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
 			
 		}
 		break;
 		case 2:
 		{ 
-			int i= 8;
-			cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 8;
+			// cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+				
+				cuda_four_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> >(serial_flag,d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
 		}
 		break;
 		case 3:
 		{ 
-			int i= 12; 
-			cuda_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3],d_patterns_list[i + 4],d_patterns_list[i + 5] ,
-				 image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 12; 
+			// cuda_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3],d_patterns_list[i + 4],d_patterns_list[i + 5] ,
+			// 	 image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+ 
+				cuda_six_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> > (d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+				// cudaDeviceSynchronize();
+
+				// cv::Mat phase(1200, 1920, CV_32F, cv::Scalar(0));
+				// CHECK(cudaMemcpy(phase.data, d_wrap_map_list[serial_flag], 1 * image_height_ * image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+				// cv::imwrite("phase1.tiff",phase);
 		}
 		break;
 		case 4:
@@ -313,21 +350,32 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		break;
 		case 1:
 		{ 
-			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
+			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
+            cuda_variable_phase_unwrap<< <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
 				image_height_, image_width_, d_unwrap_map_list[0]);
+            // CHECK ( cudaGetLastError () );
+
+			// cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
+			// 	image_height_, image_width_, d_unwrap_map_list[0]);
+				
 			
 		}
 		break;
 		case 2:
 		{ 
+			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_wrap_map_list[2], 4.0,
-				image_height_, image_width_, d_unwrap_map_list[0]);
+				image_height_, image_width_, d_unwrap_map_list[0]); 
+			// CHECK ( cudaGetLastError () );
 		}
 		break;
 		case 3:
 		{ 
+			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_wrap_map_list[3], 4.0,
-				image_height_, image_width_, d_unwrap_map_list[0]);
+				image_height_, image_width_, d_unwrap_map_list[0]); 
+
+			// CHECK ( cudaGetLastError () );
 		}
 		break;
 		case 4:
@@ -1126,11 +1174,36 @@ bool cuda_malloc_memory()
 	for(int i= 0;i< patterns_count_;i++)
 	{
 		cudaMalloc((void**)&d_patterns_list[i], image_height_*image_width_ * sizeof(unsigned char));
+		
+		// cudaBindTexture(0,texture_patterns_list[i],d_patterns_list[i]);
 
 		cudaMalloc((void**)&d_patterns_list_hdr_0[i], image_height_*image_width_ * sizeof(unsigned char));
 		cudaMalloc((void**)&d_patterns_list_hdr_1[i], image_height_*image_width_ * sizeof(unsigned char));
 		cudaMalloc((void**)&d_patterns_list_hdr_2[i], image_height_*image_width_ * sizeof(unsigned char));
 	}
+
+	cudaBindTexture(0,texture_patterns_0,d_patterns_list[0]);
+	cudaBindTexture(0,texture_patterns_1,d_patterns_list[1]);
+	cudaBindTexture(0,texture_patterns_2,d_patterns_list[2]);
+	cudaBindTexture(0,texture_patterns_3,d_patterns_list[3]);
+	cudaBindTexture(0,texture_patterns_4,d_patterns_list[4]);
+	cudaBindTexture(0,texture_patterns_5,d_patterns_list[5]);
+	cudaBindTexture(0,texture_patterns_6,d_patterns_list[6]);
+	cudaBindTexture(0,texture_patterns_7,d_patterns_list[7]);
+	cudaBindTexture(0,texture_patterns_8,d_patterns_list[8]);
+	cudaBindTexture(0,texture_patterns_9,d_patterns_list[9]);
+	cudaBindTexture(0,texture_patterns_10,d_patterns_list[10]);
+	cudaBindTexture(0,texture_patterns_11,d_patterns_list[11]);
+	cudaBindTexture(0,texture_patterns_12,d_patterns_list[12]);
+	cudaBindTexture(0,texture_patterns_13,d_patterns_list[13]);
+	cudaBindTexture(0,texture_patterns_14,d_patterns_list[14]);
+	cudaBindTexture(0,texture_patterns_15,d_patterns_list[15]);
+	cudaBindTexture(0,texture_patterns_16,d_patterns_list[16]);
+	cudaBindTexture(0,texture_patterns_17,d_patterns_list[17]);
+	cudaBindTexture(0,texture_patterns_18,d_patterns_list[18]);
+
+
+ 
 
 	for (int i = 0; i< wrap_count_; i++)
 	{
@@ -1209,11 +1282,32 @@ bool cuda_free_memory()
 
 	for (int i = 0; i< patterns_count_; i++)
 	{ 
+		// cudaUnbindTexture(texture_patterns_list[i]);
 		cudaFree(d_patterns_list[i]);
 		cudaFree(d_patterns_list_hdr_0[i]);
 		cudaFree(d_patterns_list_hdr_1[i]);
 		cudaFree(d_patterns_list_hdr_2[i]);
 	}
+
+	cudaUnbindTexture(texture_patterns_0);
+	cudaUnbindTexture(texture_patterns_1);
+	cudaUnbindTexture(texture_patterns_2);
+	cudaUnbindTexture(texture_patterns_3);
+	cudaUnbindTexture(texture_patterns_4);
+	cudaUnbindTexture(texture_patterns_5);
+	cudaUnbindTexture(texture_patterns_6);
+	cudaUnbindTexture(texture_patterns_7);
+	cudaUnbindTexture(texture_patterns_8);
+	cudaUnbindTexture(texture_patterns_9);
+	cudaUnbindTexture(texture_patterns_10);
+	cudaUnbindTexture(texture_patterns_11);
+	cudaUnbindTexture(texture_patterns_12);
+	cudaUnbindTexture(texture_patterns_13);
+	cudaUnbindTexture(texture_patterns_14);
+	cudaUnbindTexture(texture_patterns_15);
+	cudaUnbindTexture(texture_patterns_16);
+	cudaUnbindTexture(texture_patterns_17);
+	cudaUnbindTexture(texture_patterns_18);
 
 	for (int i = 0; i< wrap_count_; i++)
 	{ 
@@ -1841,6 +1935,82 @@ __global__ void cuda_merge_brightness(unsigned char* const d_in_0,unsigned char*
 }
 
 
+__global__ void cuda_six_step_phase_shift_texture(float * const d_out, float * const confidence)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy *  d_image_width_ + idx;
+	float s_0 =  0;
+	float s_1 =  0.866025;
+	float s_2 =  0.866025;
+	float s_3 =  0;
+	float s_4 =  -0.866025;
+	float s_5 =  -0.866025;
+	float c_0 =  1;
+	float c_1 =  0.5;
+	float c_2 =  -0.5;
+	float c_3 =  -1;
+	float c_4 =  -0.5;
+	float c_5 =  0.5;
+
+ 
+
+	unsigned char pixel_0 = tex1Dfetch(texture_patterns_12, offset);
+	unsigned char pixel_1 = tex1Dfetch(texture_patterns_13, offset);
+	unsigned char pixel_2 = tex1Dfetch(texture_patterns_14, offset);
+	unsigned char pixel_3 = tex1Dfetch(texture_patterns_15, offset);
+	unsigned char pixel_4 = tex1Dfetch(texture_patterns_16, offset);
+	unsigned char pixel_5 = tex1Dfetch(texture_patterns_17, offset);
+
+	if (idx < d_image_width_ && idy < d_image_height_)
+	{
+  
+		float a = c_0 *pixel_3 + c_1 *pixel_4 + c_2 *pixel_5 + c_3* pixel_0 +c_4*pixel_1 + c_5*pixel_2;
+		float b = s_0 *pixel_3 + s_1 *pixel_4 + s_2 *pixel_5 + s_3* pixel_0 +s_4*pixel_1 + s_5*pixel_2;
+
+
+		int over_num = 0;
+		if(pixel_0 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_1 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_2 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_3 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_4 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_5 >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 3)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
+  
+		// confidence[offset] = std::sqrt(a*a + b*b);
+		// d_out[offset] = DF_PI + std::atan2(a, b);
+	}
+}
+
 __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned char * const d_in_1, unsigned char * const d_in_2, unsigned char * const d_in_3,unsigned char* const d_in_4,unsigned char* const d_in_5,
 	uint32_t img_height, uint32_t img_width,float * const d_out, float * const confidence)
 {
@@ -1906,6 +2076,94 @@ __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned
   
 		// confidence[offset] = std::sqrt(a*a + b*b);
 		// d_out[offset] = DF_PI + std::atan2(a, b);
+	}
+}
+
+
+
+__global__ void cuda_four_step_phase_shift_texture(int serial_flag,float * const d_out, float * const confidence)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * d_image_width_ + idx;
+	unsigned char pixel_0 = 0;
+	unsigned char pixel_1 = 0;
+	unsigned char pixel_2 = 0;
+	unsigned char pixel_3 = 0;
+
+	if (idx < d_image_width_ && idy < d_image_height_)
+	{
+
+
+		switch (serial_flag)
+		{
+		case 0:
+		{
+			pixel_0 = tex1Dfetch(texture_patterns_0, offset);
+			pixel_1 = tex1Dfetch(texture_patterns_1, offset);
+			pixel_2 = tex1Dfetch(texture_patterns_2, offset);
+			pixel_3 = tex1Dfetch(texture_patterns_3, offset);
+		}
+		break;
+		case 1:
+		{
+			pixel_0 = tex1Dfetch(texture_patterns_4, offset);
+			pixel_1 = tex1Dfetch(texture_patterns_5, offset);
+			pixel_2 = tex1Dfetch(texture_patterns_6, offset);
+			pixel_3 = tex1Dfetch(texture_patterns_7, offset);
+		}
+		break;
+		case 2:
+		{
+			pixel_0 = tex1Dfetch(texture_patterns_8, offset);
+			pixel_1 = tex1Dfetch(texture_patterns_9, offset);
+			pixel_2 = tex1Dfetch(texture_patterns_10, offset);
+			pixel_3 = tex1Dfetch(texture_patterns_11, offset);
+		}
+		break;
+
+		default:
+			break;
+		}
+
+
+
+		float a = pixel_3 - pixel_1;
+		float b = pixel_0 - pixel_2;
+
+		int over_num = 0;
+		if(pixel_0 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_1 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_2 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_3 >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 1)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
+
+
+
+
+
 	}
 }
 
@@ -1999,7 +2257,7 @@ __global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * 
 
 		float unwrap_value =  2*DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
 		float err = unwrap_value - (rate * d_in_wrap_abs[idy * img_width + idx]);
-		if(abs(err)> 1.2)
+		if(abs(err)> 3.0)
 		{
 			d_out[idy * img_width + idx] = -10.0; 
 		}
@@ -2363,6 +2621,11 @@ __device__ float bilinear_interpolation(float x, float y, int map_width, float *
 		float fq12 = mapping[y2 *map_width + x1];
 		float fq22 = mapping[y2 *map_width + x2];
 
+		if (-2 == fq11 || -2 == fq21 || -2 == fq12 || -2 == fq22)
+		{
+			return -2;
+		}
+
 		float out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
 
 		return out;
@@ -2398,7 +2661,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 		float Z_L = Z * Xcr * R_1[6] + Z * Ycr * R_1[7] + Z * R_1[8];
  
   
-		if(confidence_map[serial_id] > 10 && Z_L > 100 && Z_L< 3000 && Xp > 0)
+		if(confidence_map[serial_id] > 1.0 && Z_L > 10 && Z_L< 60000 && Xp > 0)
 		{
 		    pointcloud[3 * serial_id + 0] = X_L;
 		    pointcloud[3 * serial_id + 1] = Y_L;
@@ -2409,6 +2672,16 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 		else
 		{
 		    pointcloud[3 * serial_id + 0] = 0;
+		    pointcloud[3 * serial_id + 1] = 0;
+		    pointcloud[3 * serial_id + 2] = 0; 
+			
+		    depth[serial_id] = 0; 
+		}
+
+		
+		if (-2 == Xcr || -2 == Ycr || -2 == Xpr)
+		{
+			pointcloud[3 * serial_id + 0] = 0;
 		    pointcloud[3 * serial_id + 1] = 0;
 		    pointcloud[3 * serial_id + 2] = 0; 
 			

@@ -421,6 +421,13 @@ DF_SDK_API int DfGetNetworkBandwidth(int& speed);
 //返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetFirmwareVersion(char* pVersion, int length);
 
+//函数名：  DfSelfTest
+//功能：    获取自检结果
+//输入参数：自检结果缓冲区地址，缓冲区长度
+//输出参数：自检结果
+//返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfSelfTest(char* pTest, int length);
+
 //函数名：  DfGetCameraVersion
 //功能：    获取相机型号
 //输入参数：无
@@ -462,3 +469,11 @@ DF_SDK_API int DfGetParamBilateralFilter(int& use, int& param_d);
 //输出参数：exposure(曝光)、led（电流）
 //返回值：  类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfSetAutoExposure(int flag, int& exposure, int& led);
+
+//函数名： DfGetProjectorTemperature
+//功能： 获取光机温度，以热敏电阻的阻值形式表示
+//输入参数：无
+//输出参数：阻值，单位千欧
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetProjectorTemperature(float& temperature);
+
