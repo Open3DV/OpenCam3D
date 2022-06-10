@@ -320,7 +320,7 @@ bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, doubl
 
 			k_ptr[c] = k;
 
-			if (ptr_err[c] > 1.2)
+			if (ptr_err[c] > 3.0)
 			{
 				h_unwrap_ptr[c] = -10;
 
