@@ -1969,6 +1969,67 @@ DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*))
 	return 0;
 }
 
+
+DF_SDK_API int DfSetAutoExposure(int flag, int& exposure, int& led)
+{
+	if (flag != 1 && flag != 2)
+	{
+		LOG(INFO) << "error flag:  " << flag << std::endl;
+		return DF_FAILED;
+	}
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	if (1 == flag)
+	{
+		ret = send_command(DF_CMD_SET_AUTO_EXPOSURE_BASE_ROI, g_sock);
+	}
+	else if (2 == flag)
+	{
+		ret = send_command(DF_CMD_SET_AUTO_EXPOSURE_BASE_BOARD, g_sock);
+	}
+
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = recv_buffer((char*)(&exposure), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		ret = recv_buffer((char*)(&led), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
 /*****************************************************************************************************/
 //函数名： DfSetParamBilateralFilter
 //功能： 设置双边滤波参数

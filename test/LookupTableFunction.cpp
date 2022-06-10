@@ -9,8 +9,8 @@ LookupTableFunction::LookupTableFunction()
 	image_size_.width = 1920;
 	image_size_.height = 1200;
 
-	min_low_z_ = 300;
-	max_max_z_ = 3000;
+	min_low_z_ = 10;
+	max_max_z_ = 30000;
 
 	dlp_width_ = 1920;
 	dlp_height_ = 1080;
@@ -740,6 +740,11 @@ double LookupTableFunction::Bilinear_interpolation(double x, double y, cv::Mat& 
 		double fq12 = mapping.at<double>(y2, x1);
 		double fq22 = mapping.at<double>(y2, x2);
 
+		if (-2 == fq11 || -2 == fq21 || -2 == fq12 || -2 == fq22)
+		{
+			return -2;
+		}
+
 		double out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
 
 		return out;
@@ -755,8 +760,16 @@ double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double 
 	double Xcr = Bilinear_interpolation(Xc, Yc, xL_rotate_x);
 	double Ycr = Bilinear_interpolation(Xc, Yc, xL_rotate_y);
 	double Xpr = Bilinear_interpolation(Xp, (Ycr + 1) * 2000, single_pattern_mapping);
+
+	if (-2 == Xcr || -2 == Ycr || -2 == Xpr)
+	{
+		return 0;
+	}
+
+
 	double delta_X = std::abs(Xcr - Xpr);
 	double Z = b / delta_X;
+
 
 
 	disparity = delta_X * 1000;
@@ -905,6 +918,12 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 			if (ptr_m[Xc] == 255 && Xp > 0) {
 				//������ȣ���Ҫ�õ�����ĵ�����꣬����λ�õ���Xp���꣬������������ֵ����ľ����Ӳ�����õ���b
 				ptr_d[Xc] = depth_per_point_6patterns_combine(Xc, Yc, Xp, xL_rotate_x, xL_rotate_y, single_pattern_mapping, b, d);
+
+				if (0 == ptr_d[Xc])
+				{
+					ptr_m[Xc] == 0;
+				}
+
 				ptr_disparity[Xc] = d;
 			}
 			else {
