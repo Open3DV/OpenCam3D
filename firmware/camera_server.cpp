@@ -59,6 +59,64 @@ bool saveSystemConfig()
     return system_config_settings_machine_.saveToSettings("../system_config.ini");
 }
 
+
+
+bool findMaskBaseConfidence(cv::Mat confidence_map, int threshold, cv::Mat& mask)
+{
+	if (confidence_map.empty())
+	{
+		return true;
+	}
+
+	int nr = confidence_map.rows;
+	int nc = confidence_map.cols;
+
+
+	cv::Mat bin_map;
+
+	cv::threshold(confidence_map, bin_map, threshold, 255, cv::THRESH_BINARY);
+	bin_map.convertTo(bin_map, CV_8UC1);
+
+	std::vector<std::vector<cv::Point>> contours;
+
+	cv::findContours(
+		bin_map,
+		contours,
+		cv::noArray(),
+		cv::RETR_EXTERNAL,
+		cv::CHAIN_APPROX_SIMPLE
+	);
+
+	std::vector<cv::Point> max_contours;
+	int max_contours_size = 0;
+
+	for (int i = 0; i < contours.size(); i++)
+	{
+		if (contours[i].size() > max_contours_size)
+		{
+			max_contours_size = contours[i].size();
+			max_contours = contours[i];
+		}
+
+	}
+
+	contours.clear();
+	contours.push_back(max_contours);
+
+	cv::Mat show_contours(nr, nc, CV_8U, cv::Scalar(0));
+	cv::drawContours(show_contours, contours, -1, cv::Scalar(255), -1);
+
+	cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+	cv::Mat result;
+	cv::erode(show_contours, result, element);
+
+	mask = result.clone();
+
+
+	return true;
+}
+
+
 bool set_camera_version(int version)
 {
     switch (version)
@@ -76,7 +134,7 @@ bool set_camera_version(int version)
     {
 
         cuda_set_camera_version(DFX_1800);
-        max_camera_exposure_ = 28000;
+        max_camera_exposure_ = 28000; 
         min_camera_exposure_ = 6000;
         return true;
     }
@@ -1951,6 +2009,32 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
         LOG(INFO) << "Bilateral";
 
 
+    }
+
+    //基于置信图最大轮廓滤波
+    if(true)
+    {
+        int nr = 1200;
+        int nc = 1920;
+        cv::Mat confidence_mat(nr,nc,CV_32FC1,cv::Scalar(0.));
+        reconstruct_copy_confidence_from_cuda_memory((float*)confidence_mat.data);
+        cv::Mat confidence_mask;
+        findMaskBaseConfidence(confidence_mat,15,confidence_mask);
+
+        for(int r= 0;r< nr;r++)
+        {
+            uchar* ptr_m = confidence_mask.ptr<uchar>(r);
+            for(int c = 0;c< nc;c++)
+            {
+                if(0 == ptr_m[c])
+                {
+                    depth_map[r*nc+c] = 0.0;
+                }
+            }
+
+        }
+        
+        LOG(INFO) << "filter base confidence";
     }
 
     // cv::Mat brightness_mat(1200, 1920, CV_8UC1, brightness);
