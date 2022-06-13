@@ -198,6 +198,20 @@ extern "C"
 	//输出参数： num（曝光次数）、exposure_param[6]（6个曝光参数、前num个有效）、led_param[6]（6个led亮度参数、前num个有效）
 	//返回值： 类型（int）:返回0表示获取标定参数成功;返回-1表示获取标定参数失败.
 	DF_SDK_API int DfGetParamMixedHdr(int& num, int exposure_param[6], int led_param[6]);
+
+	//函数名： DfSetParamCameraConfidence
+	//功能： 设置相机曝光时间
+	//输入参数：confidence(相机置信度)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamCameraConfidence(float confidence);
+
+	//函数名： DfGetParamCameraConfidence
+	//功能： 获取相机曝光时间
+	//输入参数： 无
+	//输出参数：confidence(相机置信度)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamCameraConfidence(float& confidence);
 }
 
 

@@ -261,8 +261,8 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 			double undistort_x = c;
 			double undistort_y = r;
 
-			//undistortPoint(c, r, camera_fx, camera_fy,
-			//	camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+			undistortPoint(c, r, camera_fx, camera_fy,
+				camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
 
 			int offset = r * camera_width_ + c;
 			if (depth_map[offset] > 0)
@@ -2270,6 +2270,90 @@ DF_SDK_API int DfSetParamOffset(float offset)
 	{
 
 		ret = send_buffer((char*)(&offset), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfSetParamCameraConfidence
+//功能： 设置相机曝光时间
+//输入参数：confidence(相机置信度)
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamCameraConfidence(float confidence)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_CAMERA_CONFIDENCE, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = send_buffer((char*)(&confidence), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamCameraConfidence
+//功能： 获取相机曝光时间
+//输入参数： 无
+//输出参数：confidence(相机置信度)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamCameraConfidence(float& confidence)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_CAMERA_CONFIDENCE, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = recv_buffer((char*)(&confidence), sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);
