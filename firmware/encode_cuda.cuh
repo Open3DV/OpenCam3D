@@ -8,12 +8,14 @@
 #include <iostream>
 #include <stdint.h>
 #include <vector>
+#include "system_config_settings.h"
 
 //滤波
 // __global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,uchar* remove_mask,float radius,int threshold);
 
 __device__ float computePointsDistance(float* p0,float* p1);
 
+void cuda_set_config(struct SystemConfigDataStruct param);
 
 bool cuda_set_camera_version(int version);
 

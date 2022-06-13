@@ -46,6 +46,7 @@ struct FirmwareConfigParam
 	int hdr_model; 
 	int use_bilateral_filter;
 	int bilateral_filter_param_d;  
+	float confidence;
 };
 
 

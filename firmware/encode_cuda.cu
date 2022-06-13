@@ -23,6 +23,7 @@ int image_height_ = 1200;
 
 __device__ int d_image_width_ = 1920;
 __device__ int d_image_height_ = 1200;
+__device__ float d_confidence_ = 1200;
 
 
 unsigned char* d_patterns_list_hdr_0[36];
@@ -130,6 +131,12 @@ dim3 blocksPerGrid((image_width_ + threadsPerBlock.x - 1) / threadsPerBlock.x,
   }\
 }
 
+
+void cuda_set_config(struct SystemConfigDataStruct param)
+{
+	
+	cudaMemcpyToSymbol(d_confidence_, &param.Instance().firwmare_param_.confidence, sizeof(float));
+}
 
 bool cuda_set_camera_version(int version)
 {
@@ -2661,7 +2668,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 		float Z_L = Z * Xcr * R_1[6] + Z * Ycr * R_1[7] + Z * R_1[8];
  
   
-		if(confidence_map[serial_id] > 1.0 && Z_L > 10 && Z_L< 60000 && Xp > 0)
+		if(confidence_map[serial_id] > d_confidence_ && Z_L > 10 && Z_L< 60000 && Xp > 0)
 		{
 		    pointcloud[3 * serial_id + 0] = X_L;
 		    pointcloud[3 * serial_id + 1] = Y_L;

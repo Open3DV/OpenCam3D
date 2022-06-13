@@ -2844,6 +2844,53 @@ int handle_cmd_get_param_camera_version(int client_sock)
 
 }
 
+
+//设置置信度参数
+int handle_cmd_set_param_confidence(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+    int confidence = 0;
+
+    int ret = recv_buffer(client_sock, (char *)(&confidence), sizeof(float) * 1);
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
+    }
+
+    // set led current 
+    system_config_settings_machine_.Instance().firwmare_param_.confidence = confidence;
+
+    LOG(INFO) << "Set Confidence: "<confidence;
+    cuda_set_config(system_config_settings_machine_);
+
+    return DF_SUCCESS;
+}
+
+//获取置信度参数
+int handle_cmd_get_param_confidence(int client_sock)
+{
+    if (check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;
+    }
+ 
+    float confidence = system_config_settings_machine_.Instance().firwmare_param_.confidence;
+ 
+
+    int ret = send_buffer(client_sock, (char *)(&confidence), sizeof(float) * 1);
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
+    }
+    return DF_SUCCESS;
+}
+
 //获取混合多曝光参数
 int handle_cmd_get_param_mixed_hdr(int client_sock)
 {
@@ -3861,6 +3908,14 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_MIXED_HDR";   
     	handle_cmd_get_param_mixed_hdr(client_sock);
 	    break;
+    case DF_CMD_GET_PARAM_CAMERA_CONFIDENCE:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_CONFIDENCE";   
+    	handle_cmd_get_param_confidence(client_sock);
+	    break;
+    case DF_CMD_SET_PARAM_CAMERA_CONFIDENCE:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_CAMERA_CONFIDENCE";   
+    	handle_cmd_set_param_confidence(client_sock);
+	    break;
 	case DF_CMD_GET_PARAM_CAMERA_VERSION:
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_VERSION";   
     	handle_cmd_get_param_camera_version(client_sock);
@@ -3964,6 +4019,8 @@ int init()
     int version= 0;
     lc3010.read_dmd_device_id(version);
     LOG(INFO)<<"read camera version: "<<version;
+
+    cuda_set_config(system_config_settings_machine_);
 
     set_camera_version(version);
     // LOG(INFO)<<"camera version: "<<DFX_800;
