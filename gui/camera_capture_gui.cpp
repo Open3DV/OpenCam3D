@@ -371,6 +371,9 @@ void CameraCaptureGui::undateSystemConfigUiData()
 		break;
 	}
 
+	ui.doubleSpinBox_confidence->setValue(firmware_config_param_.confidence);
+	ui.doubleSpinBox_gain->setValue(system_config_param_.camera_gain);
+
 }
 
 void CameraCaptureGui::setUiData()

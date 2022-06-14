@@ -801,6 +801,27 @@ bool DfSolution::testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, st
 }
 
 
+bool DfSolution::findMaskBaseConfidenceLocalGrads(cv::Mat confidence_map, float threshold, cv::Mat& mask)
+{
+	if (confidence_map.empty())
+	{
+		return true;
+	}
+
+	int nr = confidence_map.rows;
+	int nc = confidence_map.cols;
+
+	cv::Mat sobel_map;
+
+	cv::Sobel(confidence_map, sobel_map, -1, 1, 1, 3);
+
+
+	cv::Mat bin_map;
+
+	cv::threshold(confidence_map, bin_map, threshold, 255, cv::THRESH_BINARY);
+	//bin_map.convertTo(bin_map, CV_8UC1);
+}
+
 bool  DfSolution::findMaskBaseConfidence(cv::Mat confidence_map, int threshold, cv::Mat& mask)
 {
 	if (confidence_map.empty())
@@ -953,7 +974,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	cv::Mat wrap_2 = ver_wrap_img_4[2].clone();
 	cv::Mat wrap_3 = ver_wrap_img_6[0].clone();
 
-	float confidence_val = 1.5;
+	float confidence_val = 10;
 
 	float ver_period = ver_period_num;
 	unwrap_ver /= ver_period;
@@ -962,8 +983,9 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	encode_machine_.maskMap(unwrap_mask, unwrap_ver);
 
 	cv::Mat confidence_mask;
-	findMaskBaseConfidence(ver_confidence_map_6, 15, confidence_mask);
-	encode_machine_.maskMap(confidence_mask, unwrap_ver);
+	//findMaskBaseConfidence(ver_confidence_map_6, 3, confidence_mask);
+	////findMaskBaseConfidenceLocalGrads(ver_confidence_map_6, 3.0, confidence_mask);
+	//encode_machine_.maskMap(confidence_mask, unwrap_ver);
 
 	cv::Mat texture_map = patterns[18];
 	cv::Mat undistort_img;
