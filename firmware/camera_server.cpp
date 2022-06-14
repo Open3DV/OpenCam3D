@@ -2012,7 +2012,7 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
     }
 
     //基于置信图最大轮廓滤波
-    if(true)
+    if(false)
     {
         int nr = 1200;
         int nc = 1920;
@@ -2506,6 +2506,25 @@ int handle_cmd_get_param_standard_param_external(int client_sock)
        
 }
 
+//获取相机增益参数
+int handle_cmd_get_param_camera_gain(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    } 
+	
+    int ret = send_buffer(client_sock, (char*)(&system_config_settings_machine_.Instance().config_param_.camera_gain), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+	    return DF_FAILED;
+    }
+ 
+    return DF_SUCCESS;
+  
+}
+
 //获取相机曝光参数
 int handle_cmd_get_param_camera_exposure(int client_sock)
 {
@@ -2577,6 +2596,47 @@ int handle_cmd_get_param_offset(int client_sock)
         LOG(INFO)<<"send error, close this connection!\n";
 	    return DF_FAILED;
     } 
+  
+    return DF_SUCCESS;
+}
+
+
+//设置相机增益参数
+int handle_cmd_set_param_camera_gain(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	    return DF_FAILED;
+    }
+	  
+
+    float gain = 0;
+
+    int ret = recv_buffer(client_sock, (char*)(&gain), sizeof(float));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+    if(gain< 0)
+    {
+        gain = 0;
+    }
+    else if(gain > 10)
+    {
+        gain = 10;
+    }
+
+ 
+    system_config_settings_machine_.Instance().config_param_.camera_gain = gain;
+
+    if (camera.setScanGain(system_config_settings_machine_.Instance().config_param_.camera_gain))
+    {
+     LOG(INFO) << "Set Camera Gain: " << gain << "\n";  
+    }
+
+ 
   
     return DF_SUCCESS;
 }
@@ -2848,24 +2908,22 @@ int handle_cmd_get_param_camera_version(int client_sock)
 //设置置信度参数
 int handle_cmd_set_param_confidence(int client_sock)
 {
-    if(check_token(client_sock) == DF_FAILED)
+
+ if(check_token(client_sock) == DF_FAILED)
     {
 	    return DF_FAILED;
     }
 	  
-    int confidence = 0;
 
-    int ret = recv_buffer(client_sock, (char *)(&confidence), sizeof(float) * 1);
-    if (ret == DF_FAILED)
+    float val = 0; 
+    int ret = recv_buffer(client_sock, (char*)(&val), sizeof(float));
+    if(ret == DF_FAILED)
     {
-        LOG(INFO) << "send error, close this connection!\n";
-        return DF_FAILED;
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
     }
-
-    // set led current 
-    system_config_settings_machine_.Instance().firwmare_param_.confidence = confidence;
-
-    LOG(INFO) << "Set Confidence: "<confidence;
+    LOG(INFO) << "Set Confidence: "<<val;
+    system_config_settings_machine_.Instance().firwmare_param_.confidence = val;
     cuda_set_config(system_config_settings_machine_);
 
     return DF_SUCCESS;
@@ -3892,6 +3950,14 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_EXPOSURE_TIME";   
     	handle_cmd_get_param_camera_exposure(client_sock);
 	    break;
+    case DF_CMD_SET_PARAM_CAMERA_GAIN:
+	    LOG(INFO)<<"DF_CMD_SET_PARAM_CAMERA_GAIN";   
+    	handle_cmd_set_param_camera_gain(client_sock);
+	    break;
+	case DF_CMD_GET_PARAM_CAMERA_GAIN:
+	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_GAIN";   
+    	handle_cmd_get_param_camera_gain(client_sock);
+	    break;
 	case DF_CMD_SET_PARAM_OFFSET:
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_OFFSET";   
     	handle_cmd_set_param_offset(client_sock);
@@ -3966,12 +4032,21 @@ int init()
 
     brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
 
-    camera.openCamera();
-    // camera.warmupCamera();
+    if(!camera.openCamera())
+    { 
+        LOG(INFO)<<"Open Camera Error!";
+    }
+    
+
     camera.switchToScanMode();
     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
     cuda_malloc_memory();
     int ret = read_calib_param();
+
+    if(DF_FAILED == ret)
+    { 
+        LOG(INFO)<<"Read Calib Param Error!";
+    }
 
     cuda_copy_calib_data(param.camera_intrinsic, 
 		         param.projector_intrinsic, 
@@ -3983,10 +4058,6 @@ int init()
 	LookupTableFunction lookup_table_machine_; 
 	lookup_table_machine_.setCalibData(param);
 
-	// cv::Mat xL_rotate_x;
-	// cv::Mat xL_rotate_y;
-	// cv::Mat R1;
-	// cv::Mat pattern_mapping;
     LOG(INFO)<<"start read table:";
     
     cv::Mat xL_rotate_x;
@@ -3994,11 +4065,10 @@ int init()
     cv::Mat rectify_R1;
     cv::Mat pattern_mapping;
     bool ok = lookup_table_machine_.readTableFloat("./",xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
- 
-    LOG(INFO)<<"read table finished!";
- 
+  
     if(ok)
     {  
+          LOG(INFO)<<"read table finished!";
 	    cv::Mat R1_t = rectify_R1.t();
         xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
         xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
@@ -4011,6 +4081,10 @@ int init()
 
         float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
         reconstruct_set_baseline(b);
+    }
+    else
+    {
+        LOG(INFO)<<"read table error!";
     }
 
     float temperature_val = read_temperature(0); 

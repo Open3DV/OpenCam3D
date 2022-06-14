@@ -39,8 +39,14 @@ public:
 	bool getExposure(float &value);
 
 	bool setExposure(float value);
+	
+	bool setGain(float value);
+	
+	bool getGain(float &value);
 
 	bool setScanExposure(float value);
+	
+	bool setScanGain(float value);
 
 	bool copyBrightness(char* buffer); 
 	
@@ -73,6 +79,8 @@ private:
 
 	//条纹扫描时，相机曝光值
 	float scan_camera_exposure_;
+	//条纹扫描时，相机增益值
+	float scan_camera_gain_;
 
 	int generate_brigntness_model_;
 	float generate_brightness_exposure_time_;

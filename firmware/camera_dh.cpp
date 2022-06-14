@@ -17,6 +17,8 @@ CameraDh::CameraDh()
 
     phase_compensate_value = 0;
     
+	scan_camera_gain_ = 0;
+    
     buffer_size_ = 1920*1200;
     brightness_buff_ = new char[buffer_size_];
     memset(brightness_buff_,0,buffer_size_);
@@ -494,6 +496,17 @@ bool CameraDh::closeCamera()
 	return true;
 }
 
+bool CameraDh::setScanGain(float value)
+{
+    bool ret = setGain(value);
+
+    if(ret)
+    { 
+      scan_camera_gain_ = value;
+    }
+
+    return ret;
+}
 
 bool CameraDh::setScanExposure(float value)
 {
@@ -506,6 +519,44 @@ bool CameraDh::setScanExposure(float value)
     }
 
     return ret;
+}
+
+bool CameraDh::setGain(float value)
+{
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    //�� �� �� �� ֵ
+    status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, value);
+
+
+    if(status == GX_STATUS_SUCCESS)
+    {
+        return true;
+    }
+
+
+    LOG(INFO)<<"Error Status: "<<status;
+	return false;
+}
+
+bool CameraDh::getGain(float &value)
+{
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    //�� �� �� �� ֵ
+    double gain = 0;
+    status = GXGetFloat(hDevice_, GX_FLOAT_GAIN, &gain);
+
+
+    if(status == GX_STATUS_SUCCESS)
+    {
+
+        value = gain;
+        
+        return true;
+    }
+
+
+    LOG(INFO)<<"Error Status: "<<status;
+	return false; 
 }
 
 bool CameraDh::setExposure(float value)
@@ -626,7 +677,7 @@ bool CameraDh::openCamera()
         status = GXSetEnum(hDevice_, GX_ENUM_GAIN_SELECTOR, GX_GAIN_SELECTOR_ALL);
 
         //�� �� �� �� ֵ
-        status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, 0);
+        status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, scan_camera_gain_);
 
 
         //�� �� �� �� ѡ �� Ϊ Line2

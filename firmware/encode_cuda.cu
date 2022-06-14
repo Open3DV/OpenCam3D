@@ -133,8 +133,7 @@ dim3 blocksPerGrid((image_width_ + threadsPerBlock.x - 1) / threadsPerBlock.x,
 
 
 void cuda_set_config(struct SystemConfigDataStruct param)
-{
-	
+{ 
 	cudaMemcpyToSymbol(d_confidence_, &param.Instance().firwmare_param_.confidence, sizeof(float));
 }
 
@@ -2604,6 +2603,14 @@ bool generate_pointcloud_base_table()
 	// cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_); 
 
     // cudaDeviceSynchronize();
+	// cv::Mat point_cloud_map(1200, 1920, CV_32FC3, cv::Scalar(0.0));  
+	// CHECK(cudaMemcpy((float*)point_cloud_map.data, d_point_cloud_map_, 3 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+
+	// std::vector<cv::Mat> channel;
+	// cv::split(point_cloud_map, channel); 
+	// cv::imwrite("pointcloud_map_x.tiff",channel[0]);
+	// cv::imwrite("pointcloud_map_y.tiff",channel[1]);
+	// cv::imwrite("pointcloud_map_z.tiff",channel[2]);
 	// LOG(INFO)<<"remove finished!";
 }
  
