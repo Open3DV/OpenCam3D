@@ -212,6 +212,21 @@ extern "C"
 	//输出参数：confidence(相机置信度)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetParamCameraConfidence(float& confidence);
+
+
+	//函数名： DfSetParamCameraGain
+	//功能： 设置相机增益
+	//输入参数：gain(相机增益)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamCameraGain(float gain);
+
+	//函数名： DfGetParamCameraGain
+	//功能： 获取相机增益
+	//输入参数： 无
+	//输出参数：gain(相机增益)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamCameraGain(float& gain);
 }
 
 

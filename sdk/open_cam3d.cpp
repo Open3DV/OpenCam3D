@@ -218,13 +218,6 @@ bool transformPointcloud(float* org_point_cloud_map, float* transform_point_clou
 bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 {
 
-
-	//double camera_fx = camera_intrinsic_.at<double>(0, 0);
-	//double camera_fy = camera_intrinsic_.at<double>(1, 1); 
-	//double camera_cx = camera_intrinsic_.at<double>(0, 2);
-	//double camera_cy = camera_intrinsic_.at<double>(1, 2);
-
-
 	float camera_fx = calibration_param_.camera_intrinsic[0];
 	float camera_fy = calibration_param_.camera_intrinsic[4];
 
@@ -238,16 +231,6 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 	float p2 = calibration_param_.camera_distortion[3];
 	float k3 = calibration_param_.camera_distortion[4];
 
-	//LOG(INFO) << "camera_fx: " << camera_fx << std::endl;
-	//LOG(INFO) << "camera_fy: " << camera_fy << std::endl;
-	//LOG(INFO) << "camera_cx: " << camera_cx << std::endl;
-	//LOG(INFO) << "camera_cy: " << camera_cy << std::endl;
-	//LOG(INFO) << "camera_width_: " << camera_width_ << std::endl;
-	//LOG(INFO) << "camera_height_: " << camera_height_ << std::endl;
-
-
-
-	int point_num = camera_height_ * camera_width_;
 
 	int nr = camera_height_;
 	int nc = camera_width_;
@@ -2298,6 +2281,8 @@ DF_SDK_API int DfSetParamOffset(float offset)
 //返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 DF_SDK_API int DfSetParamCameraConfidence(float confidence)
 {
+
+
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
@@ -2310,7 +2295,6 @@ DF_SDK_API int DfSetParamCameraConfidence(float confidence)
 	ret = recv_command(&command, g_sock);
 	if (command == DF_CMD_OK)
 	{
-
 		ret = send_buffer((char*)(&confidence), sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
@@ -2354,6 +2338,91 @@ DF_SDK_API int DfGetParamCameraConfidence(float& confidence)
 	{
 
 		ret = recv_buffer((char*)(&confidence), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfSetParamCameraGain
+//功能： 设置相机增益
+//输入参数：gain(相机增益)
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamCameraGain(float gain)
+{
+
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_SET_PARAM_CAMERA_GAIN, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = send_buffer((char*)(&gain), sizeof(float), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetParamCameraGain
+//功能： 获取相机增益
+//输入参数： 无
+//输出参数：gain(相机增益)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamCameraGain(float& gain)
+{
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PARAM_CAMERA_GAIN, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+
+		ret = recv_buffer((char*)(&gain), sizeof(float), g_sock);
 		if (ret == DF_FAILED)
 		{
 			close_socket(g_sock);

@@ -106,6 +106,8 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.spinBox_exposure_num, SIGNAL(valueChanged(int)), this, SLOT(do_spin_exposure_num_changed(int)));
 	connect(ui.spinBox_min_z, SIGNAL(valueChanged(int)), this, SLOT(do_spin_min_z_changed(int)));
 	connect(ui.spinBox_max_z, SIGNAL(valueChanged(int)), this, SLOT(do_spin_max_z_changed(int)));
+	connect(ui.doubleSpinBox_confidence, SIGNAL(valueChanged(double)), this, SLOT(do_doubleSpin_confidence(double)));
+	connect(ui.doubleSpinBox_gain, SIGNAL(valueChanged(double)), this, SLOT(do_doubleSpin_gain(double)));
 
 	connect(ui.spinBox_led, SIGNAL(valueChanged(int)), this, SLOT(do_spin_led_current_changed(int)));
 	connect(ui.spinBox_camera_exposure, SIGNAL(valueChanged(int)), this, SLOT(do_spin_camera_exposure_changed(int)));
@@ -202,7 +204,6 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
 
 	depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
-
 
 	FileIoFunction file_io_machine;
 	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_);
@@ -585,6 +586,110 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 
 }
 
+void CameraCaptureGui::do_doubleSpin_gain(double val)
+{
+
+	if (camera_setting_flag_)
+	{
+		return;
+	}
+
+
+	//设置参数时加锁
+	camera_setting_flag_ = true;
+	if (connected_flag_)
+	{
+
+		system_config_param_.camera_gain = val;
+
+		int ret_code = -1;
+		//如果连续采集在用、先暂停
+		if (start_timer_flag_)
+		{
+
+			stopCapturingOneFrameBaseThread();
+
+			ret_code = DfSetParamCameraGain(system_config_param_.camera_gain);
+			if (0 == ret_code)
+			{
+				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
+				QString str = u8"设置相机增益: " + QString::number(system_config_param_.camera_gain);
+				addLogMessage(str);
+			}
+
+			do_pushButton_capture_continuous();
+
+		}
+		else
+		{
+			ret_code = DfSetParamCameraGain(system_config_param_.camera_gain);
+
+			if (0 == ret_code)
+			{
+				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
+				QString str = u8"设置相机增益: " + QString::number(system_config_param_.camera_gain);
+				addLogMessage(str);
+			}
+
+		}
+
+	}
+
+	camera_setting_flag_ = false;
+}
+
+void CameraCaptureGui::do_doubleSpin_confidence(double val)
+{
+
+	if (camera_setting_flag_)
+	{
+		return;
+	}
+
+
+	//设置参数时加锁
+	camera_setting_flag_ = true;
+	if (connected_flag_)
+	{
+
+		firmware_config_param_.confidence = (float)val;
+
+		int ret_code = -1;
+		//如果连续采集在用、先暂停
+		if (start_timer_flag_)
+		{
+
+			stopCapturingOneFrameBaseThread();
+
+			ret_code = DfSetParamCameraConfidence(firmware_config_param_.confidence);
+			if (0 == ret_code)
+			{
+				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
+				QString str = u8"设置相机置信度: " + QString::number(firmware_config_param_.confidence);
+				addLogMessage(str);
+			}
+
+			do_pushButton_capture_continuous();
+
+		}
+		else
+		{
+			ret_code = DfSetParamCameraConfidence(firmware_config_param_.confidence);
+
+			if (0 == ret_code)
+			{
+				//ui.spinBox_camera_exposure->setValue(system_config_param_.camera_exposure_time);
+				QString str = u8"设置相机置信度: " + QString::number(firmware_config_param_.confidence);
+				addLogMessage(str);
+			}
+
+		}
+
+	}
+
+	camera_setting_flag_ = false;
+
+}
 
 bool CameraCaptureGui::manyExposureParamHasChanged()
 {
@@ -615,13 +720,6 @@ bool CameraCaptureGui::setCameraConfigParam()
 
 
 	//更新多曝光参数 
-	//for (int i = 0; i < exposure_time_list_.size(); i++)
-	//{
-	//	firmware_config_param_.mixed_exposure_param_list[i] = exposure_time_list_[i]->value();
-	//	firmware_config_param_.mixed_led_param_list[i] = led_current_list_[i]->value();
-	//}
-
-	//firmware_config_param_.mixed_exposure_num = exposure_time_list_.size();  
 	ret_code = DfSetParamMixedHdr(firmware_config_param_.mixed_exposure_num, firmware_config_param_.mixed_exposure_param_list, firmware_config_param_.mixed_led_param_list);
 	if (0 != ret_code)
 	{
@@ -630,43 +728,51 @@ bool CameraCaptureGui::setCameraConfigParam()
 	}
 
 
-	//ret_code = DfSetParamHdr(system_config_param_.exposure_num, system_config_param_.exposure_param);
-
-	//if (0 != ret_code)
-	//{
-	//	qDebug() << "Set HDR Param Error;";
-	//	return false;
-	//}
-
 	ret_code = DfSetParamStandardPlaneExternal(&system_config_param_.standard_plane_external_param[0],
 		&system_config_param_.standard_plane_external_param[9]);
 
 	if (0 != ret_code)
 	{
-		qDebug() << "Set Standard Plane Param Error;";
+		addLogMessage(u8"设置基准平面参数失败！");
 		return false;
 	}
 
 	ret_code = DfSetParamCameraExposure(system_config_param_.camera_exposure_time);
 	if (0 != ret_code)
 	{
-		qDebug() << "Set Camera Exposure Error;";
+		addLogMessage(u8"设置曝光参数失败！");
 		return false;
 	}
 
 	ret_code = DfSetParamGenerateBrightness(firmware_config_param_.generate_brightness_model, firmware_config_param_.generate_brightness_exposure);
 	if (0 != ret_code)
 	{
-		qDebug() << "Set Generate Brightness Param Error;";
-		return false;
+		addLogMessage(u8"设置生成亮度图参数失败！");
 	}
 
 	ret_code = DfSetParamBilateralFilter(firmware_config_param_.use_bilateral_filter, firmware_config_param_.bilateral_filter_param_d);
 	if (0 != ret_code)
 	{
-		qDebug() << "Set Bilateral Filter Param Error;";
-		return false;
+		addLogMessage(u8"设置平滑参数失败！");
 	}
+
+	ret_code = DfSetParamCameraConfidence(firmware_config_param_.confidence);
+	if (0 != ret_code)
+	{
+		addLogMessage(u8"设置置信度失败！");
+	}
+
+	ret_code = DfSetParamCameraGain(system_config_param_.camera_gain);
+	if (0 != ret_code)
+	{
+		addLogMessage(u8"设置相机增益失败！");
+	}
+
+	if (DF_UNKNOWN == ret_code)
+	{
+		addLogMessage(u8"请检查相机版本！");
+	}
+
 	return true;
 }
 

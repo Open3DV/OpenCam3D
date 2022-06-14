@@ -112,6 +112,12 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			camera_config_.Instance().config_param_.camera_exposure_time = firmware_Obj.value("camera_exposure_time").toInt();
 		}
 
+		if (firmware_Obj.contains("camera_gain") && firmware_Obj["camera_gain"].isDouble())
+		{
+			qDebug() << "camera_gain is:" << firmware_Obj.value("camera_gain").toInt();
+			camera_config_.Instance().config_param_.camera_gain = firmware_Obj.value("camera_gain").toInt();
+		}
+
 		if (firmware_Obj.contains("mixed_exposure_num") && firmware_Obj["mixed_exposure_num"].isDouble())
 		{
 			qDebug() << "camera_exposure_time is:" << firmware_Obj.value("mixed_exposure_num").toInt();
@@ -195,6 +201,11 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			camera_config_.Instance().firwmare_param_.bilateral_filter_param_d = firmware_Obj.value("bilateral_filter_param_d").toInt();
 		}
 
+		if (firmware_Obj.contains("confidence") && firmware_Obj["confidence"].isDouble())
+		{
+			qDebug() << "confidence is:" << firmware_Obj.value("confidence").toInt();
+			camera_config_.Instance().firwmare_param_.confidence = firmware_Obj.value("confidence").toInt();
+		}
 	}
 
 	/******************************************************************************************************************************/
@@ -300,6 +311,7 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 
 
 	jsonObject_firmware.insert("camera_exposure_time", camera_config_.Instance().config_param_.camera_exposure_time);
+	jsonObject_firmware.insert("camera_gain", camera_config_.Instance().config_param_.camera_gain);
 
 
 	jsonObject_firmware.insert("generate_brightness_model", camera_config_.Instance().firwmare_param_.generate_brightness_model);
@@ -307,6 +319,8 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 
 	jsonObject_firmware.insert("use_bilateral_filter", camera_config_.Instance().firwmare_param_.use_bilateral_filter);
 	jsonObject_firmware.insert("bilateral_filter_param_d", camera_config_.Instance().firwmare_param_.bilateral_filter_param_d);
+
+	jsonObject_firmware.insert("confidence", camera_config_.Instance().firwmare_param_.confidence);
 
 	// 使用QJsonDocument设置该json对象
 	QJsonDocument jsonDoc;

@@ -140,6 +140,10 @@ private slots:
 
 	void do_spin_max_z_changed(int val);
 
+	void do_doubleSpin_gain(double val);
+
+	void do_doubleSpin_confidence(double val);
+
 	void do_pushButton_capture_one_frame();
 
 	void do_pushButton_test_accuracy();
