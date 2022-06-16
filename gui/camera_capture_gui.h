@@ -130,9 +130,11 @@ private slots:
 	double get_exposure_item_value(int row);
 
 private slots:
-	void do_checkBox_toggled_bilateral_filter(bool state);
+	//void do_checkBox_toggled_bilateral_filter(bool state);
 
 	void do_checkBox_toggled_hdr(bool state);
+
+	void do_spin_smoothing_changed(int val);
 
 	void do_spin_exposure_num_changed(int val);
 

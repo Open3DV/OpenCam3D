@@ -55,9 +55,9 @@ bool GuiConfigDataStruct::saveToSettings(const QString& f)
 
 SettingsFileFunction::SettingsFileFunction()
 {
-	gui_config_.Instance().ip = "";
+	gui_config_.Instance().ip = "192.168.0.100";
 	gui_config_.Instance().low_z_value = 300;
-	gui_config_.Instance().high_z_value = 1200;
+	gui_config_.Instance().high_z_value = 3000;
 	gui_config_.Instance().calibration_board = 20;
 
 	firmware_config_param_.generate_brightness_exposure = 12000;

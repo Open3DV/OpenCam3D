@@ -224,4 +224,18 @@ extern "C"
 	//输出参数：gain(相机增益)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetParamCameraGain(float& gain);
+
+	//函数名： DfSetParamSmoothing
+	//功能： 设置点云平滑参数
+	//输入参数：smoothing(0:关、1-5:平滑程度由低到高)
+	//输出参数： 无
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfSetParamSmoothing(int smoothing);
+
+	//函数名： DfGetParamSmoothing
+	//功能： 设置点云平滑参数
+	//输入参数：无
+	//输出参数：smoothing(0:关、1-5:平滑程度由低到高)
+	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+	DF_SDK_API int DfGetParamSmoothing(int& smoothing);
 }

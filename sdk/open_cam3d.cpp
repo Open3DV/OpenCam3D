@@ -2069,6 +2069,56 @@ DF_SDK_API int DfSetAutoExposure(int flag, int& exposure, int& led)
 }
 
 /*****************************************************************************************************/
+
+
+//函数名： DfSetParamSmoothing
+//功能： 设置点云平滑参数
+//输入参数：smoothing(0:关、1：小、2：中、3：大)
+//输出参数： 无
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfSetParamSmoothing(int smoothing)
+{
+	int ret = -1;
+	if (0 == smoothing)
+	{
+		ret = DfSetParamBilateralFilter(0, 5);
+	}
+	else
+	{
+		ret = DfSetParamBilateralFilter(1, 2 * smoothing + 1);
+	}
+
+	return ret;
+}
+
+//函数名： DfGetParamSmoothing
+//功能： 设置点云平滑参数
+//输入参数：无
+//输出参数：smoothing(0:关、1：小、2：中、3：大)
+//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfGetParamSmoothing(int& smoothing)
+{
+	int use = 0;
+	int d = 0;
+
+	int ret = DfGetParamBilateralFilter(use, d);
+
+	if (DF_FAILED == ret)
+	{
+		return DF_FAILED;
+	}
+
+	if (0 == use)
+	{
+		smoothing = 0;
+	}
+	else if (1 == use)
+	{
+		smoothing = d / 2;
+	}
+	return DF_SUCCESS;
+}
+
 //函数名： DfSetParamBilateralFilter
 //功能： 设置双边滤波参数
 //输入参数： use（开关：1为开、0为关）、param_d（平滑系数：3、5、7、9、11）
