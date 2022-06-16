@@ -1,16 +1,26 @@
-﻿#include "../sdk/open_cam3d.h"
+﻿#pragma once
+#ifdef _WIN32 
+#include "../sdk/open_cam3d.h" 
+#include <windows.h>
+#elif __linux
+#include "../sdk/open_cam3d.h" 
+#include <cstring>
+#include <iomanip>
+#include <stdio.h> 
+#define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
+#endif 
 #include "../firmware/system_config_settings.h"
 #include "../firmware/protocol.h"
 #include "../firmware/version.h"
 #include "../test/solution.h"
 #include "opencv2/opencv.hpp"
-#include <windows.h>
 #include <assert.h>
 #include <fstream>
 #include <string.h>
 #include "getopt.h" 
 #include "../test/LookupTableFunction.h"
 
+using namespace std;
 
 const char* help_info =
 "Examples:\n\
@@ -56,6 +66,7 @@ open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
 \n\
 14.Get Repetition Frame 03: \n\
 open_cam3d.exe --get-repetition-frame-03 --count 6 --ip 192.168.x.x --path ./frame03_repetition\n\
+\n\
 15.Load pattern data: \n\
 open_cam3d.exe --load-pattern-data --ip 192.168.x.x\n\
 \n\
@@ -72,14 +83,42 @@ open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
 open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\n\
 \n\
 20.Set calibration lookTable: \n\
-open_cam3d.exe--set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
+open_cam3d.exe --set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
+\n\
+21.Set Generate Brightness Param: \n\
+open_cam3d.exe --set-generate-brigntness-param --ip 192.168.x.x --model 1 --exposure 12000\n\
+\n\
+22.Get Generate Brightness Param: \n\
+open_cam3d.exe --get-generate-brigntness-param --ip 192.168.x.x\n\
+\n\
+23.Set Camera Exposure Param: \n\
+open_cam3d.exe --set-camera-exposure-param --ip 192.168.x.x --exposure 12000\n\
+\n\
+24.Get Camera Exposure Param: \n\
+open_cam3d.exe --get-camera-exposure-param --ip 192.168.x.x\n\
+\n\
+25.Set Offset Param: \n\
+open_cam3d.exe --set-offset-param --offset 12 --ip 192.168.x.x\n\
+\n\
+26.Get Camera Version: \n\
+open_cam3d.exe --get-camera-version --ip 192.168.x.x\n\
+\n\
+27.Set Auto Exposure: \n\
+open_cam3d.exe --set-auto-exposure-roi  --ip 192.168.x.x\n\
+\n\
+28.Self-test: \n\
+open_cam3d.exe --self-test --ip 192.168.x.x\n\
+\n\
+29.Get projector temperature: \n\
+open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
+\n\
 ";
 
 void help_with_version(const char* help);
 bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map);
 int get_frame_01(const char* ip, const char* frame_path);
 int get_frame_03(const char* ip, const char* frame_path);
-int get_repetition_frame_03(const char* ip,int count, const char* frame_path);
+int get_repetition_frame_03(const char* ip, int count, const char* frame_path);
 int get_frame_hdr(const char* ip, const char* frame_path);
 void save_frame(float* depth_buffer, unsigned char* bright_buffer, const char* frame_path);
 void save_images(const char* raw_image_dir, unsigned char* buffer, int image_size, int image_num);
@@ -93,6 +132,11 @@ int get_raw_02(const char* ip, const char* raw_image_dir);
 int get_raw_03(const char* ip, const char* raw_image_dir);
 int get_calib_param(const char* ip, const char* calib_param_path);
 int set_calib_param(const char* ip, const char* calib_param_path);
+int set_generate_brightness_param(const char* ip, int model, float exposure);
+int get_generate_brightness_param(const char* ip, int& model, float& exposure);
+int set_camera_exposure_param(const char* ip, float exposure);
+int get_camera_exposure_param(const char* ip, float& exposure);
+int set_offset_param(const char* ip, float offset);
 int set_calib_looktable(const char* ip, const char* calib_param_path);
 int test_calib_param(const char* ip, const char* result_path);
 int get_temperature(const char* ip);
@@ -102,6 +146,11 @@ int load_pattern_data(const char* ip);
 int program_pattern_data(const char* ip);
 int get_network_bandwidth(const char* ip);
 int get_firmware_version(const char* ip);
+int get_camera_version(const char* ip);
+int set_auto_exposure_base_roi(const char* ip);
+int set_auto_exposure_base_board(const char* ip);
+int self_test(const char* ip);
+int get_projector_temperature(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -132,7 +181,20 @@ enum opt_set
 	LOAD_PATTERN_DATA,
 	PROGRAM_PATTERN_DATA,
 	GET_NETWORK_BANDWIDTH,
-	GET_FIRMWARE_VERSION
+	GET_FIRMWARE_VERSION,
+	SET_GENERATE_BRIGHTNESS,
+	GET_GENERATE_BRIGHTNESS,
+	MODEL,
+	EXPOSURE,
+	SET_CAMERA_EXPOSURE,
+	GET_CAMERA_EXPOSURE,
+	SET_OFFSET,
+	OFFSET,
+	GET_CAMERA_VERSION, 
+	SET_AUTO_EXPOSURE_BASE_ROI,
+	SET_AUTO_EXPOSURE_BASE_BOARD, 
+	SELF_TEST,
+	GET_PROJECTOR_TEMPERATURE 
 };
 
 static struct option long_options[] =
@@ -141,6 +203,9 @@ static struct option long_options[] =
 	{"path", required_argument, NULL, PATH},
 	{"count", required_argument, NULL, COUNT},
 	{"use", required_argument, NULL, USE},
+	{"model", required_argument, NULL, MODEL},
+	{"exposure", required_argument, NULL, EXPOSURE},
+	{"offset", required_argument, NULL, OFFSET},
 	{"get-temperature",no_argument,NULL,GET_TEMPERATURE},
 	{"get-calib-param",no_argument,NULL,GET_CALIB_PARAM},
 	{"set-calib-param",no_argument,NULL,SET_CALIB_PARAM},
@@ -162,6 +227,16 @@ static struct option long_options[] =
 	{"program-pattern-data",no_argument,NULL,PROGRAM_PATTERN_DATA},
 	{"get-network-bandwidth",no_argument,NULL,GET_NETWORK_BANDWIDTH},
 	{"get-firmware-version",no_argument,NULL,GET_FIRMWARE_VERSION},
+	{"set-generate-brightness-param",no_argument,NULL,SET_GENERATE_BRIGHTNESS},
+	{"get-generate-brightness-param",no_argument,NULL,GET_GENERATE_BRIGHTNESS},
+	{"set-camera-exposure-param",no_argument,NULL,SET_CAMERA_EXPOSURE},
+	{"get-camera-exposure-param",no_argument,NULL,GET_CAMERA_EXPOSURE},
+	{"set-offset-param",no_argument,NULL,SET_OFFSET},
+	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION}, 
+	{"set-auto-exposure-roi",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_ROI},
+	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD}, 
+	{"self-test",no_argument,NULL,SELF_TEST},
+	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE}, 
 };
 
 
@@ -169,6 +244,9 @@ const char* camera_id;
 const char* path;
 const char* repetition_count;
 const char* use_command;
+const char* c_model;
+const char* c_exposure;
+const char* c_offset;
 int command = HELP;
 
 struct CameraCalibParam calibration_param_;
@@ -193,6 +271,15 @@ int main(int argc, char* argv[])
 			break;
 		case USE:
 			use_command = optarg;
+			break;
+		case MODEL:
+			c_model = optarg;
+			break;
+		case EXPOSURE:
+			c_exposure = optarg;
+			break;
+		case OFFSET:
+			c_offset = optarg;
 			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
@@ -239,11 +326,11 @@ int main(int argc, char* argv[])
 		get_frame_03(camera_id, path);
 		break;
 	case GET_REPETITION_FRAME_03:
-	{ 
+	{
 		int num = std::atoi(repetition_count);
 		get_repetition_frame_03(camera_id, num, path);
 	}
-		break;
+	break;
 	case GET_FRAME_HDR:
 		get_frame_hdr(camera_id, path);
 		break;
@@ -271,6 +358,59 @@ int main(int argc, char* argv[])
 	case GET_FIRMWARE_VERSION:
 		get_firmware_version(camera_id);
 		break;
+	case SET_GENERATE_BRIGHTNESS:
+	{
+		int model = std::atoi(c_model);
+		float exposure = std::atof(c_exposure);
+		set_generate_brightness_param(camera_id, model, exposure);
+	}
+	break;
+	case GET_GENERATE_BRIGHTNESS:
+	{
+		int model = 0;
+		float exposure = 0;
+		get_generate_brightness_param(camera_id, model, exposure);
+	}
+	break;
+	case SET_CAMERA_EXPOSURE:
+	{
+		float exposure = std::atof(c_exposure);
+		set_camera_exposure_param(camera_id, exposure);
+	}
+	break;
+	case GET_CAMERA_EXPOSURE:
+	{
+		float exposure = 0;
+		get_camera_exposure_param(camera_id, exposure);
+	}
+	break;
+	case SET_OFFSET:
+	{
+		float offset = std::atof(c_offset);
+		set_offset_param(camera_id, offset);
+	}
+	break;
+	case GET_CAMERA_VERSION:
+	{
+		get_camera_version(camera_id);
+	}
+	break; 
+	case SET_AUTO_EXPOSURE_BASE_ROI:
+	{
+		set_auto_exposure_base_roi(camera_id);
+	}
+	break;
+	case SET_AUTO_EXPOSURE_BASE_BOARD:
+	{
+		set_auto_exposure_base_board(camera_id);
+	}
+	break; 
+	case SELF_TEST:
+		self_test(camera_id);
+		break;
+	case GET_PROJECTOR_TEMPERATURE:
+		get_projector_temperature(camera_id);
+		break; 
 	default:
 		break;
 	}
@@ -280,17 +420,30 @@ int main(int argc, char* argv[])
 
 void help_with_version(const char* help)
 {
-	char info[100 * 1024] = {'\0'};
+	char info[100 * 1024] = { '\0' };
 	char version[] = _VERSION_;
 	char enter[] = "\n";
 
+#ifdef _WIN32 
 	strcpy_s(info, sizeof(enter), enter);
 	strcat_s(info, sizeof(info), version);
 	strcat_s(info, sizeof(info), enter);
 	strcat_s(info, sizeof(info), enter);
 	strcat_s(info, sizeof(info), help);
 
-	printf_s(info);
+
+#elif __linux
+	strncpy(info, enter, sizeof(enter));
+	strncat(info, version, sizeof(info));
+	strncat(info, enter, sizeof(info));
+	strncat(info, enter, sizeof(info));
+	strncat(info, help, sizeof(info));
+
+#endif 
+
+
+	printf(info);
+
 }
 
 int on_dropped(void* param)
@@ -311,7 +464,7 @@ bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map)
 
 	double camera_cx = calibration_param_.camera_intrinsic[2];
 	double camera_cy = calibration_param_.camera_intrinsic[5];
-  
+
 	int nr = depth_map.rows;
 	int nc = depth_map.cols;
 
@@ -521,7 +674,7 @@ int get_repetition_frame_03(const char* ip, int count, const char* frame_path)
 	int brightness_bug_size = image_size;
 	unsigned char* brightness_buf = new unsigned char[brightness_bug_size];
 
-	ret = DfGetRepetitionFrame03(count,depth_buf, depth_buf_size, brightness_buf, brightness_bug_size);
+	ret = DfGetRepetitionFrame03(count, depth_buf, depth_buf_size, brightness_buf, brightness_bug_size);
 
 	DfDisconnectNet();
 
@@ -731,12 +884,12 @@ int get_raw_02(const char* ip, const char* raw_image_dir)
 
 
 int test_calib_param(const char* ip, const char* result_path)
-{ 
+{
 	std::string cmd(use_command);
 
 	if ("plane" == cmd)
 	{
-		std::cout << "plane"<<std::endl;
+		std::cout << "plane" << std::endl;
 
 		struct CameraCalibParam calibration_param_;
 		DfSolution solution_machine_;
@@ -760,9 +913,9 @@ int test_calib_param(const char* ip, const char* result_path)
 
 		solution_machine_.testCalibrationParamBasePlane(patterns_, calibration_param_, std::string(result_path));
 	}
-	else if("board" == cmd)
+	else if ("board" == cmd)
 	{
-		std::cout << "board" << std::endl; 
+		std::cout << "board" << std::endl;
 
 		struct CameraCalibParam calibration_param_;
 		DfSolution solution_machine_;
@@ -772,7 +925,7 @@ int test_calib_param(const char* ip, const char* result_path)
 
 		if (!ret)
 		{
-			std::cout << "采集图像出错！"<<std::endl;
+			std::cout << "采集图像出错！" << std::endl;
 			return false;
 		}
 
@@ -818,7 +971,7 @@ int get_calib_param(const char* ip, const char* calib_param_path)
 int set_calib_looktable(const char* ip, const char* calib_param_path)
 {
 	/*************************************************************************************************/
-  
+
 	struct CameraCalibParam calibration_param;
 	std::ifstream ifile;
 	ifile.open(calib_param_path);
@@ -828,7 +981,7 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 		std::cout << ((float*)(&calibration_param))[i] << std::endl;
 	}
 	ifile.close();
-	std::cout << "Read Param"<<std::endl;
+	std::cout << "Read Param" << std::endl;
 	LookupTableFunction looktable_machine;
 	looktable_machine.setCalibData(calibration_param);
 	//looktable_machine.readCalibData(calib_param_path);
@@ -841,13 +994,13 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 	std::cout << "Start Generate LookTable Param" << std::endl;
 	bool ok = looktable_machine.generateLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
 
-	std::cout << "Finished Generate LookTable Param: "<< ok << std::endl;
+	std::cout << "Finished Generate LookTable Param: " << ok << std::endl;
 
 	xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
 	xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
 	rectify_R1.convertTo(rectify_R1, CV_32F);
 	pattern_mapping.convertTo(pattern_mapping, CV_32F);
- 
+
 	/**************************************************************************************************/
 
 	DfRegisterOnDropped(on_dropped);
@@ -862,9 +1015,137 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 
 	DfSetCalibrationLookTable(calibration_param, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)rectify_R1.data, (float*)pattern_mapping.data);
 
-	 
+
 
 	DfDisconnectNet();
+	return 1;
+}
+
+
+int get_camera_exposure_param(const char* ip, float& exposure)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+
+	DfGetParamCameraExposure(exposure);
+
+
+	DfDisconnectNet();
+
+
+	std::cout << "camera exposure: " << exposure << std::endl;
+}
+
+
+int set_offset_param(const char* ip, float offset)
+{
+	if (offset < 0)
+	{
+		std::cout << "offset param out of range!" << std::endl;
+		return 0;
+	}
+
+
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+
+	DfSetParamOffset(offset);
+
+
+	DfDisconnectNet();
+
+
+	std::cout << "offset: " << offset << std::endl;
+
+	return 1;
+}
+
+int set_camera_exposure_param(const char* ip, float exposure)
+{
+	if (exposure < 20 || exposure> 1000000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return 0;
+	}
+
+
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+
+	DfSetParamCameraExposure(exposure);
+
+
+	DfDisconnectNet();
+
+
+	std::cout << "camera exposure: " << exposure << std::endl;
+
+	return 1;
+}
+
+
+int get_generate_brightness_param(const char* ip, int& model, float& exposure)
+{
+
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	DfGetParamGenerateBrightness(model, exposure);
+
+	DfDisconnectNet();
+
+
+	std::cout << "model: " << model << std::endl;
+	std::cout << "exposure: " << exposure << std::endl;
+	return 1;
+}
+
+int set_generate_brightness_param(const char* ip, int model, float exposure)
+{
+	if (exposure < 20 || exposure> 1000000)
+	{
+		std::cout << "exposure param out of range!" << std::endl;
+		return 0;
+	}
+
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	DfSetParamGenerateBrightness(model, exposure);
+
+
+	DfDisconnectNet();
+
+	std::cout << "model: " << model << std::endl;
+	std::cout << "exposure: " << exposure << std::endl;
 	return 1;
 }
 
@@ -962,19 +1243,41 @@ int load_pattern_data(const char* ip)
 		return 0;
 	}
 
-	char * LoadBuffer = new char[PATTERN_DATA_SIZE];
+	char* LoadBuffer = new char[PATTERN_DATA_SIZE];
 
-	DfLoadPatternData(PATTERN_DATA_SIZE, LoadBuffer);							
+	DfLoadPatternData(PATTERN_DATA_SIZE, LoadBuffer);
 
 	char string[50] = { '\0' };
 	FILE* fw;
 	if (fopen_s(&fw, "pattern_data.dat", "wb") == 0) {
 		fwrite(LoadBuffer, 1, PATTERN_DATA_SIZE, fw);
 		fclose(fw);
-		sprintf_s(string, "pattern_data.dat");
+
+#ifdef _WIN32 
+
+		sprintf_s(string, sizeof("pattern_data.dat"), "pattern_data.dat");
+#elif __linux
+
+		snprintf(string, sizeof("pattern_data.dat"), "pattern_data.dat");
+#endif 
+
+
+
+
+
 	}
 	else {
-		sprintf_s(string, "save pattern data fail");
+
+#ifdef _WIN32 
+
+		sprintf_s(string, sizeof("save pattern data fail"), "save pattern data fail");
+#elif __linux
+
+		snprintf(string, sizeof("save pattern data fail"), "save pattern data fail");
+#endif 
+
+
+
 	}
 
 	std::cout << "Load Pattern save as:" << string << std::endl;
@@ -1002,7 +1305,13 @@ int program_pattern_data(const char* ip)
 	// read the pattern data from file into the front half of the buffer.
 	FILE* fw;
 	if (fopen_s(&fw, "pattern_data.dat", "rb") == 0) {
+
+#ifdef _WIN32  
 		fread_s(pOrg, PATTERN_DATA_SIZE, 1, PATTERN_DATA_SIZE, fw);
+#elif __linux
+		fread(pOrg, PATTERN_DATA_SIZE, PATTERN_DATA_SIZE, fw);
+#endif 
+
 		fclose(fw);
 		std::cout << "Program Pattern:" << "load file ok!" << std::endl;
 	}
@@ -1013,9 +1322,10 @@ int program_pattern_data(const char* ip)
 	DfProgramPatternData(pOrg, pBack, PATTERN_DATA_SIZE);
 
 	// check the program and load data be the same.
-	if ( memcmp(pOrg, pBack, PATTERN_DATA_SIZE) ) {
+	if (memcmp(pOrg, pBack, PATTERN_DATA_SIZE)) {
 		std::cout << "Program Pattern:" << "fail..." << std::endl;
-	} else {
+	}
+	else {
 		std::cout << "Program Pattern:" << "ok!" << std::endl;
 	}
 
@@ -1057,6 +1367,107 @@ int get_firmware_version(const char* ip)
 	char version[_VERSION_LENGTH_] = { '\0' };
 	DfGetFirmwareVersion(version, _VERSION_LENGTH_);
 	std::cout << "Firmware: " << version << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int set_auto_exposure_base_roi(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int exposure = 0;
+	int led = 0;
+
+	DfSetAutoExposure(1, exposure, led);
+
+	DfDisconnectNet();
+
+	std::cout << "exposure: " << exposure << std::endl;
+	std::cout << "led: " << led << std::endl;
+
+	return 1;
+}
+
+int set_auto_exposure_base_board(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int exposure = 0;
+	int led = 0;
+
+	DfSetAutoExposure(2, exposure, led);
+
+	DfDisconnectNet();
+
+	std::cout << "exposure: " << exposure << std::endl;
+	std::cout << "led: " << led << std::endl;
+
+	return 1;
+}
+
+int get_camera_version(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int version = 0;
+
+	DfGetCameraVersion(version);
+
+	DfDisconnectNet();
+
+	std::cout << "Camera Version: " << version << std::endl;
+	return 1;
+}
+
+int self_test(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED) {
+		return 0;
+	}
+
+	char test[500] = { '\0' };
+	DfSelfTest(test, sizeof(test));
+	std::cout << "Self-test: " << test << std::endl;
+
+	DfDisconnectNet();
+	return 1;
+}
+
+int get_projector_temperature(const char* ip)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	float temperature = 0;
+	DfGetProjectorTemperature(temperature);
+	std::cout << "Projector temperature: " << temperature << std::endl;
 
 	DfDisconnectNet();
 	return 1;

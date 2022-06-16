@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="triangulation.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="encode.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -48,6 +45,12 @@
     <ClCompile Include="LookupTableFunction.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="FilterModule.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="triangulation.cpp">
+      <Filter>资源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="triangulation.h">
@@ -72,6 +75,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="LookupTableFunction.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FilterModule.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

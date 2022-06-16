@@ -1,4 +1,4 @@
-#include "encode.h"
+﻿#include "encode.h"
 #include "iostream" 
 
 DF_Encode::DF_Encode()
@@ -80,10 +80,37 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 		double* optr = result.ptr<double>(r);
 		for (int c = 0; c < nc; c++)
 		{
+			int exposure_num = 0;
 			if (ptr_m[c])
 			{
 				//double a = ptr4[j] - ptr2[j];
 				//double b = ptr1[j] - ptr3[j];
+				if (255 == ptr0[c])
+				{
+					exposure_num++;
+				}
+
+				if (255 == ptr1[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr2[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr3[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr4[c])
+				{
+					exposure_num++;
+				}
+
+				if (255 == ptr5[c])
+				{
+					exposure_num++;
+				}
 
 
 				double b = ptr0[c] * std::sin(0 * CV_2PI / 6.0) + ptr1[c] * std::sin(1 * CV_2PI / 6.0) + ptr2[c] * std::sin(2 * CV_2PI / 6.0)
@@ -93,7 +120,7 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 				double a = ptr0[c] * std::cos(0 * CV_2PI / 6.0) + ptr1[c] * std::cos(1 * CV_2PI / 6.0) + ptr2[c] * std::cos(2 * CV_2PI / 6.0)
 					+ ptr3[c] * std::cos(3 * CV_2PI / 6.0) + ptr4[c] * std::cos(4 * CV_2PI / 6.0) + ptr5[c] * std::cos(5 * CV_2PI / 6.0);
 
-				double r = std::sqrtf(a * a + b * b);
+				double r = std::sqrt(a * a + b * b);
 
 				//if (r > 255)
 				//{
@@ -104,11 +131,11 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 
 				/***********************************************************************/
 
-				if (255 == ptr1[c] || 255 == ptr2[c] || 255 == ptr3[c] || 255 == ptr4[c] || 255 == ptr4[c] || 255 == ptr5[c])
+				if (exposure_num > 3)
 				{
 					ptr_m[c] = 0;
 					ptr_con[c] = 0;
-					optr[c] = 0;
+					optr[c] = -1;
 				}
 				else
 				{
@@ -129,13 +156,13 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 	return true;
 }
 
-bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat &confidence)
+bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence)
 {
 	if (4 != patterns.size())
 	{
 		return false;
 	}
-	 
+
 	cv::Mat img1 = patterns[0];
 	cv::Mat img2 = patterns[1];
 	cv::Mat img3 = patterns[2];
@@ -148,10 +175,10 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 	if (!mask.data)
 	{
 		mask = cv::Mat(img1.rows, img1.cols, CV_8U, cv::Scalar(255));
-	} 
+	}
 
 	int nl = img1.rows;
-	int nc = img1.cols* img1.channels();
+	int nc = img1.cols * img1.channels();
 
 	if (img1.isContinuous())
 	{
@@ -163,7 +190,7 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 				{
 					if (mask.isContinuous())
 					{
-						nc = nc*nl;
+						nc = nc * nl;
 						nl = 1;
 					}
 				}
@@ -171,50 +198,68 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 		}
 
 	}
-	#pragma omp parallel for
-		for (int i = 0; i< nl; i++)
+#pragma omp parallel for
+	for (int i = 0; i < nl; i++)
+	{
+		uchar* ptr1 = img1.ptr<uchar>(i);
+		uchar* ptr2 = img2.ptr<uchar>(i);
+		uchar* ptr3 = img3.ptr<uchar>(i);
+		uchar* ptr4 = img4.ptr<uchar>(i);
+		uchar* ptr_m = mask.ptr<uchar>(i);
+		double* ptr_con = confidence_map.ptr<double>(i);
+
+		double* optr = result.ptr<double>(i);
+		for (int j = 0; j < nc; j++)
 		{
-			uchar* ptr1 = img1.ptr<uchar>(i);
-			uchar* ptr2 = img2.ptr<uchar>(i);
-			uchar* ptr3 = img3.ptr<uchar>(i);
-			uchar* ptr4 = img4.ptr<uchar>(i);
-			uchar* ptr_m = mask.ptr<uchar>(i);
-			double* ptr_con = confidence_map.ptr<double>(i);
-
-			double* optr = result.ptr<double>(i);
-			for (int j = 0; j< nc; j++)
+			int exposure_num = 0;
+			if (ptr_m[j] == 255)
 			{
-				if (ptr_m[j] == 255)
+				if (255 == ptr1[j])
 				{
-					double a = ptr4[j] - ptr2[j];
-					double b = ptr1[j] - ptr3[j];
- 
-					double r = std::sqrtf(a*a + b*b) + 0.5; 
-
-					//if(r> 255)
-					//{
-					//	r = 255;
-					//}
-
-					ptr_con[j] = r;
-
-					/***********************************************************************/
-
-					//if (255 == ptr1[j] || 255 == ptr2[j] || 255 == ptr3[j] || 255 == ptr4[j])
-					//{
-					//	ptr_m[j] = 0;
-					//	ptr_con[j] = 0;
-					//	optr[j] = 0;
-					//}
-					//else
-					{
-						optr[j] = CV_PI + std::atan2(a, b);
-					} 
-
+					exposure_num++;
 				}
+				if (255 == ptr2[j])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr3[j])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr4[j])
+				{
+					exposure_num++;
+				}
+
+				double a = ptr4[j] - ptr2[j];
+				double b = ptr1[j] - ptr3[j];
+
+				double r = std::sqrt(a * a + b * b) + 0.5;
+
+				//if(r> 255)
+				//{
+				//	r = 255;
+				//}
+
+				ptr_con[j] = r;
+
+				/***********************************************************************/
+
+				if (exposure_num > 1)
+				{
+					ptr_m[j] = 0;
+					ptr_con[j] = 0;
+					optr[j] = -1;
+				}
+				else
+				{
+					optr[j] = CV_PI + std::atan2(a, b);
+				}
+
 			}
 		}
-	 
+	}
+
 
 	/*****************************************************************************************************************************/
 
@@ -224,9 +269,9 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 
 	return true;
 }
- 
 
-bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, double rate, cv::Mat& h_unwrap, cv::Mat& k_Mat,cv::Mat err_mat)
+
+bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, double rate, cv::Mat& h_unwrap, cv::Mat& k_Mat, cv::Mat err_mat)
 {
 
 	if (l_unwrap.empty() || h_wrap.empty())
@@ -267,15 +312,15 @@ bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, doubl
 
 			//double temp = 0.5 + l_ptr[j] / (1 * CV_PI) - h_ptr[j] / (rate * CV_PI); 
 
-			double temp = 0.5 + (rate * l_ptr[c] - h_ptr[c]) / (CV_PI);
+			double temp = 0.5 + (rate * l_ptr[c] - h_ptr[c]) / (2 * CV_PI);
 			int k = temp;
-			h_unwrap_ptr[c] = CV_PI * k + h_ptr[c];
+			h_unwrap_ptr[c] = 2 * CV_PI * k + h_ptr[c];
 
 			ptr_err[c] = fabs(h_unwrap_ptr[c] - rate * l_ptr[c]);
 
 			k_ptr[c] = k;
 
-			if (ptr_err[c] > 0.8)
+			if (ptr_err[c] > 1.5)
 			{
 				h_unwrap_ptr[c] = -10;
 
@@ -284,7 +329,7 @@ bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, doubl
 			//int k = temp; 
 			//k_ptr[j] = k; 
 			//h_unwrap_ptr[j] = 2 * CV_PI * k + h_ptr[j];
-			 
+
 
 		}
 	}
@@ -350,10 +395,10 @@ bool DF_Encode::unwrapHalfWavelengthPatternsOpenmp(std::vector<cv::Mat> wrap_img
 		return false;
 	}
 
- 
+
 
 	bool unwrap_filter = false;
-	 
+
 
 	if (mask.data)
 	{
@@ -376,20 +421,20 @@ bool DF_Encode::unwrapHalfWavelengthPatternsOpenmp(std::vector<cv::Mat> wrap_img
 		cv::Mat k_mat(nr, nc, CV_8U, cv::Scalar(0));
 		cv::Mat unwrap_mat(nr, nc, CV_64F, cv::Scalar(0));
 
-		unwarpDualWavelength(img_1, img_2, unwrap_mat, k_mat); 
+		unwarpDualWavelength(img_1, img_2, unwrap_mat, k_mat);
 		unwrap_img_list.push_back(unwrap_mat);
 
 	}
-	 
+
 
 	float period_num = std::pow(2, unwrap_img_list.size() - 1);
 
-	 
+
 
 	//unwrap_img = unwrap_img_list[unwrap_img_list.size() - 1].clone()/ period_num;
 
 	unwrap_img = unwrap_img_list[unwrap_img_list.size() - 1].clone();
-	 
+
 
 	return true;
 }
@@ -401,7 +446,7 @@ bool DF_Encode::unwrapVariableWavelengthPatterns(std::vector<cv::Mat> wrap_img_l
 	{
 		return false;
 	}
-	if (wrap_img_list.size() != rate_list.size()+1)
+	if (wrap_img_list.size() != rate_list.size() + 1)
 	{
 		return false;
 	}
@@ -424,7 +469,7 @@ bool DF_Encode::unwrapVariableWavelengthPatterns(std::vector<cv::Mat> wrap_img_l
 
 	cv::Mat unwrap_map = wrap_img_list[0];
 
-	cv::Mat k_mat(nr,nc,CV_8U,cv::Scalar(0));
+	cv::Mat k_mat(nr, nc, CV_8U, cv::Scalar(0));
 
 	for (int g_i = 1; g_i < wrap_img_list.size(); g_i++)
 	{
@@ -441,7 +486,7 @@ bool DF_Encode::unwrapVariableWavelengthPatterns(std::vector<cv::Mat> wrap_img_l
 	return true;
 }
 
-bool DF_Encode::unwrapVariableWavelengthPatternsOpenmp(std::vector<cv::Mat> wrap_img_list, std::vector<double> rate_list, cv::Mat &unwrap_img, cv::Mat &mask)
+bool DF_Encode::unwrapVariableWavelengthPatternsOpenmp(std::vector<cv::Mat> wrap_img_list, std::vector<double> rate_list, cv::Mat& unwrap_img, cv::Mat& mask)
 {
 
 	if (wrap_img_list.empty())
@@ -473,8 +518,8 @@ bool DF_Encode::unwrapVariableWavelengthPatternsOpenmp(std::vector<cv::Mat> wrap
 	cv::Mat err_map_l(nr, nc, CV_64F, cv::Scalar(0));
 	cv::Mat err_map_h(nr, nc, CV_64F, cv::Scalar(0));
 
-	#pragma omp parallel for
-	for (int r = 0; r< nr; r++)
+#pragma omp parallel for
+	for (int r = 0; r < nr; r++)
 	{
 		double* ptr_0 = wrap_img_list[0].ptr<double>(r);
 		double* ptr_1 = wrap_img_list[1].ptr<double>(r);
@@ -487,12 +532,12 @@ bool DF_Encode::unwrapVariableWavelengthPatternsOpenmp(std::vector<cv::Mat> wrap
 
 		double* ptr_h = h_unwrap_map.ptr<double>(r);
 
-		for (int c = 0; c< nc; c++)
+		for (int c = 0; c < nc; c++)
 		{
 
 			double temp = 0.5 + (rate_list[0] * ptr_0[c] - ptr_1[c]) / (CV_PI);
 			int k = temp;
-			ptr_h[c] = CV_PI*k + ptr_1[c];
+			ptr_h[c] = CV_PI * k + ptr_1[c];
 
 			if (unwrap_filter)
 			{
@@ -514,7 +559,7 @@ bool DF_Encode::unwrapVariableWavelengthPatternsOpenmp(std::vector<cv::Mat> wrap
 			k = temp;
 
 			double old_ptr_h = ptr_h[c];
-			ptr_h[c] = CV_PI*k + ptr_2[c];
+			ptr_h[c] = CV_PI * k + ptr_2[c];
 
 			if (unwrap_filter)
 			{
@@ -628,7 +673,7 @@ bool DF_Encode::computePhaseBaseSixStep(std::vector<cv::Mat> patterns, std::vect
 	return true;
 }
 
-bool DF_Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector<cv::Mat> &wrap_maps, cv::Mat &mask_img, cv::Mat& confidence)
+bool DF_Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector<cv::Mat>& wrap_maps, cv::Mat& mask_img, cv::Mat& confidence)
 {
 
 	std::vector<cv::Mat> wrap_img_list;
@@ -637,7 +682,7 @@ bool DF_Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vec
 
 
 
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int i = 0; i < patterns.size() - 1; i += 4)
 	{
 		cv::Mat wrap_img;
@@ -647,7 +692,7 @@ bool DF_Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vec
 		fourStepPhaseShift(phase_list, wrap_img, mask_img, confidence);
 
 
-		#pragma omp critical
+#pragma omp critical
 		{
 			number_list.push_back(i / 4);
 			wrap_img_list.push_back(wrap_img);
@@ -729,30 +774,30 @@ bool DF_Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vec
 }
 
 
-bool DF_Encode::maskMap(cv::Mat mask, cv::Mat &map)
+bool DF_Encode::maskMap(cv::Mat mask, cv::Mat& map)
 {
-	if(!mask.data)
+	if (!mask.data)
 	{
 		return false;
 	}
 
-	if(!map.data)
+	if (!map.data)
 	{
 		return false;
 	}
 
 
-	if(CV_64FC3 == map.type())
+	if (CV_64FC3 == map.type())
 	{
-		for(int r= 0;r< map.rows;r++)
+		for (int r = 0; r < map.rows; r++)
 		{
-			
+
 			cv::Vec3d* ptr_map = map.ptr<cv::Vec3d>(r);
 			uchar* ptr_mask = mask.ptr<uchar>(r);
 
-			for(int c= 0;c< map.cols;c++)
+			for (int c = 0; c < map.cols; c++)
 			{
-				if(0 == ptr_mask[c])
+				if (0 == ptr_mask[c])
 				{
 					ptr_map[c][0] = 0;
 					ptr_map[c][1] = 0;
@@ -762,14 +807,14 @@ bool DF_Encode::maskMap(cv::Mat mask, cv::Mat &map)
 
 		}
 	}
-	else if(CV_64FC1 == map.type())
+	else if (CV_64FC1 == map.type())
 	{
-		for (int r = 0; r< map.rows; r++)
-		{ 
+		for (int r = 0; r < map.rows; r++)
+		{
 			double* ptr_map = map.ptr<double>(r);
 			uchar* ptr_mask = mask.ptr<uchar>(r);
 
-			for (int c = 0; c< map.cols; c++)
+			for (int c = 0; c < map.cols; c++)
 			{
 				if (0 == ptr_mask[c])
 				{
@@ -797,18 +842,18 @@ bool DF_Encode::selectMaskBaseConfidence(cv::Mat confidence, int threshold, cv::
 
 	//mask = cv::Mat(nr, nc, CV_8U, cv::Scalar(0));
 
-	for (int r = 0; r< nr; r++)
+	for (int r = 0; r < nr; r++)
 	{
 		double* ptr_c = confidence.ptr<double>(r);
 		uchar* ptr_m = mask.ptr<uchar>(r);
 
-		for (int c = 0; c< nc; c++)
+		for (int c = 0; c < nc; c++)
 		{
 			if (ptr_c[c] < threshold)
 			{
 				ptr_m[c] = 0;
 			}
- 
+
 		}
 	}
 

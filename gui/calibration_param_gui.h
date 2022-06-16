@@ -1,6 +1,6 @@
 #pragma once
-
-#include <QDialog>
+#include <QtWidgets/QDialog>
+//#include <QDialog>
 #include "ui_calibration_param_gui.h"
 #include "../firmware/camera_param.h"
 #include "../firmware/system_config_settings.h"

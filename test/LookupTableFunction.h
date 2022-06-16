@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp> 
 #include <opencv2/imgproc/imgproc.hpp>
@@ -13,29 +13,29 @@ public:
 
 	bool rebuildData(cv::Mat unwrap_map_x, int group_num, cv::Mat& deep_map, cv::Mat& mask);
 
-	bool mat_double_to_float(cv::Mat org_mat,cv::Mat &dst_mat);
+	bool mat_double_to_float(cv::Mat org_mat, cv::Mat& dst_mat);
 
-	bool mat_float_to_double(cv::Mat org_mat, cv::Mat &dst_mat);
+	bool mat_float_to_double(cv::Mat org_mat, cv::Mat& dst_mat);
 
-	bool generate_pointcloud(cv::Mat z, cv::Mat& mask,cv::Mat &map_xyz);
+	bool generate_pointcloud(cv::Mat z, cv::Mat& mask, cv::Mat& map_xyz);
 
-	double depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b);
+	double depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b, double& disparity);
 
-	double Bilinear_interpolation(double x, double y, cv::Mat &mapping);
+	double Bilinear_interpolation(double x, double y, cv::Mat& mapping);
 
-	cv::Mat readmapping(int rows, int cols, std::string mapping_file); 
+	cv::Mat readmapping(int rows, int cols, std::string mapping_file);
 
-	bool readBinMapping(int rows, int cols, std::string mapping_file, cv::Mat& out_map); 
-	
-	bool readBinMappingFloat(int rows, int cols, std::string mapping_file, cv::Mat& out_map); 
+	bool readBinMapping(int rows, int cols, std::string mapping_file, cv::Mat& out_map);
+
+	bool readBinMappingFloat(int rows, int cols, std::string mapping_file, cv::Mat& out_map);
 
 	bool TestReadBinMapping(int rows, int cols, std::string mapping_file, cv::Mat& out_map);
 
 	bool saveBinMapping(std::string mapping_file, cv::Mat out_map);
-	
+
 	bool saveBinMappingFloat(std::string mapping_file, cv::Mat out_map);
 
-	bool getRebuildValueB(double &b);
+	bool getRebuildValueB(double& b);
 
 	void setRebuildValueB(double b);
 
@@ -43,7 +43,7 @@ public:
 
 	bool readCalibXml(std::string path);
 
-	bool readTable(std::string dir_path,int rows,int cols);
+	bool readTable(std::string dir_path, int rows, int cols);
 
 	bool generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 
@@ -59,9 +59,11 @@ public:
 
 	void setCalibData(struct CameraCalibParam calib_param);
 
-	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping); 
+	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 
-	bool readTableFloat(std::string dir_path,cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+	bool readTableFloat(std::string dir_path, cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+
+	bool setCameraVersion(int version);
 private:
 	void normalizePoint(
 		double x, double y,
@@ -90,5 +92,9 @@ private:
 	cv::Mat rotation_matrix_;
 	cv::Mat translation_matrix_;
 	double value_b_;
+
+	float dlp_width_;
+	float dlp_height_;
+
 };
 

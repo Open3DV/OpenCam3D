@@ -28,6 +28,8 @@ public slots:
     void do_action_exit();
 
     void do_action_show_calibration_param();
+
+    void do_action_select_calibration_board();
 protected:
     void closeEvent(QCloseEvent * e);
 

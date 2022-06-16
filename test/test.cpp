@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "solution.h"
-#include "../Firmware/camera_param.h"
+#include "../firmware/camera_param.h"
 #include "../cmd/getopt.h"
 
 
@@ -11,13 +11,13 @@ const char* help_info =
 "Examples:\n\
 \n\
 1.Capture:\n\
-test.exe --capture --ip 192.168.x.x --patterns ./patterns_data --calib ./param.txt --pointcloud ./pointcloud_data\n\
+test.exe --capture --ip 192.168.x.x --patterns ./patterns_data --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
 \n\
 2.Read:\n\
-test.exe --read --patterns ./patterns_data  --calib ./param.txt --pointcloud ./pointcloud_data\n\
+test.exe --read --patterns ./patterns_data  --calib ./param.txt --version DFX800  --pointcloud ./pointcloud_data\n\
 \n\
 3.Read:\n\
-test.exe --reconstruct --use look-table --patterns ./patterns_data  --calib ./param.txt --pointcloud ./pointcloud_data\n\
+test.exe --reconstruct --use look-table --patterns ./patterns_data  --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
 \n\
 ";
 
@@ -34,6 +34,7 @@ enum opt_set
 	PATTERNS,
 	CALIB,
 	POINTCLOUD,
+	VERSION,
 	HELP
 };
 
@@ -47,14 +48,16 @@ static struct option long_options[] =
 	{"patterns", required_argument, NULL, PATTERNS},
 	{"calib", required_argument, NULL, CALIB},
 	{"pointcloud", required_argument, NULL, POINTCLOUD},
+	{"version", required_argument, NULL, VERSION},
 	{"help",no_argument,NULL,HELP},
 };
 
-const char* camera_ip;
-const char* patterns_path;
-const char* calib_path;
-const char* pointcloud_path;
-const char* use_type;
+const char* camera_ip = "";
+const char* patterns_path = "";
+const char* calib_path = "";
+const char* pointcloud_path = "";
+const char* use_type = "";
+const char* char_version = "";
 int command = HELP;
 
 
@@ -64,6 +67,8 @@ void reconstruct_base_looktable();
 
 const char* camera_id;
 const char* path;
+
+int version_number = 0;
 
 int main(int argc, char* argv[])
 {
@@ -88,6 +93,22 @@ int main(int argc, char* argv[])
 			break;
 		case USE:
 			use_type = optarg;
+			break;
+		case VERSION:
+		{
+			char_version = optarg;
+
+			std::string version_str(char_version);
+
+			if ("DFX800" == version_str || "dfx800" == version_str || "800" == version_str)
+			{
+				version_number = 800;
+			}
+			else if ("DFX1800" == version_str || "dfx1800" == version_str || "1800" == version_str)
+			{
+				version_number = 1800;
+			}
+		}
 			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
@@ -153,7 +174,13 @@ void capture()
 	{
 		std::cout << "Get Camera Calib Data Failure!";
 	}
-
+	 
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{  
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
 
 	solution_machine_.reconstructMixedVariableWavelengthPatternsBaseXYSR(patterns_, calibration_param_, pointcloud_path);
 }
@@ -177,11 +204,15 @@ void reconstruct_base_looktable()
 	{
 		std::cout << "Read Calib Param Error!" << std::endl;
 	}
+	 
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{ 
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
 
-
-
-
-
+	
 	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseTable(patterns_, calibration_param_, pointcloud_path);
 }
 
@@ -204,8 +235,13 @@ void read()
 	{
 		std::cout << "Read Calib Param Error!" << std::endl;
 	}
-
-
+	 
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{ 
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
 
 	solution_machine_.reconstructMixedVariableWavelengthPatternsBaseXYSR(patterns_, calibration_param_, pointcloud_path);
 }

@@ -1,7 +1,16 @@
-#include "Support_Function.h"
+#ifdef _WIN32  
+#include <windows.h>
+#elif __linux 
+#include <sys/types.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif 
+#include "support_function.h"
 #include "iostream" 
-#include <fstream>
-
+#include <fstream> 
 
 /**************************************************************************************************************************/
 
@@ -21,12 +30,12 @@ std::time_t getTimeStamp(int& msec)
 
 std::tm* gettm(long long timestamp)
 {
-	auto milli = timestamp + (long long)8 * 60 * 60 * 1000; //´Ë´¦×ª»¯Îª¶«°ËÇø±±¾©Ê±¼ä£¬Èç¹ûÊÇÆäËüÊ±ÇøĞèÒª°´ĞèÇóĞŞ¸Ä
+	auto milli = timestamp + (long long)8 * 60 * 60 * 1000; //ï¿½Ë´ï¿½×ªï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ş¸ï¿½
 	auto mTime = std::chrono::milliseconds(milli);
 	auto tp = std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>(mTime);
 	auto tt = std::chrono::system_clock::to_time_t(tp);
 	std::tm* now = std::gmtime(&tt);
-	//printf("%4dÄê%02dÔÂ%02dÈÕ %02d:%02d:%02d\n", now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+	//printf("%4dï¿½ï¿½%02dï¿½ï¿½%02dï¿½ï¿½ %02d:%02d:%02d\n", now->tm_year + 1900, now->tm_mon + 1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
 	return now;
 }
 
@@ -39,13 +48,13 @@ std::string GetTimeStamp()
 	auto t = getTimeStamp(msec);
 	//std::cout << "Millisecond timestamp is: " << t << std::endl;
 	auto time_ptr = gettm(t);
-	sprintf(time_str[0], "%02d", time_ptr->tm_year + 1900); //ÔÂ·İÒª¼Ó1
-	sprintf(time_str[1], "%02d", time_ptr->tm_mon + 1); //ÔÂ·İÒª¼Ó1
-	sprintf(time_str[2], "%02d", time_ptr->tm_mday);//Ìì
+	sprintf(time_str[0], "%02d", time_ptr->tm_year + 1900); //ï¿½Â·ï¿½Òªï¿½ï¿½1
+	sprintf(time_str[1], "%02d", time_ptr->tm_mon + 1); //ï¿½Â·ï¿½Òªï¿½ï¿½1
+	sprintf(time_str[2], "%02d", time_ptr->tm_mday);//ï¿½ï¿½
 	sprintf(time_str[3], "%02d", time_ptr->tm_hour);//Ê±
-	sprintf(time_str[4], "%02d", time_ptr->tm_min);// ·Ö
+	sprintf(time_str[4], "%02d", time_ptr->tm_min);// ï¿½ï¿½
 	sprintf(time_str[5], "%02d", time_ptr->tm_sec);//Ê±
-	sprintf(time_str[6], "%02d", msec);// ·Ö
+	sprintf(time_str[6], "%02d", msec);// ï¿½ï¿½
 	//for (int i = 0; i < 7; i++)
 	//{
 	//	std::cout << "time_str[" << i << "] is: " << time_str[i] << std::endl;
@@ -111,7 +120,7 @@ bool getFilesList(std::string dirs, std::vector<std::vector<std::string>>& files
 	for (int i = 0; i < dir_list.size(); i++)
 	{
 		std::string dir = dir_list[i];
-
+		
 		std::vector<std::string> files; 
 		getFiles(dir, files); 
 
@@ -121,59 +130,186 @@ bool getFilesList(std::string dirs, std::vector<std::vector<std::string>>& files
 	return true;
 }
 
-void getJustCurrentDir(std::string path, std::vector<std::string>& dirs) {
-	//ÎÄ¼ş¾ä±ú
+bool compareNat(const std::string& a, const std::string& b)
+{
+    if (a.empty())
+        return true;
+    if (b.empty())
+        return false;
+    if (std::isdigit(a[0]) && !std::isdigit(b[0]))
+        return true;
+    if (!std::isdigit(a[0]) && std::isdigit(b[0]))
+        return false;
+    if (!std::isdigit(a[0]) && !std::isdigit(b[0]))
+    {
+        if (std::toupper(a[0]) == std::toupper(b[0]))
+            return compareNat(a.substr(1), b.substr(1));
+        return (std::toupper(a[0]) < std::toupper(b[0]));
+    }
+
+    // Both strings begin with digit --> parse both numbers
+    std::istringstream issa(a);
+    std::istringstream issb(b);
+    int ia, ib;
+    issa >> ia;
+    issb >> ib;
+    if (ia != ib)
+        return ia < ib;
+
+    // Numbers are the same --> remove numbers and recurse
+    std::string anew, bnew;
+    std::getline(issa, anew);
+    std::getline(issb, bnew);
+    return (compareNat(anew, bnew));
+}
+void getJustCurrentDir(std::string path, std::vector<std::string>& dirs)
+ { 
+
+#ifdef _WIN32 
+
+	//æ–‡ä»¶å¥æŸ„
 	intptr_t hFile = 0;
-	//ÎÄ¼şĞÅÏ¢ 
+	//æ–‡ä»¶ä¿¡æ¯ 
 	struct _finddata_t fileinfo;
 	std::string p;
 	if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1) {
 		do {
 			if ((fileinfo.attrib & _A_SUBDIR)) {
 				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
-					dirs.push_back(path /*+ "/" */+ fileinfo.name);
+					dirs.push_back(path /*+ "/" */ + fileinfo.name);
 					//files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 
-				} 
+				}
 			}
 
 		} while (_findnext(hFile, &fileinfo) == 0);
 		_findclose(hFile);
 
 	}
+  
+
+#elif __linux
+
+	 DIR *dir = opendir(path.c_str());
+	 struct dirent *entry;
+
+	std::vector<std::string> name_list;
+
+	 //ç„¶åé€šè¿‡whileå¾ªç¯ä¸æ–­readdirï¼Œè·å–ç›®å½•ä¸­çš„å†…å®¹
+	 while ((entry = readdir(dir)) != 0)
+	 {
+		   
+		 if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
+		 {
+  
+		//
+		 if (entry->d_type == 4) //å¦‚æœæ˜¯å­ç›®å½•ï¼Œç»§ç»­é€’å½’æœç´¢
+		 { 
+			 //è·å–è¯¥ç»“æ„ä½“å˜é‡çš„æˆå‘˜å‡½æ•°d_nameå°±å¾—åˆ°äº†å¾…æ‰«æçš„æ–‡ä»¶ï¼Œç„¶ååœ¨ä½¿ç”¨sprintfå‡½æ•°åŠ å…¥æ–‡ä»¶ç»å¯¹è·¯å¾„
+
+			 std::string name(entry->d_name);
+			//  bool exist_flag = false;
+
+			//  auto iter = name_list.begin();
+			//  while (iter != name_list.end())
+			//  {
+			// 	 if (*iter == name)
+			// 	 { // è¿™å‘½ä»¤å¯ä»¥ä½œä¸ºæŸ¥æ‰¾vetorå…ƒç´ çš„æ–¹æ³•
+			// 		 // vct_name_.erase(iter);	 // åˆ é™¤
+			// 		 // iter=vct_name_.erase(iter); //ä¹Ÿå¯ä»¥è¿™ä¹ˆå†™
+			// 		 exist_flag = true;
+			// 	 }
+			// 	 iter++;
+			//  }
+
+			//  if (!exist_flag)
+			//  {
+				 name_list.push_back(name); 
+			//  }
+ 
+ 
+		 }
+		 }
+ 
+
+	 }
+
+	 //æœ€åå…³é—­ç›®å½•å¥æŸ„closedir
+	 closedir(dir); 
+	 std::sort(name_list.begin(), name_list.end(), compareNat);
+
+	 for (int i = 0; i < name_list.size(); i++)
+	 {
+		 std::string dir = path + "/" + name_list[i];
+		 dirs.push_back(dir); 
+	 }
+ 
+#endif 
 
 }
 
 void  getFiles(std::string path, std::vector<std::string>& files)
 {
-	//ÎÄ¼ş¾ä±ú  
+
+#ifdef _WIN32 
+	//ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½  
 	intptr_t    hFile = 0;
-	//ÎÄ¼şĞÅÏ¢£¬ÉùÃ÷Ò»¸ö´æ´¢ÎÄ¼şĞÅÏ¢µÄ½á¹¹Ìå  
+	//ï¿½Ä¼ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½æ´¢ï¿½Ä¼ï¿½ï¿½ï¿½Ï¢ï¿½Ä½á¹¹ï¿½ï¿½  
 	struct _finddata_t fileinfo;
-	string p;//×Ö·û´®£¬´æ·ÅÂ·¾¶
-	if ((hFile = _findfirst(p.assign(path).append("/*.bmp").c_str(), &fileinfo)) != -1)//Èô²éÕÒ³É¹¦£¬Ôò½øÈë
+	string p;//ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½
+	if ((hFile = _findfirst(p.assign(path).append("/*.bmp").c_str(), &fileinfo)) != -1)//ï¿½ï¿½ï¿½ï¿½ï¿½Ò³É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	{
 		do
 		{
-			//Èç¹ûÊÇÄ¿Â¼,µü´úÖ®£¨¼´ÎÄ¼ş¼ĞÄÚ»¹ÓĞÎÄ¼ş¼Ğ£©  
+			//ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Â¼,ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Ú»ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½Ğ£ï¿½  
 			if ((fileinfo.attrib & _A_SUBDIR))
 			{
-				//ÎÄ¼şÃû²»µÈÓÚ"."&&ÎÄ¼şÃû²»µÈÓÚ".."
-					//.±íÊ¾µ±Ç°Ä¿Â¼
-					//..±íÊ¾µ±Ç°Ä¿Â¼µÄ¸¸Ä¿Â¼
-					//ÅĞ¶ÏÊ±£¬Á½Õß¶¼ÒªºöÂÔ£¬²»È»¾ÍÎŞÏŞµİ¹éÌø²»³öÈ¥ÁË£¡
+				//ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"."&&ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½".."
+					//.ï¿½ï¿½Ê¾ï¿½ï¿½Ç°Ä¿Â¼
+					//..ï¿½ï¿½Ê¾ï¿½ï¿½Ç°Ä¿Â¼ï¿½Ä¸ï¿½Ä¿Â¼
+					//ï¿½Ğ¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ß¶ï¿½Òªï¿½ï¿½ï¿½Ô£ï¿½ï¿½ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½Şµİ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¥ï¿½Ë£ï¿½
 				//if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
 				//	getFiles(p.assign(path).append("\\").append(fileinfo.name), files);
 			}
-			//Èç¹û²»ÊÇ,¼ÓÈëÁĞ±í  
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½Ğ±ï¿½  
 			else
 			{
 				files.push_back(p.assign(path).append("/").append(fileinfo.name));
 			}
 		} while (_findnext(hFile, &fileinfo) == 0);
-		//_findcloseº¯Êı½áÊø²éÕÒ
+		//_findcloseï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		_findclose(hFile);
 	}
+
+#elif __linux 
+	DIR *pDir;
+	struct dirent *entry;
+	if (!(pDir = opendir(path.c_str())))
+		return;
+	while ((entry = readdir(pDir)) != 0)
+	{
+		if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
+		{
+
+			//
+			if (entry->d_type == 8) //å¦‚æœæ˜¯å­ç›®å½•ï¼Œç»§ç»­é€’å½’æœç´¢
+			{
+				//è·å–è¯¥ç»“æ„ä½“å˜é‡çš„æˆå‘˜å‡½æ•°d_nameå°±å¾—åˆ°äº†å¾…æ‰«æçš„æ–‡ä»¶ï¼Œç„¶ååœ¨ä½¿ç”¨sprintfå‡½æ•°åŠ å…¥æ–‡ä»¶ç»å¯¹è·¯å¾„
+
+				std::string name(entry->d_name);
+
+				if(name.find(".bmp"))
+				{
+					files.push_back(path + "/" + name);	
+				}
+ 
+			}
+		}
+	}
+	closedir(pDir);
+	std::sort(files.begin(), files.end(), compareNat);
+#endif 
+ 
 
 }
 
@@ -197,7 +333,7 @@ bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map)
 
 	if (texture_map.empty())
 	{
-		//ÎŞÑÕÉ«
+		//ï¿½ï¿½ï¿½ï¿½É«
 		for (int i = 0; i < nc * nr; i++)
 		{
 			if (point_cloud_buffer[i * 3 + 2] > 0.01)
@@ -207,13 +343,27 @@ bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map)
 	}
 	else
 	{
-		//ÓĞÑÕÉ« 
-		for (int i = 0; i < nc * nr; i++)
+		if (1 == texture_map.channels())
 		{
-			if (point_cloud_buffer[i * 3 + 2] > 0.01)
-				ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << " "
-				<< (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << std::endl;
+			//ï¿½ï¿½ï¿½ï¿½É« 
+			for (int i = 0; i < nc * nr; i++)
+			{
+				if (point_cloud_buffer[i * 3 + 2] > 0.01)
+					ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << " "
+					<< (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << " " << (int)brightness_buffer[i] << std::endl;
+			}
 		}
+		else if (3 == texture_map.channels())
+		{
+			//ï¿½ï¿½ï¿½ï¿½É« 
+			for (int i = 0; i < nc * nr; i++)
+			{
+				if (point_cloud_buffer[i * 3 + 2] > 0.01)
+					ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << " "
+					<< (int)brightness_buffer[i * 3] << " " << (int)brightness_buffer[i*3+1] << " " << (int)brightness_buffer[i*3+2] << std::endl;
+			}
+		}
+
 	}
 
 
@@ -224,7 +374,7 @@ bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map)
 	return true;
 }
 
-//½ØÈ¡z-map RoiÍ¼
+//ï¿½ï¿½È¡z-map RoiÍ¼
 bool MaskZMap(cv::Mat& z_map, cv::Mat mask)
 {
 	if (!z_map.data)
@@ -404,6 +554,50 @@ bool MapToColor(cv::Mat deep_map, cv::Mat& color_map, cv::Mat& grey_map, int low
 
 	return true;
 
+}
+
+
+bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, int offset_value)
+{
+	if (normal_phase.empty() || brightness.empty())
+		return false;
+	 
+	int nr = brightness.rows;
+	int nc = brightness.cols;
+
+	cv::Mat sobel_brightness = brightness.clone();
+	cv::Mat sobel_grad_x, scharr_x;
+
+	//cv::Sobel(sobel_brightness, sobel_grad_x, CV_64F, 1, 0, 1);
+
+	Scharr(sobel_brightness, scharr_x, CV_64F, 1, 0, 1, 0, cv::BORDER_DEFAULT);
+	cv::GaussianBlur(scharr_x, scharr_x, cv::Size(5, 5), 3, 3);
+  
+
+	for (int r = 0; r < nr; r++)
+	{
+		double* ptr_sobel = scharr_x.ptr<double>(r); 
+		double* ptr_phase_map = normal_phase.ptr<double>(r);
+
+		for (int c = 0; c < nc; c++)
+		{
+			if (std::abs(ptr_sobel[c]) < 300)
+			{
+				ptr_sobel[c] = 0;
+			}
+			else
+			{
+				if (ptr_phase_map[c] > 0)
+				{
+					ptr_phase_map[c] -= ptr_sobel[c] * 0.0000001 * offset_value;
+				} 
+			}
+		}
+
+	}
+
+
+	return true;
 }
 
 bool MergeTextureMap(std::vector<cv::Mat> patterns, cv::Mat& texture_map)

@@ -9,3 +9,6 @@ example/*.dll
 example/*.lib
 build
 firmware/version.h
+TestData
+release_camera
+camera_config.json
