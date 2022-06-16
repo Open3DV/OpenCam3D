@@ -110,7 +110,7 @@ open_cam3d.exe --set-auto-exposure-roi  --ip 192.168.x.x\n\
 open_cam3d.exe --self-test --ip 192.168.x.x\n\
 \n\
 29.Get projector temperature: \n\
-
+\n\
 open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
 \n\
 ";
