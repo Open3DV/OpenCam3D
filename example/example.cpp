@@ -100,6 +100,12 @@ int main()
 			std::cout << "Set Camera Gain Error!" << std::endl;
 		}
 
+		ret_code = DfSetParamSmoothing(1);
+		if (0 != ret_code)
+		{
+			std::cout << "Set Pointcloud Smoothing Error!" << std::endl;
+		}
+
 		//采集单曝光数据
 		if (false)
 		{

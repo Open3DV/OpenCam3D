@@ -111,6 +111,7 @@ bool CameraCaptureGui::initializeFunction()
 
 	connect(ui.spinBox_led, SIGNAL(valueChanged(int)), this, SLOT(do_spin_led_current_changed(int)));
 	connect(ui.spinBox_camera_exposure, SIGNAL(valueChanged(int)), this, SLOT(do_spin_camera_exposure_changed(int)));
+	connect(ui.spinBox_smoothing, SIGNAL(valueChanged(int)), this, SLOT(do_spin_smoothing_changed(int)));
 
 	connect(ui.radioButton_brightness, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_brightness(bool)));
 	connect(ui.radioButton_depth_color, SIGNAL(toggled(bool)), this, SLOT(do_QRadioButton_toggled_color_depth(bool)));
@@ -118,7 +119,6 @@ bool CameraCaptureGui::initializeFunction()
 
 
 	connect(ui.checkBox_hdr, SIGNAL(toggled(bool)), this, SLOT(do_checkBox_toggled_hdr(bool)));
-	connect(ui.checkBox_bilateral_filter, SIGNAL(toggled(bool)), this, SLOT(do_checkBox_toggled_bilateral_filter(bool)));
 
 	connect(ui.pushButton_connect, SIGNAL(clicked()), this, SLOT(do_pushButton_connect()));
 	connect(ui.pushButton_capture_one_frame, SIGNAL(clicked()), this, SLOT(do_pushButton_capture_one_frame()));
@@ -233,8 +233,6 @@ bool CameraCaptureGui::loadSettingData(QString path)
 bool CameraCaptureGui::saveSettingData(QString path)
 {
 
-	//bool ret = processing_settings_data_.saveToSettings(path);
-
 	config_system_param_machine_.setSystemConfigData(system_config_param_);
 	config_system_param_machine_.setFirmwareConfigData(firmware_config_param_);
 	config_system_param_machine_.setGuiConfigData(processing_gui_settings_data_);
@@ -308,8 +306,6 @@ bool CameraCaptureGui::renderDepthImage(cv::Mat depth)
 
 	FileIoFunction io_machine;
 
-	//int low_z = processing_settings_data_.Instance().low_z_value;
-	//int high_z = processing_settings_data_.Instance().high_z_value;
 
 	io_machine.depthToColor(depth, render_image_color_depth_, render_image_gray_depth_, min_depth_value_, max_depth_value_);
 
@@ -374,6 +370,15 @@ void CameraCaptureGui::undateSystemConfigUiData()
 	ui.doubleSpinBox_confidence->setValue(firmware_config_param_.confidence);
 	ui.doubleSpinBox_gain->setValue(system_config_param_.camera_gain);
 
+	if (0 == firmware_config_param_.use_bilateral_filter)
+	{
+		ui.spinBox_smoothing->setValue(0);
+	}
+	else
+	{
+		ui.spinBox_smoothing->setValue(firmware_config_param_.bilateral_filter_param_d / 2);
+	}
+
 }
 
 void CameraCaptureGui::setUiData()
@@ -384,14 +389,7 @@ void CameraCaptureGui::setUiData()
 
 	ui.checkBox_hdr->setChecked(processing_gui_settings_data_.Instance().use_hdr_model);
 
-	if (1 == firmware_config_param_.use_bilateral_filter)
-	{
-		ui.checkBox_bilateral_filter->setChecked(true);
-	}
-	else if (0 == firmware_config_param_.use_bilateral_filter)
-	{
-		ui.checkBox_bilateral_filter->setChecked(false);
-	}
+
 
 	//ui.spinBox_exposure_num->setDisabled(true);
 	//ui.spinBox_led->setDisabled(true);
@@ -587,6 +585,64 @@ void CameraCaptureGui::do_spin_max_z_changed(int val)
 	showImage();
 
 
+}
+
+void CameraCaptureGui::do_spin_smoothing_changed(int val)
+{
+
+	if (camera_setting_flag_)
+	{
+		return;
+	}
+
+
+	//设置参数时加锁
+	camera_setting_flag_ = true;
+	if (connected_flag_)
+	{
+		if (0 == val)
+		{
+			firmware_config_param_.use_bilateral_filter = 0;
+		}
+		else
+		{
+			firmware_config_param_.bilateral_filter_param_d = 2 * val + 1;
+		}
+
+
+		int ret_code = -1;
+		//如果连续采集在用、先暂停
+		if (start_timer_flag_)
+		{
+
+			stopCapturingOneFrameBaseThread();
+
+			ret_code = DfSetParamSmoothing(val);
+
+			if (0 == ret_code)
+			{
+				QString str = u8"设置平滑参数: " + QString::number(val);
+				addLogMessage(str);
+			}
+
+			do_pushButton_capture_continuous();
+
+		}
+		else
+		{
+			ret_code = DfSetParamSmoothing(val);
+
+			if (0 == ret_code)
+			{
+				QString str = u8"设置平滑参数: " + QString::number(val);
+				addLogMessage(str);
+			}
+
+		}
+
+	}
+
+	camera_setting_flag_ = false;
 }
 
 void CameraCaptureGui::do_doubleSpin_gain(double val)
@@ -922,6 +978,9 @@ void CameraCaptureGui::updateManyExposureParam()
 	addLogMessage(str);
 
 }
+
+
+
 
 void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 {
@@ -2015,24 +2074,24 @@ void  CameraCaptureGui::do_pushButton_capture_continuous()
 /*********************************************************************************************************************************/
 //HDR显示
 
-void CameraCaptureGui::do_checkBox_toggled_bilateral_filter(bool state)
-{
-	if (state)
-	{
-		firmware_config_param_.use_bilateral_filter = 1;
-	}
-	else
-	{
-		firmware_config_param_.use_bilateral_filter = 0;
-	}
-
-	if (connected_flag_)
-	{
-		qDebug() << "bilateral_filter_param_d: " << firmware_config_param_.bilateral_filter_param_d;
-		DfSetParamBilateralFilter(firmware_config_param_.use_bilateral_filter, firmware_config_param_.bilateral_filter_param_d);
-
-	}
-}
+//void CameraCaptureGui::do_checkBox_toggled_bilateral_filter(bool state)
+//{
+//	if (state)
+//	{
+//		firmware_config_param_.use_bilateral_filter = 1;
+//	}
+//	else
+//	{
+//		firmware_config_param_.use_bilateral_filter = 0;
+//	}
+//
+//	if (connected_flag_)
+//	{
+//		qDebug() << "bilateral_filter_param_d: " << firmware_config_param_.bilateral_filter_param_d;
+//		DfSetParamBilateralFilter(firmware_config_param_.use_bilateral_filter, firmware_config_param_.bilateral_filter_param_d);
+//
+//	}
+//}
 
 
 void CameraCaptureGui::do_checkBox_toggled_hdr(bool state)
