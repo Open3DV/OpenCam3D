@@ -2,7 +2,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp> 
-#include "../Firmware/camera_param.h"
+#include "../firmware/camera_param.h"
 
 class DF_Reconstruct
 {
@@ -35,6 +35,8 @@ public:
 	bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map);
 
 	bool pointError(cv::Mat point_cloud_0, cv::Mat point_cloud_1, cv::Mat& error_map);
+
+	bool setCameraVersion(int version);
 
 private:
 

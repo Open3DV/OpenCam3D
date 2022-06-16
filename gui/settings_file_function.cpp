@@ -1,4 +1,4 @@
-#include "settings_file_function.h"
+ï»¿#include "settings_file_function.h"
 #include "qsettings.h"
 #include "qfile.h"
 #include <QJsonArray>
@@ -24,13 +24,13 @@ bool GuiConfigDataStruct::loadFromSettings(const QString& f)
 
 	//if (QFile::exists(f))
 	//{
-		QSettings settings(f, QSettings::IniFormat);
- 
-		instance_.low_z_value = settings.value("low_z_value", 400.0).toInt(); 
-		instance_.high_z_value = settings.value("high_z_value", 600.0).toInt();
-		instance_.ip = settings.value("ip", "").toString();
-		 
-		return true;
+	QSettings settings(f, QSettings::IniFormat);
+
+	instance_.low_z_value = settings.value("low_z_value", 400.0).toInt();
+	instance_.high_z_value = settings.value("high_z_value", 600.0).toInt();
+	instance_.ip = settings.value("ip", "").toString();
+
+	return true;
 	//}
 	//else
 	//{
@@ -45,7 +45,7 @@ bool GuiConfigDataStruct::saveToSettings(const QString& f)
 	settings.setValue("low_z_value", Instance().low_z_value);
 	settings.setValue("high_z_value", Instance().high_z_value);
 	settings.setValue("ip", Instance().ip);
-   
+
 	return true;
 }
 
@@ -58,6 +58,10 @@ SettingsFileFunction::SettingsFileFunction()
 	gui_config_.Instance().ip = "";
 	gui_config_.Instance().low_z_value = 300;
 	gui_config_.Instance().high_z_value = 1200;
+	gui_config_.Instance().calibration_board = 20;
+
+	firmware_config_param_.generate_brightness_exposure = 12000;
+	firmware_config_param_.generate_brightness_model = 1;
 }
 
 SettingsFileFunction::~SettingsFileFunction()
@@ -67,7 +71,7 @@ SettingsFileFunction::~SettingsFileFunction()
 
 bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 {
-	//´ò¿ªÎÄ¼þ
+	//æ‰“å¼€æ–‡ä»¶
 	QFile file(path);
 	file.open(QIODevice::ReadOnly);
 	QByteArray data = file.readAll();
@@ -84,8 +88,8 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 
 	QJsonObject rootObject = jsonDocument.object();
 	QStringList rootKeys = rootObject.keys();
-	qDebug()<<"roots keys: " << rootKeys << "\r\n";
-	 
+	qDebug() << "roots keys: " << rootKeys << "\r\n";
+
 	//QStringList keys = rootObject.keys();
 	//for (int i = 0; i < keys.size(); i++)
 	//{
@@ -102,23 +106,51 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			camera_config_.Instance().config_param_.led_current = firmware_Obj.value("led_current").toInt();
 		}
 
-		if (firmware_Obj.contains("exposure_num") && firmware_Obj["led_current"].isDouble())
+		if (firmware_Obj.contains("camera_exposure_time") && firmware_Obj["camera_exposure_time"].isDouble())
 		{
-			qDebug() << "exposure_num is:" << firmware_Obj.value("exposure_num").toInt();
-			camera_config_.Instance().config_param_.exposure_num = firmware_Obj.value("exposure_num").toInt();
+			qDebug() << "camera_exposure_time is:" << firmware_Obj.value("camera_exposure_time").toInt();
+			camera_config_.Instance().config_param_.camera_exposure_time = firmware_Obj.value("camera_exposure_time").toInt();
 		}
 
-		if (firmware_Obj.contains("exposure_param") && firmware_Obj["exposure_param"].isArray())
+		if (firmware_Obj.contains("camera_gain") && firmware_Obj["camera_gain"].isDouble())
 		{
-			QJsonArray j_array = firmware_Obj.value("exposure_param").toArray();
+			qDebug() << "camera_gain is:" << firmware_Obj.value("camera_gain").toInt();
+			camera_config_.Instance().config_param_.camera_gain = firmware_Obj.value("camera_gain").toInt();
+		}
+
+		if (firmware_Obj.contains("mixed_exposure_num") && firmware_Obj["mixed_exposure_num"].isDouble())
+		{
+			qDebug() << "camera_exposure_time is:" << firmware_Obj.value("mixed_exposure_num").toInt();
+			camera_config_.Instance().firwmare_param_.mixed_exposure_num = firmware_Obj.value("mixed_exposure_num").toInt();
+		}
+
+		if (firmware_Obj.contains("mixed_exposure_param_list") && firmware_Obj["mixed_exposure_param_list"].isArray())
+		{
+			QJsonArray j_array = firmware_Obj.value("mixed_exposure_param_list").toArray();
 
 			if (6 == j_array.size())
-			{ 
-				qDebug() << "exposure_param is:" << firmware_Obj.value("exposure_param").toArray();
+			{
+				qDebug() << "mixed_exposure_param_list is:" << firmware_Obj.value("mixed_exposure_param_list").toArray();
 
 				for (int i = 0; i < 6; i++)
 				{
-					camera_config_.Instance().config_param_.exposure_param[i] = j_array[i].toInt();
+					camera_config_.Instance().firwmare_param_.mixed_exposure_param_list[i] = j_array[i].toInt();
+				}
+
+			}
+		}
+
+		if (firmware_Obj.contains("mixed_led_param_list") && firmware_Obj["mixed_led_param_list"].isArray())
+		{
+			QJsonArray j_array = firmware_Obj.value("mixed_led_param_list").toArray();
+
+			if (6 == j_array.size())
+			{
+				qDebug() << "mixed_led_param_list is:" << firmware_Obj.value("mixed_led_param_list").toArray();
+
+				for (int i = 0; i < 6; i++)
+				{
+					camera_config_.Instance().firwmare_param_.mixed_led_param_list[i] = j_array[i].toInt();
 				}
 
 			}
@@ -138,6 +170,42 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 			}
 
 		}
+
+		if (firmware_Obj.contains("camera_exposure_time") && firmware_Obj["camera_exposure_time"].isDouble())
+		{
+			qDebug() << "camera_exposure_time is:" << firmware_Obj.value("camera_exposure_time").toInt();
+			camera_config_.Instance().config_param_.camera_exposure_time = firmware_Obj.value("camera_exposure_time").toInt();
+		}
+
+		if (firmware_Obj.contains("generate_brightness_model") && firmware_Obj["generate_brightness_model"].isDouble())
+		{
+			qDebug() << "generate_brightness_model is:" << firmware_Obj.value("generate_brightness_model").toInt();
+			camera_config_.Instance().firwmare_param_.generate_brightness_model = firmware_Obj.value("generate_brightness_model").toInt();
+		}
+
+		if (firmware_Obj.contains("generate_brightness_exposure") && firmware_Obj["generate_brightness_exposure"].isDouble())
+		{
+			qDebug() << "generate_brightness_exposure is:" << firmware_Obj.value("generate_brightness_exposure").toInt();
+			camera_config_.Instance().firwmare_param_.generate_brightness_exposure = firmware_Obj.value("generate_brightness_exposure").toInt();
+		}
+
+		if (firmware_Obj.contains("use_bilateral_filter") && firmware_Obj["use_bilateral_filter"].isDouble())
+		{
+			qDebug() << "use_bilateral_filter is:" << firmware_Obj.value("use_bilateral_filter").toInt();
+			camera_config_.Instance().firwmare_param_.use_bilateral_filter = firmware_Obj.value("use_bilateral_filter").toInt();
+		}
+
+		if (firmware_Obj.contains("bilateral_filter_param_d") && firmware_Obj["bilateral_filter_param_d"].isDouble())
+		{
+			qDebug() << "bilateral_filter_param_d is:" << firmware_Obj.value("bilateral_filter_param_d").toInt();
+			camera_config_.Instance().firwmare_param_.bilateral_filter_param_d = firmware_Obj.value("bilateral_filter_param_d").toInt();
+		}
+
+		if (firmware_Obj.contains("confidence") && firmware_Obj["confidence"].isDouble())
+		{
+			qDebug() << "confidence is:" << firmware_Obj.value("confidence").toInt();
+			camera_config_.Instance().firwmare_param_.confidence = firmware_Obj.value("confidence").toInt();
+		}
 	}
 
 	/******************************************************************************************************************************/
@@ -148,7 +216,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 		QJsonObject gui_Obj = rootObject["gui"].toObject();
 
 		if (gui_Obj.contains("low_z_value") && gui_Obj["low_z_value"].isDouble())
-		{ 
+		{
 			gui_config_.Instance().low_z_value = gui_Obj.value("low_z_value").toInt();
 		}
 
@@ -160,6 +228,16 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 		if (gui_Obj.contains("ip") && gui_Obj["ip"].isString())
 		{
 			gui_config_.Instance().ip = gui_Obj.value("ip").toString();
+		}
+
+		if (gui_Obj.contains("use_hdr_model") && gui_Obj["use_hdr_model"].isBool())
+		{
+			gui_config_.Instance().use_hdr_model = gui_Obj.value("use_hdr_model").toBool();
+		}
+
+		if (gui_Obj.contains("calibration_board") && gui_Obj["calibration_board"].isDouble())
+		{
+			gui_config_.Instance().calibration_board = gui_Obj.value("calibration_board").toInt();
 		}
 	}
 
@@ -181,7 +259,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 
 	/*********************************************************************************************************************************/
 
-	
+
 
 	return true;
 }
@@ -189,7 +267,7 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 
 bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 {
-	  
+
 	QFile file(path);
 	if (!file.open(QIODevice::ReadWrite)) {
 		qDebug() << "File open error";
@@ -197,7 +275,7 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	else {
 		qDebug() << "File open!";
 	}
-	// Ê¹ÓÃQJsonObject¶ÔÏó²åÈë¼üÖµ¶Ô¡£
+	// ä½¿ç”¨QJsonObjectå¯¹è±¡æ’å…¥é”®å€¼å¯¹ã€‚
 	QJsonObject rootObject;
 
 
@@ -206,15 +284,22 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 
 	QJsonObject jsonObject_firmware;
 	jsonObject_firmware.insert("led_current", camera_config_.Instance().config_param_.led_current);
-	jsonObject_firmware.insert("exposure_num", camera_config_.Instance().config_param_.exposure_num);
+	jsonObject_firmware.insert("camera_exposure_time", camera_config_.Instance().config_param_.camera_exposure_time);
 
-	QJsonArray exposure_param_array; 
+	QJsonArray exposure_param_array;
 	for (int i = 0; i < 6; i++)
 	{
-		exposure_param_array.append(camera_config_.Instance().config_param_.exposure_param[i]);
+		exposure_param_array.append(camera_config_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
 	}
-	jsonObject_firmware.insert("exposure_param", exposure_param_array);
+	jsonObject_firmware.insert("mixed_exposure_param_list", exposure_param_array);
 
+	QJsonArray led_param_array;
+	for (int i = 0; i < 6; i++)
+	{
+		led_param_array.append(camera_config_.Instance().firwmare_param_.mixed_led_param_list[i]);
+	}
+	jsonObject_firmware.insert("mixed_led_param_list", led_param_array);
+	jsonObject_firmware.insert("mixed_exposure_num", camera_config_.Instance().firwmare_param_.mixed_exposure_num);
 
 	QJsonArray standard_plane_external_param_array;
 	for (int i = 0; i < 12; i++)
@@ -224,7 +309,20 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 
 	jsonObject_firmware.insert("standard_plane_external_param", standard_plane_external_param_array);
 
-	// Ê¹ÓÃQJsonDocumentÉèÖÃ¸Ãjson¶ÔÏó
+
+	jsonObject_firmware.insert("camera_exposure_time", camera_config_.Instance().config_param_.camera_exposure_time);
+	jsonObject_firmware.insert("camera_gain", camera_config_.Instance().config_param_.camera_gain);
+
+
+	jsonObject_firmware.insert("generate_brightness_model", camera_config_.Instance().firwmare_param_.generate_brightness_model);
+	jsonObject_firmware.insert("generate_brightness_exposure", camera_config_.Instance().firwmare_param_.generate_brightness_exposure);
+
+	jsonObject_firmware.insert("use_bilateral_filter", camera_config_.Instance().firwmare_param_.use_bilateral_filter);
+	jsonObject_firmware.insert("bilateral_filter_param_d", camera_config_.Instance().firwmare_param_.bilateral_filter_param_d);
+
+	jsonObject_firmware.insert("confidence", camera_config_.Instance().firwmare_param_.confidence);
+
+	// ä½¿ç”¨QJsonDocumentè®¾ç½®è¯¥jsonå¯¹è±¡
 	QJsonDocument jsonDoc;
 	rootObject.insert("firmware", jsonObject_firmware);
 
@@ -234,6 +332,8 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	jsonObject_gui.insert("low_z_value", gui_config_.Instance().low_z_value);
 	jsonObject_gui.insert("high_z_value", gui_config_.Instance().high_z_value);
 	jsonObject_gui.insert("ip", gui_config_.Instance().ip);
+	jsonObject_gui.insert("use_hdr_model", gui_config_.Instance().use_hdr_model);
+	jsonObject_gui.insert("calibration_board", gui_config_.Instance().calibration_board);
 
 	rootObject.insert("gui", jsonObject_gui);
 
@@ -243,11 +343,11 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 
 	jsonDoc.setObject(rootObject);
 
-	// ½«jsonÒÔÎÄ±¾ÐÎÊ½Ð´ÈëÎÄ¼þ²¢¹Ø±ÕÎÄ¼þ¡£
+	// å°†jsonä»¥æ–‡æœ¬å½¢å¼å†™å…¥æ–‡ä»¶å¹¶å…³é—­æ–‡ä»¶ã€‚
 	file.write(jsonDoc.toJson());
 	file.close();
 
-	qDebug() << "Write to file: "<< path;
+	qDebug() << "Write to file: " << path;
 	return true;
 }
 
@@ -263,12 +363,22 @@ void SettingsFileFunction::setGuiConfigData(struct GuiConfigDataStruct param)
 }
 
 
-void SettingsFileFunction::getFirmwareConfigData(struct SystemConfigParam& param)
+void SettingsFileFunction::getFirmwareConfigData(struct FirmwareConfigParam& param)
+{
+	param = camera_config_.Instance().firwmare_param_;
+}
+
+void SettingsFileFunction::setFirmwareConfigData(struct FirmwareConfigParam param)
+{
+	camera_config_.Instance().firwmare_param_ = param;
+}
+
+void SettingsFileFunction::getSystemConfigData(struct SystemConfigParam& param)
 {
 	param = camera_config_.Instance().config_param_;
 }
 
-void SettingsFileFunction::setFirmwareConfigData(struct SystemConfigParam param)
+void SettingsFileFunction::setSystemConfigData(struct SystemConfigParam param)
 {
 	camera_config_.Instance().config_param_ = param;
 }

@@ -8,7 +8,35 @@
 #include <iostream>
 #include <stdint.h>
 #include <vector>
+#include "system_config_settings.h"
 
+//滤波
+// __global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,uchar* remove_mask,float radius,int threshold);
+
+__device__ float computePointsDistance(float* p0,float* p1);
+
+void cuda_set_config(struct SystemConfigDataStruct param);
+
+bool cuda_set_camera_version(int version);
+
+void BubbleSort(float  *p, int length, int * ind_diff);
+/***************************************************************************************/
+//用于查找表
+bool generate_pointcloud_base_table();
+
+void reconstruct_cuda_malloc_memory();
+void reconstruct_cuda_free_memory();
+void reconstruct_set_baseline(float b);
+void reconstruct_copy_talbe_to_cuda_memory(float* mapping,float* rotate_x,float* rotate_y,float* r_1);
+void reconstruct_copy_pointcloud_from_cuda_memory(float* pointcloud);
+void reconstruct_copy_depth_from_cuda_memory(float* depth);
+void reconstruct_copy_confidence_from_cuda_memory(float* confidence);
+void reconstruct_copy_brightness_from_cuda_memory(unsigned char* brightness);
+
+__global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,float * const xL_rotate_y,float * const single_pattern_mapping,float * const R_1,float * const confidence_map,
+                                                        float * const phase_x,uint32_t img_height, uint32_t img_width,float b, float * const pointcloud,float * const depth);
+
+__device__ float bilinear_interpolation(float x, float y, int map_width, float *mapping);
 
 /**********************************************************************************************/
 //并行于图像采集
@@ -36,13 +64,19 @@ bool parallel_cuda_unwrap_phase(int serial_flag);
 
 bool parallel_cuda_reconstruct();
 
+bool parallel_cuda_copy_unwrap_phase_from_gpu(int serial_flag,float* unwrap_map);
+
+bool parallel_cuda_copy_unwrap_phase_to_gpu(int serial_flag,float* unwrap_map);
+
 bool parallel_cuda_copy_result_from_gpu(float* depth,unsigned char* brightness);
 
 bool parallel_cuda_copy_pointcloud_from_gpu(float* pointcloud,unsigned char* brightness);
 
 bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* brightness); 
 
-bool parallel_cuda_copy_result_to_hdr(int serial_flag);
+bool parallel_cuda_copy_result_to_hdr(int serial_flag,int brigntness_serial);
+
+__global__ void parallel_cuda_count_sum_pixel(const unsigned char* brightness,uint32_t img_height, uint32_t img_width, float* sum_pixels);
 
 __global__ void parallel_cuda_merge_hdr_6(const float*  depth_map_0,const float*  depth_map_1,const float*  depth_map_2,
 	const float*  depth_map_3,const float*  depth_map_4,const float*  depth_map_5,
@@ -136,6 +170,9 @@ __global__ void cuda_merge_hdr(const float*  depth_map_0,const float*  depth_map
 __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned char * const d_in_1, unsigned char * const d_in_2, unsigned char * const d_in_3,unsigned char* const d_in_4,unsigned char* const d_in_5,
 	uint32_t img_height, uint32_t img_width,float * const d_out, float * const confidence);
 
+__global__ void cuda_six_step_phase_shift_texture(float * const d_out, float * const confidence);
+
+__global__ void cuda_four_step_phase_shift_texture(int serial_flag,float * const d_out, float * const confidence);
 
 //kernel
 __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigned char * const d_in_1, unsigned char * const d_in_2, unsigned char * const d_in_3,

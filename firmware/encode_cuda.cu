@@ -1,13 +1,19 @@
 #include "encode_cuda.cuh"
-// #include <opencv2/core.hpp> 
-// #include <opencv2/imgcodecs.hpp>
+#include <opencv2/core.hpp> 
+#include <opencv2/imgcodecs.hpp>
 #include <device_launch_parameters.h>
-//#include <device_functions.h>
+#include <device_functions.h>
+#include <cuda_texture_types.h>
+#include <texture_types.h>
+#include "cuda_runtime.h" 
 #include <cuda_runtime.h>
+
 #include <iostream>
 #include <stdint.h>
 #include <vector>  
 #include "easylogging++.h"
+#include "protocol.h"
+
 
 int patterns_count_ = 36;
 int wrap_count_ = 8;
@@ -17,6 +23,7 @@ int image_height_ = 1200;
 
 __device__ int d_image_width_ = 1920;
 __device__ int d_image_height_ = 1200;
+__device__ float d_confidence_ = 1200;
 
 
 unsigned char* d_patterns_list_hdr_0[36];
@@ -38,6 +45,7 @@ float* d_unwrap_map_list_hdr_2[2];
 
 float* d_hdr_depth_map_list_[D_HDR_MAX_NUM];
 unsigned char* d_hdr_brightness_list_[D_HDR_MAX_NUM];
+float* d_hdr_bright_pixel_sum_list_[D_HDR_MAX_NUM];
 float* d_hdr_depth_map_;
 unsigned char* d_hdr_brightness_;
 
@@ -46,16 +54,37 @@ unsigned char* d_repetition_patterns_list_[6*D_REPETITIONB_MAX_NUM];
 unsigned short* d_repetition_merge_patterns_list_[6];  
 /*****************************************************************************/
 
-unsigned char* d_patterns_list[36];
-unsigned char* d_brightness_;
-float* d_confidence_list[8];
-float* d_wrap_map_list[8];
-float* d_unwrap_map_list[2];
-float* d_point_cloud_map_;
-float* d_depth_map_;
-short* d_depth_map_short_;
-float* d_triangulation_error_map_;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_0;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_1;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_2;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_3;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_4;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_5;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_6;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_7;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_8;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_9;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_10;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_11;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_12;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_13;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_14;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_15;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_16;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_17;
+texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_18;
 
+__device__ unsigned char* d_patterns_list[36];
+__device__ unsigned char* d_brightness_;
+__device__ float* d_confidence_list[8];
+__device__ float* d_wrap_map_list[8];
+__device__ float* d_unwrap_map_list[2];
+__device__ float* d_point_cloud_map_;
+__device__ float* d_depth_map_;
+__device__ short* d_depth_map_short_;
+__device__ float* d_triangulation_error_map_;
+
+unsigned char* d_mask_;
 /*********************************************************************************/
 float* d_camera_intrinsic_;
 float* d_project_intrinsic_;
@@ -64,14 +93,27 @@ float* d_projector_distortion_;
 float* d_rotation_matrix_;
 float* d_translation_matrix_;
 
-__device__ int d_dlp_width_ = 1280;
-__device__ int d_dlp_height_ = 720;
+__device__ int d_dlp_width_ = 1920;
+__device__ int d_dlp_height_ = 1080;
 __device__ float d_max_phase_ = 2* 3.1415926535;
 
 bool load_calib_data_flag_ = false;
 
 #define DF_PI 3.1415926535
 /*********************************************************************************/
+
+
+__device__ float d_baseline_ = 0;
+ 
+
+__device__ float* d_single_pattern_mapping_;
+__device__ float* d_xL_rotate_x_;
+__device__ float* d_xL_rotate_y_; 
+__device__ float* d_R_1_; 
+
+  
+/*********************************************************************************************/
+
 
 dim3 threadsPerBlock(8, 8);
 dim3 blocksPerGrid((image_width_ + threadsPerBlock.x - 1) / threadsPerBlock.x,
@@ -89,11 +131,60 @@ dim3 blocksPerGrid((image_width_ + threadsPerBlock.x - 1) / threadsPerBlock.x,
   }\
 }
 
+
+void cuda_set_config(struct SystemConfigDataStruct param)
+{ 
+	cudaMemcpyToSymbol(d_confidence_, &param.Instance().firwmare_param_.confidence, sizeof(float));
+}
+
+bool cuda_set_camera_version(int version)
+{
+    switch (version)
+    {
+    case DFX_800:
+    {
+		int dlp_width = 1280;
+		int dlp_height = 720;
+		cudaMemcpyToSymbol(d_dlp_width_, &dlp_width, sizeof(int));
+		cudaMemcpyToSymbol(d_dlp_height_, &dlp_height, sizeof(int));
+  
+		int camera_width = 1920;
+		int camera_height = 1200;
+		cudaMemcpyToSymbol(d_image_width_, &camera_width, sizeof(int));
+		cudaMemcpyToSymbol(d_image_height_, &camera_height, sizeof(int));
+
+        return true;
+    }
+    break;
+
+    case DFX_1800:
+    {
+		int dlp_width = 1920;
+		int dlp_height = 1080;
+		cudaMemcpyToSymbol(d_dlp_width_, &dlp_width, sizeof(int));
+		cudaMemcpyToSymbol(d_dlp_height_, &dlp_height, sizeof(int));
+
+		int camera_width = 1920;
+		int camera_height = 1200;
+		cudaMemcpyToSymbol(d_image_width_, &camera_width, sizeof(int));
+		cudaMemcpyToSymbol(d_image_height_, &camera_height, sizeof(int));
+        return true;
+    }
+    break;
+
+    default:
+        break;
+    }
+
+	return false;
+}
+
+
 /***********************************************************************************************************************************************/
 
 bool parallel_cuda_copy_signal_patterns(unsigned char* patterns_ptr,int serial_flag)
 {
-	CHECK(cudaMemcpyAsync(d_patterns_list[serial_flag], patterns_ptr, image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpyAsync(d_patterns_list[serial_flag], patterns_ptr, image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyHostToDevice)); 
 }
 
 bool parallel_cuda_copy_repetition_signal_patterns(unsigned char* patterns_ptr,int serial_flag)
@@ -179,33 +270,46 @@ bool parallel_cuda_compute_phase(int serial_flag)
 	{
 		case 0:
 		{ 
-			int i= 0;
-			cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 0;
+			// cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+
+				cuda_four_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> >(serial_flag,d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
 		}
 		break;
 		case 1:
 		{
 
-			int i= 4;
-			cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 4;
+			// cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+				
+				cuda_four_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> >(serial_flag,d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
 			
 		}
 		break;
 		case 2:
 		{ 
-			int i= 8;
-			cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 8;
+			// cuda_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3], image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+				
+				cuda_four_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> >(serial_flag,d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
 		}
 		break;
 		case 3:
 		{ 
-			int i= 12; 
-			cuda_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
-				d_patterns_list[i + 3],d_patterns_list[i + 4],d_patterns_list[i + 5] ,
-				 image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+			// int i= 12; 
+			// cuda_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_patterns_list[i+0], d_patterns_list[i + 1], d_patterns_list[i + 2],
+			// 	d_patterns_list[i + 3],d_patterns_list[i + 4],d_patterns_list[i + 5] ,
+			// 	 image_height_, image_width_, d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+ 
+				cuda_six_step_phase_shift_texture<< <blocksPerGrid, threadsPerBlock >> > (d_wrap_map_list[serial_flag], d_confidence_list[serial_flag]);
+				// cudaDeviceSynchronize();
+
+				// cv::Mat phase(1200, 1920, CV_32F, cv::Scalar(0));
+				// CHECK(cudaMemcpy(phase.data, d_wrap_map_list[serial_flag], 1 * image_height_ * image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+				// cv::imwrite("phase1.tiff",phase);
 		}
 		break;
 		case 4:
@@ -252,21 +356,32 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		break;
 		case 1:
 		{ 
-			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
+			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
+            cuda_variable_phase_unwrap<< <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
 				image_height_, image_width_, d_unwrap_map_list[0]);
+            // CHECK ( cudaGetLastError () );
+
+			// cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
+			// 	image_height_, image_width_, d_unwrap_map_list[0]);
+				
 			
 		}
 		break;
 		case 2:
 		{ 
+			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_wrap_map_list[2], 4.0,
-				image_height_, image_width_, d_unwrap_map_list[0]);
+				image_height_, image_width_, d_unwrap_map_list[0]); 
+			// CHECK ( cudaGetLastError () );
 		}
 		break;
 		case 3:
 		{ 
+			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_wrap_map_list[3], 4.0,
-				image_height_, image_width_, d_unwrap_map_list[0]);
+				image_height_, image_width_, d_unwrap_map_list[0]); 
+
+			// CHECK ( cudaGetLastError () );
 		}
 		break;
 		case 4:
@@ -391,9 +506,96 @@ bool parallel_cuda_copy_result_from_gpu(float* depth,unsigned char* brightness)
  
 }
 
+bool parallel_cuda_copy_unwrap_phase_from_gpu(int serial_flag,float* unwrap_map)
+{
+
+	CHECK(cudaMemcpy(unwrap_map, d_unwrap_map_list[serial_flag], 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+	return true;
+}
+
+bool parallel_cuda_copy_unwrap_phase_to_gpu(int serial_flag,float* unwrap_map)
+{
+
+	CHECK(cudaMemcpy(d_unwrap_map_list[serial_flag], unwrap_map,  1 * image_height_*image_width_ * sizeof(float), cudaMemcpyHostToDevice));
+	return true;
+}
+
+void BubbleSort(float  *p, int length, int * ind_diff)
+{
+	for (int m = 0; m < length; m++)
+	{
+		ind_diff[m] = m;
+	}
+ 
+	for (int i = 0; i < length; i++)
+	{
+		for (int j = 0; j < length- i - 1; j++)
+		{
+			if (p[j] > p[j + 1])
+			{
+				float temp = p[j];
+				p[j] = p[j + 1];
+				p[j + 1] = temp;
+ 
+				int ind_temp = ind_diff[j];
+				ind_diff[j] = ind_diff[j + 1];
+				ind_diff[j + 1] = ind_temp;
+			}
+		}
+	}
+}
+
+ 
 
 bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* brightness)
 {
+	
+	LOG(INFO)<<"sum pixels ";
+	float sum_pixels_list[6];  
+
+    for(int i= 0;i<hdr_num;i++)
+    { 
+		CHECK(cudaMemcpy(&sum_pixels_list[i], d_hdr_bright_pixel_sum_list_[i], 1* sizeof(float), cudaMemcpyDeviceToHost));
+    }
+ 
+ 
+	std::vector<float> param_list;
+	std::vector<int> id; 
+	std::vector<bool> flag_list;
+
+	for (int i = 0; i < hdr_num; i++)
+	{ 
+        param_list.push_back(sum_pixels_list[i]);
+		id.push_back(0);
+		flag_list.push_back(true);
+    } 
+   	std::sort(param_list.begin(),param_list.end(),std::greater<float>());
+ 
+ 
+	for (int i = 0; i < hdr_num; i++)
+	{ 
+		
+		for(int j= 0;j< hdr_num;j++)
+		{
+			if(param_list[i] == sum_pixels_list[j])
+			{
+				if(flag_list[j])
+				{ 
+					id[i] = j;
+					flag_list[j] = false; 
+					break;
+				}
+			}
+		}
+		 
+    } 
+
+ 
+	for (int i = 0; i < hdr_num; i++)
+	{ 
+        LOG(INFO)<<"sum pixels "<<i<<": "<<sum_pixels_list[i]<<" _ "<<id[i];
+    }
+ 
 
 	switch(hdr_num)
 	{
@@ -401,63 +603,63 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 		{
 
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_list_[0], 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[0], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[0], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 		} 
 		break;
 		case 2:
 		{
-			parallel_cuda_merge_hdr_2 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1], d_hdr_brightness_list_[0], 
-				d_hdr_brightness_list_[1], image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
+			parallel_cuda_merge_hdr_2 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[id[0]],d_hdr_depth_map_list_[id[1]], d_hdr_brightness_list_[id[0]], 
+				d_hdr_brightness_list_[id[1]], image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
 		case 3:
 		{
-			parallel_cuda_merge_hdr_3 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1],d_hdr_depth_map_list_[2], d_hdr_brightness_list_[0], 
-				d_hdr_brightness_list_[1], d_hdr_brightness_list_[2], image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
+			parallel_cuda_merge_hdr_3 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[id[0]],d_hdr_depth_map_list_[id[1]],d_hdr_depth_map_list_[id[2]], d_hdr_brightness_list_[id[0]], 
+				d_hdr_brightness_list_[id[1]], d_hdr_brightness_list_[id[2]], image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
 		case 4:
 		{
-			parallel_cuda_merge_hdr_4 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1],d_hdr_depth_map_list_[2],d_hdr_depth_map_list_[3],
-				 d_hdr_brightness_list_[0], d_hdr_brightness_list_[1], d_hdr_brightness_list_[2], d_hdr_brightness_list_[3], 
+			parallel_cuda_merge_hdr_4 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[id[0]],d_hdr_depth_map_list_[id[1]],d_hdr_depth_map_list_[id[2]],d_hdr_depth_map_list_[id[3]],
+				 d_hdr_brightness_list_[id[0]], d_hdr_brightness_list_[id[1]], d_hdr_brightness_list_[id[2]], d_hdr_brightness_list_[id[3]], 
 				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
 		case 5:
 		{
-			parallel_cuda_merge_hdr_5 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1],d_hdr_depth_map_list_[2],
-				d_hdr_depth_map_list_[3],d_hdr_depth_map_list_[4],
-				 d_hdr_brightness_list_[0], d_hdr_brightness_list_[1], d_hdr_brightness_list_[2], d_hdr_brightness_list_[3], d_hdr_brightness_list_[4], 
+			parallel_cuda_merge_hdr_5 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[id[0]],d_hdr_depth_map_list_[id[1]],d_hdr_depth_map_list_[id[2]],
+				d_hdr_depth_map_list_[id[3]],d_hdr_depth_map_list_[id[4]],
+				 d_hdr_brightness_list_[id[0]], d_hdr_brightness_list_[id[1]], d_hdr_brightness_list_[id[2]], d_hdr_brightness_list_[id[3]], d_hdr_brightness_list_[id[4]], 
 				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
 		case 6:
 		{
-			parallel_cuda_merge_hdr_6 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[0],d_hdr_depth_map_list_[1],d_hdr_depth_map_list_[2],
-				d_hdr_depth_map_list_[3],d_hdr_depth_map_list_[4],d_hdr_depth_map_list_[5],
-				 d_hdr_brightness_list_[0], d_hdr_brightness_list_[1], d_hdr_brightness_list_[2], d_hdr_brightness_list_[3], d_hdr_brightness_list_[4], 
-				 d_hdr_brightness_list_[5], 
+			parallel_cuda_merge_hdr_6 << <blocksPerGrid, threadsPerBlock >> > (d_hdr_depth_map_list_[id[0]],d_hdr_depth_map_list_[id[1]],d_hdr_depth_map_list_[id[2]],
+				d_hdr_depth_map_list_[id[3]],d_hdr_depth_map_list_[id[4]],d_hdr_depth_map_list_[id[5]],
+				 d_hdr_brightness_list_[id[0]], d_hdr_brightness_list_[id[1]], d_hdr_brightness_list_[id[2]], d_hdr_brightness_list_[id[3]], d_hdr_brightness_list_[id[4]], 
+				 d_hdr_brightness_list_[id[5]], 
 				image_height_, image_width_, d_hdr_depth_map_,d_hdr_brightness_);
 				
 			CHECK(cudaMemcpy(depth_map, d_hdr_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+			// CHECK(cudaMemcpy(brightness, d_hdr_brightness_, 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 
 		}
 		break;
@@ -466,7 +668,9 @@ bool parallel_cuda_merge_hdr_data(int hdr_num,float* depth_map, unsigned char* b
 		 		return false;
 
 	}
- 
+
+ 	// CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[id[0]], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+ 	CHECK(cudaMemcpy(brightness, d_hdr_brightness_list_[hdr_num-1], 1*image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost));
 	LOG(INFO)<<"DHR Finished!";
 
 	return true;
@@ -484,8 +688,7 @@ __global__ void parallel_cuda_merge_hdr_6(const float*  depth_map_0,const float*
 
 	if (idx < img_width && idy < img_height)
 	{
-
-
+ 
 
 		float pixel= 0;
 		pixel +=  brightness_0[offset];
@@ -531,8 +734,11 @@ __global__ void parallel_cuda_merge_hdr_6(const float*  depth_map_0,const float*
 			// brightness[offset] = brightness_2[offset];
 			depth_map[offset] = depth_map_5[offset];
 		}
-
-
+		//没有深度则用最亮的深度值
+		if (depth_map[offset] <= 0)
+		{
+			depth_map[offset] = depth_map_0[offset];
+		}
 	}
 }
 
@@ -589,8 +795,11 @@ __global__ void parallel_cuda_merge_hdr_5(const float*  depth_map_0,const float*
 			// brightness[offset] = brightness_2[offset];
 			depth_map[offset] = depth_map_4[offset];
 		}
-
-
+		//没有深度则用最亮的深度值
+		if (depth_map[offset] <= 0)
+		{
+			depth_map[offset] = depth_map_0[offset];
+		}
 	}
 }
 
@@ -640,8 +849,11 @@ __global__ void parallel_cuda_merge_hdr_4(const float*  depth_map_0,const float*
 				// brightness[offset] = brightness_2[offset];
 				depth_map[offset] = depth_map_3[offset];
 			}
-	
-	
+			//没有深度则用最亮的深度值
+			if (depth_map[offset] <= 0)
+			{
+				depth_map[offset] = depth_map_0[offset];
+			}
 		}
 	}
 
@@ -683,7 +895,11 @@ __global__ void parallel_cuda_merge_hdr_3(const float*  depth_map_0,const float*
 				// brightness[offset] = brightness_2[offset];
 				depth_map[offset] = depth_map_2[offset];
 			}
-	
+				//没有深度则用最亮的深度值
+			if(depth_map[offset]<= 0)
+			{
+				depth_map[offset] = depth_map_0[offset];
+			}
 	
 		}
 	}
@@ -718,12 +934,29 @@ __global__ void parallel_cuda_merge_hdr_2(const float*  depth_map_0,const float*
 				depth_map[offset] = depth_map_1[offset];
 			}
 
+			//没有深度则用最亮的深度值
+			if(depth_map[offset]<= 0)
+			{
+				depth_map[offset] = depth_map_0[offset];
+			}
+
 		}
 	}
 
 
+__global__ void parallel_cuda_count_sum_pixel(const unsigned char* brightness,uint32_t img_height, uint32_t img_width, float* sum_pixels)
+{
+			const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+		const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+		const unsigned int offset = idy * img_width + idx;
 	
-bool parallel_cuda_copy_result_to_hdr(int serial_flag)
+		if (idx < img_width && idy < img_height)
+		{ 
+			*sum_pixels +=  brightness[offset];  
+		}
+}
+	
+bool parallel_cuda_copy_result_to_hdr(int serial_flag,int brigntness_serial)
 {
 	if(!load_calib_data_flag_)
 	{
@@ -732,8 +965,11 @@ bool parallel_cuda_copy_result_to_hdr(int serial_flag)
  
 
 	CHECK(cudaMemcpyAsync(d_hdr_depth_map_list_[serial_flag], d_depth_map_, 1 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToDevice)); 
-	CHECK(cudaMemcpyAsync(d_hdr_brightness_list_[serial_flag], d_patterns_list[30], 1 * image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToDevice));
- 
+	CHECK(cudaMemcpyAsync(d_hdr_brightness_list_[serial_flag], d_patterns_list[brigntness_serial], 1 * image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToDevice));
+
+	float val  = 0;
+	CHECK(cudaMemcpyAsync(d_hdr_bright_pixel_sum_list_[serial_flag], &val, sizeof(float), cudaMemcpyHostToDevice)); 
+ 	parallel_cuda_count_sum_pixel << <blocksPerGrid, threadsPerBlock >> > (d_hdr_brightness_list_[serial_flag],image_height_,image_width_,d_hdr_bright_pixel_sum_list_[serial_flag]);
  
 	LOG(INFO)<<"parallel_cuda_copy_result_to_hdr: "<<serial_flag;
 	return true;
@@ -944,11 +1180,36 @@ bool cuda_malloc_memory()
 	for(int i= 0;i< patterns_count_;i++)
 	{
 		cudaMalloc((void**)&d_patterns_list[i], image_height_*image_width_ * sizeof(unsigned char));
+		
+		// cudaBindTexture(0,texture_patterns_list[i],d_patterns_list[i]);
 
 		cudaMalloc((void**)&d_patterns_list_hdr_0[i], image_height_*image_width_ * sizeof(unsigned char));
 		cudaMalloc((void**)&d_patterns_list_hdr_1[i], image_height_*image_width_ * sizeof(unsigned char));
 		cudaMalloc((void**)&d_patterns_list_hdr_2[i], image_height_*image_width_ * sizeof(unsigned char));
 	}
+
+	cudaBindTexture(0,texture_patterns_0,d_patterns_list[0]);
+	cudaBindTexture(0,texture_patterns_1,d_patterns_list[1]);
+	cudaBindTexture(0,texture_patterns_2,d_patterns_list[2]);
+	cudaBindTexture(0,texture_patterns_3,d_patterns_list[3]);
+	cudaBindTexture(0,texture_patterns_4,d_patterns_list[4]);
+	cudaBindTexture(0,texture_patterns_5,d_patterns_list[5]);
+	cudaBindTexture(0,texture_patterns_6,d_patterns_list[6]);
+	cudaBindTexture(0,texture_patterns_7,d_patterns_list[7]);
+	cudaBindTexture(0,texture_patterns_8,d_patterns_list[8]);
+	cudaBindTexture(0,texture_patterns_9,d_patterns_list[9]);
+	cudaBindTexture(0,texture_patterns_10,d_patterns_list[10]);
+	cudaBindTexture(0,texture_patterns_11,d_patterns_list[11]);
+	cudaBindTexture(0,texture_patterns_12,d_patterns_list[12]);
+	cudaBindTexture(0,texture_patterns_13,d_patterns_list[13]);
+	cudaBindTexture(0,texture_patterns_14,d_patterns_list[14]);
+	cudaBindTexture(0,texture_patterns_15,d_patterns_list[15]);
+	cudaBindTexture(0,texture_patterns_16,d_patterns_list[16]);
+	cudaBindTexture(0,texture_patterns_17,d_patterns_list[17]);
+	cudaBindTexture(0,texture_patterns_18,d_patterns_list[18]);
+
+
+ 
 
 	for (int i = 0; i< wrap_count_; i++)
 	{
@@ -976,13 +1237,15 @@ bool cuda_malloc_memory()
 	for (int i = 0; i< D_HDR_MAX_NUM; i++)
 	{
 		cudaMalloc((void**)&d_hdr_depth_map_list_[i], image_height_*image_width_ * sizeof(float));
-		cudaMalloc((void**)&d_hdr_brightness_list_[i], image_height_*image_width_ * sizeof(unsigned char));
+		cudaMalloc((void**)&d_hdr_brightness_list_[i], image_height_*image_width_ * sizeof(unsigned char)); 
+		cudaMalloc((void**)&d_hdr_bright_pixel_sum_list_[i], 1 * sizeof(float)); 
 	}
 	cudaMalloc((void**)&d_hdr_depth_map_, image_height_*image_width_ * sizeof(float));
 	cudaMalloc((void**)&d_hdr_brightness_, image_height_*image_width_ * sizeof(unsigned char));
 
 
 	cudaMalloc((void**)&d_brightness_, image_height_*image_width_ * sizeof(unsigned char));
+	cudaMalloc((void**)&d_mask_, image_height_*image_width_ * sizeof(unsigned char));
 
 
 	cudaMalloc((void**)&d_camera_intrinsic_, 3*3 * sizeof(float));
@@ -1011,6 +1274,8 @@ bool cuda_malloc_memory()
 	}
  
 	
+	
+	reconstruct_cuda_malloc_memory();
 
 	cudaDeviceSynchronize();
 
@@ -1023,11 +1288,32 @@ bool cuda_free_memory()
 
 	for (int i = 0; i< patterns_count_; i++)
 	{ 
+		// cudaUnbindTexture(texture_patterns_list[i]);
 		cudaFree(d_patterns_list[i]);
 		cudaFree(d_patterns_list_hdr_0[i]);
 		cudaFree(d_patterns_list_hdr_1[i]);
 		cudaFree(d_patterns_list_hdr_2[i]);
 	}
+
+	cudaUnbindTexture(texture_patterns_0);
+	cudaUnbindTexture(texture_patterns_1);
+	cudaUnbindTexture(texture_patterns_2);
+	cudaUnbindTexture(texture_patterns_3);
+	cudaUnbindTexture(texture_patterns_4);
+	cudaUnbindTexture(texture_patterns_5);
+	cudaUnbindTexture(texture_patterns_6);
+	cudaUnbindTexture(texture_patterns_7);
+	cudaUnbindTexture(texture_patterns_8);
+	cudaUnbindTexture(texture_patterns_9);
+	cudaUnbindTexture(texture_patterns_10);
+	cudaUnbindTexture(texture_patterns_11);
+	cudaUnbindTexture(texture_patterns_12);
+	cudaUnbindTexture(texture_patterns_13);
+	cudaUnbindTexture(texture_patterns_14);
+	cudaUnbindTexture(texture_patterns_15);
+	cudaUnbindTexture(texture_patterns_16);
+	cudaUnbindTexture(texture_patterns_17);
+	cudaUnbindTexture(texture_patterns_18);
 
 	for (int i = 0; i< wrap_count_; i++)
 	{ 
@@ -1059,6 +1345,7 @@ bool cuda_free_memory()
 	{ 
 		cudaFree(d_hdr_depth_map_list_[i]);
 		cudaFree(d_hdr_brightness_list_[i]);
+		cudaFree(d_hdr_bright_pixel_sum_list_[i]);
 	}
 		cudaFree(d_hdr_depth_map_);
 		cudaFree(d_hdr_brightness_);
@@ -1066,6 +1353,7 @@ bool cuda_free_memory()
 
 
 	cudaFree(d_brightness_);
+	cudaFree(d_mask_);
 
 	cudaFree(d_camera_intrinsic_);
 	cudaFree(d_project_intrinsic_);
@@ -1091,6 +1379,7 @@ bool cuda_free_memory()
 		cudaFree(d_repetition_merge_patterns_list_[i]);  
 	}
  
+	reconstruct_cuda_free_memory();
 
 	return true;
 }
@@ -1652,6 +1941,82 @@ __global__ void cuda_merge_brightness(unsigned char* const d_in_0,unsigned char*
 }
 
 
+__global__ void cuda_six_step_phase_shift_texture(float * const d_out, float * const confidence)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy *  d_image_width_ + idx;
+	float s_0 =  0;
+	float s_1 =  0.866025;
+	float s_2 =  0.866025;
+	float s_3 =  0;
+	float s_4 =  -0.866025;
+	float s_5 =  -0.866025;
+	float c_0 =  1;
+	float c_1 =  0.5;
+	float c_2 =  -0.5;
+	float c_3 =  -1;
+	float c_4 =  -0.5;
+	float c_5 =  0.5;
+
+ 
+
+	unsigned char pixel_0 = tex1Dfetch(texture_patterns_12, offset);
+	unsigned char pixel_1 = tex1Dfetch(texture_patterns_13, offset);
+	unsigned char pixel_2 = tex1Dfetch(texture_patterns_14, offset);
+	unsigned char pixel_3 = tex1Dfetch(texture_patterns_15, offset);
+	unsigned char pixel_4 = tex1Dfetch(texture_patterns_16, offset);
+	unsigned char pixel_5 = tex1Dfetch(texture_patterns_17, offset);
+
+	if (idx < d_image_width_ && idy < d_image_height_)
+	{
+  
+		float a = c_0 *pixel_3 + c_1 *pixel_4 + c_2 *pixel_5 + c_3* pixel_0 +c_4*pixel_1 + c_5*pixel_2;
+		float b = s_0 *pixel_3 + s_1 *pixel_4 + s_2 *pixel_5 + s_3* pixel_0 +s_4*pixel_1 + s_5*pixel_2;
+
+
+		int over_num = 0;
+		if(pixel_0 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_1 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_2 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_3 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_4 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_5 >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 3)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
+  
+		// confidence[offset] = std::sqrt(a*a + b*b);
+		// d_out[offset] = DF_PI + std::atan2(a, b);
+	}
+}
+
 __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned char * const d_in_1, unsigned char * const d_in_2, unsigned char * const d_in_3,unsigned char* const d_in_4,unsigned char* const d_in_5,
 	uint32_t img_height, uint32_t img_width,float * const d_out, float * const confidence)
 {
@@ -1677,9 +2042,134 @@ __global__ void cuda_six_step_phase_shift(unsigned char * const d_in_0, unsigned
 		float a = c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset];
 		float b = s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset];
 
+
+		int over_num = 0;
+		if(d_in_0[offset]>= 255)
+		{
+			over_num++;
+		}
+		if (d_in_1[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_2[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_3[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_4[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_5[offset] >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 3)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
   
-		confidence[offset] = std::sqrt(a*a + b*b);
-		d_out[offset] = DF_PI + std::atan2(a, b);
+		// confidence[offset] = std::sqrt(a*a + b*b);
+		// d_out[offset] = DF_PI + std::atan2(a, b);
+	}
+}
+
+
+
+__global__ void cuda_four_step_phase_shift_texture(int serial_flag,float * const d_out, float * const confidence)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * d_image_width_ + idx;
+	unsigned char pixel_0 = 0;
+	unsigned char pixel_1 = 0;
+	unsigned char pixel_2 = 0;
+	unsigned char pixel_3 = 0;
+
+	if (idx < d_image_width_ && idy < d_image_height_)
+	{
+
+
+		switch (serial_flag)
+		{
+		case 0:
+		{
+			pixel_0 = tex1Dfetch(texture_patterns_0, offset);
+			pixel_1 = tex1Dfetch(texture_patterns_1, offset);
+			pixel_2 = tex1Dfetch(texture_patterns_2, offset);
+			pixel_3 = tex1Dfetch(texture_patterns_3, offset);
+		}
+		break;
+		case 1:
+		{
+			pixel_0 = tex1Dfetch(texture_patterns_4, offset);
+			pixel_1 = tex1Dfetch(texture_patterns_5, offset);
+			pixel_2 = tex1Dfetch(texture_patterns_6, offset);
+			pixel_3 = tex1Dfetch(texture_patterns_7, offset);
+		}
+		break;
+		case 2:
+		{
+			pixel_0 = tex1Dfetch(texture_patterns_8, offset);
+			pixel_1 = tex1Dfetch(texture_patterns_9, offset);
+			pixel_2 = tex1Dfetch(texture_patterns_10, offset);
+			pixel_3 = tex1Dfetch(texture_patterns_11, offset);
+		}
+		break;
+
+		default:
+			break;
+		}
+
+
+
+		float a = pixel_3 - pixel_1;
+		float b = pixel_0 - pixel_2;
+
+		int over_num = 0;
+		if(pixel_0 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_1 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_2 >= 255)
+		{
+			over_num++;
+		}
+		if (pixel_3 >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 1)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
+
+
+
+
+
 	}
 }
 
@@ -1697,9 +2187,36 @@ __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigne
 		float a = d_in_3[offset] - d_in_1[offset];
 		float b = d_in_0[offset] - d_in_2[offset];
 
-  
-		confidence[offset] = std::sqrt(a*a + b*b);
-		d_out[offset] = DF_PI + std::atan2(a, b);
+		int over_num = 0;
+		if(d_in_0[offset]>= 255)
+		{
+			over_num++;
+		}
+		if (d_in_1[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_2[offset] >= 255)
+		{
+			over_num++;
+		}
+		if (d_in_3[offset] >= 255)
+		{
+			over_num++;
+		}
+
+		if(over_num> 1)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
+
+
 
 
 
@@ -1739,14 +2256,14 @@ __global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * 
 
 		/*****************************************************************************/
 
-		float temp = 0.5 + (rate * d_in_wrap_abs[idy * img_width + idx] - d_in_wrap_high[idy * img_width + idx]) / (DF_PI);
+		float temp = 0.5 + (rate * d_in_wrap_abs[idy * img_width + idx] - d_in_wrap_high[idy * img_width + idx]) / (2*DF_PI);
 		int k = temp;
 		// d_out[idy * img_width + idx] = DF_PI*k + d_in_wrap_high[idy * img_width + idx];
 
 
-		float unwrap_value =  DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
+		float unwrap_value =  2*DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
 		float err = unwrap_value - (rate * d_in_wrap_abs[idy * img_width + idx]);
-		if(abs(err)> 0.8)
+		if(abs(err)> 1.0)
 		{
 			d_out[idy * img_width + idx] = -10.0; 
 		}
@@ -1932,7 +2449,7 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 		triangulation(x_norm_L, y_norm_L, x_norm_R, y_norm_R, rotation_matrix, translation_matrix,
 			X_L, Y_L, Z_L, X_R, Y_R, Z_R, error);
-		if(confidence_map[serial_id] > 10 && error< 3.0)	
+		if(confidence_map[serial_id] > 10 && error< 3.0 && dlp_x > 0 && dlp_y > 0)	
 		//if(confidence_map[serial_id] > 10 && error< 0.5 && dlp_x> 0.0 && dlp_y > 0.0)
 		{
 		    d_out_point_cloud_map[3 * serial_id + 0] = X_L;
@@ -1956,3 +2473,306 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 	}
 }
+
+
+
+
+/***************************************************************************************************/
+__device__ float computePointsDistance(float* p0,float* p1)
+{
+	return std::sqrt(p0[0]*p1[0] + p0[1] *p1[1] + p0[2] * p1[2]);
+}
+ 
+//滤波
+__global__ void cuda_removal_points_base_mask(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,float* const deep_map,uchar* remove_mask)
+{
+  	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y; 
+  
+	const unsigned int serial_id = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+		if(0 == remove_mask[serial_id])
+		{
+			deep_map[serial_id] = 0;
+			point_cloud_map[3 * serial_id + 0] = 0;
+			point_cloud_map[3 * serial_id + 1] = 0;
+			point_cloud_map[3 * serial_id + 2] = 0;
+		}
+
+	}
+
+}
+
+//滤波
+__global__ void cuda_filter_radius_outlier_removal(uint32_t img_height, uint32_t img_width,float* const point_cloud_map,uchar* remove_mask,float dot_spacing, float radius,int threshold)
+{
+ 	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y; 
+  
+	const unsigned int serial_id = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+		/****************************************************************************/
+		//定位区域
+		if (point_cloud_map[3 * serial_id + 2] > 0)
+		{
+			remove_mask[serial_id] = 255;
+
+			int w = 1 + radius / dot_spacing;
+
+			int s_r = idy - w;
+			int s_c = idx - w;
+
+			int e_r = idy + w;
+			int e_c = idx + w;
+
+			if (s_r < 0)
+			{
+				s_r = 0;
+			}
+			if (s_c < 0)
+			{
+				s_c = 0;
+			}
+
+			if (e_r >= img_height)
+			{
+				e_r = img_height - 1;
+			}
+
+			if (e_c >= img_width)
+			{
+				e_c = img_width - 1;
+			}
+
+			int num = 0;
+
+			for (int r = s_r; r <= e_r; r++)
+			{
+				for (int c = s_c; c <= e_c; c++)
+				{
+					int pos = r * img_width + c;
+					if (point_cloud_map[3 * pos + 2] > 0)
+					{  
+						float dx= point_cloud_map[3 * serial_id + 0] - point_cloud_map[3 * pos + 0];
+						float dy= point_cloud_map[3 * serial_id + 1] - point_cloud_map[3 * pos + 1];
+						float dz= point_cloud_map[3 * serial_id + 2] - point_cloud_map[3 * pos + 2];
+
+						float dist = std::sqrt(dx * dx + dy * dx + dz * dz); 
+ 
+						if (radius > dist)
+						{
+							num++;
+						}
+					}
+				}
+			} 
+
+			if (num < threshold)
+			{ 
+				remove_mask[serial_id] = 0;
+			} 
+		}
+		else
+		{ 
+			remove_mask[serial_id] = 0;
+		}
+
+		/******************************************************************/
+	}
+}
+
+
+/*****************************************************************************************************************************************************/
+
+
+bool generate_pointcloud_base_table()
+{
+
+	reconstruct_pointcloud_base_table << <blocksPerGrid, threadsPerBlock >> > (d_xL_rotate_x_ , d_xL_rotate_y_, 
+                                                d_single_pattern_mapping_, d_R_1_,d_confidence_list[3],d_unwrap_map_list[0],
+												image_height_,image_width_,d_baseline_,d_point_cloud_map_,d_depth_map_);
+
+
+	// LOG(INFO)<<"remove start:";
+	// //相机像素为5.4um、焦距12mm。dot_spacing = 5.4*distance/12000 mm，典型值0.54mm（1200） 
+	// cuda_filter_radius_outlier_removal << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_mask_,0.5,2,4); 
+	// cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_); 
+
+    // cudaDeviceSynchronize();
+	// cv::Mat point_cloud_map(1200, 1920, CV_32FC3, cv::Scalar(0.0));  
+	// CHECK(cudaMemcpy((float*)point_cloud_map.data, d_point_cloud_map_, 3 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+
+	// std::vector<cv::Mat> channel;
+	// cv::split(point_cloud_map, channel); 
+	// cv::imwrite("pointcloud_map_x.tiff",channel[0]);
+	// cv::imwrite("pointcloud_map_y.tiff",channel[1]);
+	// cv::imwrite("pointcloud_map_z.tiff",channel[2]);
+	// LOG(INFO)<<"remove finished!";
+}
+ 
+
+__device__ float bilinear_interpolation(float x, float y, int map_width, float *mapping)
+{
+
+	int x1 = floor(x);
+	int y1 = floor(y);
+	int x2 = x1 + 1;
+	int y2 = y1 + 1;
+
+	//row-y,col-x
+
+	if (x1 == 1919) {
+		float out = mapping[y1 *map_width + x1];
+		return out;
+	}
+	else {
+		float fq11 = mapping[y1 *map_width + x1];
+		float fq21 = mapping[y1 *map_width + x2];
+		float fq12 = mapping[y2 *map_width + x1];
+		float fq22 = mapping[y2 *map_width + x2];
+
+		if (-2 == fq11 || -2 == fq21 || -2 == fq12 || -2 == fq22)
+		{
+			return -2;
+		}
+
+		float out = fq11 * (x2 - x) * (y2 - y) + fq21 * (x - x1) * (y2 - y) + fq12 * (x2 - x) * (y - y1) + fq22 * (x - x1) * (y - y1);
+
+		return out;
+	}
+	 
+
+}
+
+
+__global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,float * const xL_rotate_y,float * const single_pattern_mapping,float * const R_1,float * const confidence_map,
+                                                        float * const phase_x,uint32_t img_height, uint32_t img_width,float b, float * const pointcloud,float * const depth)
+{
+    const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+
+  
+	const unsigned int serial_id = idy * img_width + idx;
+
+	if (idx < img_width && idy < img_height)
+	{
+		/****************************************************************************/
+		//phase to position
+		float Xp = phase_x[serial_id] * d_dlp_width_ / (128.0*2*DF_PI); 
+  
+    	float Xcr = bilinear_interpolation(idx, idy,1920, xL_rotate_x);
+        float Ycr = bilinear_interpolation(idx, idy, 1920,xL_rotate_y);
+        float Xpr = bilinear_interpolation(Xp, (Ycr + 1) * 2000, 2000, single_pattern_mapping);
+        float delta_X = std::abs(Xcr - Xpr);
+        float Z = b / delta_X;
+	
+		float X_L = Z * Xcr * R_1[0] + Z * Ycr * R_1[1] + Z * R_1[2];
+		float Y_L = Z * Xcr * R_1[3] + Z * Ycr * R_1[4] + Z * R_1[5];
+		float Z_L = Z * Xcr * R_1[6] + Z * Ycr * R_1[7] + Z * R_1[8];
+ 
+  
+		if(confidence_map[serial_id] > d_confidence_ && Z_L > 10 && Z_L< 60000 && Xp > 0)
+		{
+		    pointcloud[3 * serial_id + 0] = X_L;
+		    pointcloud[3 * serial_id + 1] = Y_L;
+		    pointcloud[3 * serial_id + 2] = Z_L; 
+			
+		    depth[serial_id] = Z_L; 
+		}
+		else
+		{
+		    pointcloud[3 * serial_id + 0] = 0;
+		    pointcloud[3 * serial_id + 1] = 0;
+		    pointcloud[3 * serial_id + 2] = 0; 
+			
+		    depth[serial_id] = 0; 
+		}
+
+		
+		if (-2 == Xcr || -2 == Ycr || -2 == Xpr)
+		{
+			pointcloud[3 * serial_id + 0] = 0;
+		    pointcloud[3 * serial_id + 1] = 0;
+		    pointcloud[3 * serial_id + 2] = 0; 
+			
+		    depth[serial_id] = 0; 
+		}
+  
+		/******************************************************************/
+
+
+	}
+}
+
+
+void reconstruct_copy_talbe_to_cuda_memory(float* mapping,float* rotate_x,float* rotate_y,float* r_1)
+{
+   
+	CHECK(cudaMemcpyAsync(d_R_1_, r_1, 3*3 * sizeof(float), cudaMemcpyHostToDevice)); 
+	CHECK(cudaMemcpyAsync(d_single_pattern_mapping_, mapping, 4000*2000 * sizeof(float), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpyAsync(d_xL_rotate_x_, rotate_x, image_height_*image_width_ * sizeof(float), cudaMemcpyHostToDevice));
+	CHECK(cudaMemcpyAsync(d_xL_rotate_y_, rotate_y, image_height_*image_width_ * sizeof(float), cudaMemcpyHostToDevice));
+
+}
+
+
+void reconstruct_set_baseline(float b)
+{
+    d_baseline_ = b;  
+}
+
+void reconstruct_copy_pointcloud_from_cuda_memory(float* pointcloud)
+{ 
+	CHECK(cudaMemcpy(pointcloud, d_point_cloud_map_, 3 * image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost));
+}
+
+
+void reconstruct_copy_confidence_from_cuda_memory(float* confidence)
+{ 
+	CHECK(cudaMemcpy(confidence, d_confidence_list[3], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost)); 
+}
+
+void reconstruct_copy_depth_from_cuda_memory(float* depth)
+{
+	CHECK(cudaMemcpy(depth, d_depth_map_, image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost)); 
+} 
+
+void reconstruct_copy_brightness_from_cuda_memory(unsigned char* brightness)
+{
+	CHECK(cudaMemcpy(brightness, d_patterns_list[18], image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost)); 
+}
+
+  
+ 
+
+void reconstruct_cuda_malloc_memory()
+{
+
+	cudaMalloc((void**)&d_single_pattern_mapping_, 4000*2000 * sizeof(float)); 
+	cudaMalloc((void**)&d_xL_rotate_x_, image_height_*image_width_ * sizeof(float)); 
+	cudaMalloc((void**)&d_xL_rotate_y_, image_height_*image_width_ * sizeof(float)); 
+	cudaMalloc((void**)&d_R_1_, 3*3 * sizeof(float)); 
+
+  
+}
+
+
+
+void reconstruct_cuda_free_memory()
+{
+    cudaFree(d_single_pattern_mapping_);
+    cudaFree(d_xL_rotate_x_);
+    cudaFree(d_xL_rotate_y_);
+    cudaFree(d_R_1_);
+ 
+}
+
+
+ 
+
+
+/****************************************************************************************************/

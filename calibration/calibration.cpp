@@ -5,7 +5,7 @@
 #include <string.h>
 #include "../test/encode.h"   
 #include "../test/support_function.h"
-#include "Calibrate_Function.h"
+#include "calibrate_function.h"
 #include "../cmd/getopt.h"
 #include "../firmware/version.h"
 
@@ -13,11 +13,15 @@ const char* help_info =
 "Examples:\n\
 \n\
 1.Calibrate:\n\
-calibration.exe --patterns ./calib --calib ./param.txt \n\
+calibration.exe --calibrate --patterns ./capture/calib --version DFX800 --board 20 --calib ./param.txt \n\
+\n\
+2.Get Version:\n\
+calibration.exe --get-version \n\
 \n\
 ";
 
- 
+int dlp_width = 1920;
+int dlp_height = 1080;
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -27,19 +31,36 @@ enum opt_set
 	CALIBRATE,
 	PATTERNS,
 	CALIB,
+	VERSION,
+	GET_VERSION,
+	BOARD,
 	HELP
 };
 
 static struct option long_options[] =
 {
 	{"calibrate",no_argument,NULL,CALIBRATE},
+	{"get-version", no_argument, NULL, GET_VERSION},
 	{"patterns", required_argument, NULL, PATTERNS},
 	{"calib", required_argument, NULL, CALIB},
+	{"version", required_argument, NULL, VERSION},
+	{"board", required_argument, NULL, BOARD},
 	{"help",no_argument,NULL,HELP},
 };
  
-const char* patterns_path;
-const char* calib_path; 
+
+struct BoardMessage
+{
+	int rows;
+	int cols;
+	int width;
+	int height;
+};
+struct BoardMessage board_message;
+const char* patterns_path = "";
+const char* calib_path = "";
+const char* char_version = "";
+const char* char_board = "";
 int command = HELP;
 
 void project_version();
@@ -60,6 +81,12 @@ int main(int argc, char* argv[])
 		case CALIB:
 			calib_path = optarg;
 			break; 
+		case VERSION:
+			char_version = optarg;
+			break;
+		case BOARD:
+			char_board = optarg;
+			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
 			break;
@@ -72,23 +99,83 @@ int main(int argc, char* argv[])
 	switch (command)
 	{
 	case HELP:
+		printf(help_info);
+		break;
+	case GET_VERSION:
 		project_version();
 		break;
 	case  CALIBRATE:
 	{
 		std::string patterns_str(patterns_path);
 		std::string calib_str(calib_path);
+		std::string version_str(char_version);
+		std::string board_str(char_board);
+
+ 
+		if (patterns_str.empty() || calib_str.empty() || version_str.empty())
+		{
+			printf("calibration.exe --calibrate --patterns --version DFX800 --board 20 ./calib --calib ./param.txt \n");
+		}
+
+		if ("800" == version_str || "DFX800" == version_str || "dfx800" == version_str)
+		{
+			dlp_width = 1280;
+			dlp_height = 720;
+
+			board_message.rows = 11;
+			board_message.cols = 7;
+			board_message.width = 20;
+			board_message.height = 10;
+
+		}
+		else if ("1800" == version_str || "DFX1800" == version_str || "dfx1800" == version_str)
+		{
+			dlp_width = 1920;
+			dlp_height = 1080;
+
+			board_message.rows = 11;
+			board_message.cols = 7;
+			board_message.width = 40;
+			board_message.height = 20;
+		}
+		else
+		{ 
+			printf("calibration.exe --calibrate --patterns --version DFX800 --board 20 ./calib --calib ./param.txt \n");
+		}
+
+		if ("20" == board_str)
+		{
+			board_message.rows = 11;
+			board_message.cols = 7;
+			board_message.width = 20;
+			board_message.height = 10;
+		}
+		else if ("40" == board_str)
+		{
+			board_message.rows = 11;
+			board_message.cols = 7;
+			board_message.width = 40;
+			board_message.height = 20;
+		}
 
 		bool ok= calibrate_stereo(patterns_str, calib_str);
 
 		if (!ok)
 		{
-			printf(help_info);
-		 }
+			printf("calibration.exe --calibrate --patterns --version DFX800 --board 20 ./calib --calib ./param.txt \n");
+		}
+		else
+		{
+			std::cout << version_str << " Calibrate Finished! " << std::endl;
+
+		}
+
+
 		
 	}
 		break; 
 	default:
+		printf(help_info);
 		break;
 	}
 
@@ -100,19 +187,25 @@ void project_version()
 	char info[100 * 1024] = { '\0' };
 	char version[] = _VERSION_;
 	char enter[] = "\n";
-
+#ifdef _WIN32 
 	strcpy_s(info, sizeof(enter), enter);
 	strcat_s(info, sizeof(info), version);
 	strcat_s(info, sizeof(info), enter);
 	strcat_s(info, sizeof(info), enter);
-
-	printf_s(info);
+#elif __linux
+	strncpy(info, enter, sizeof(enter));
+	strncat(info, version, sizeof(info));
+	strncat(info, enter, sizeof(info));
+	strncat(info, enter, sizeof(info)); 
+#endif 
+	printf(info);
 }
 
 bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 {
 	std::string path = patterns_path;
 	Calibrate_Function calib_function;
+	calib_function.setBoardMessage(board_message.rows, board_message.cols, board_message.width, board_message.height);
 
 	//读取多组标定条纹图案图像
 	std::vector<std::vector<std::string>> files_list;
@@ -350,7 +443,7 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 		/*******************************************************************************************************************************************/
 
 		float ver_period = ver_period_num;
-		float hor_period = hor_period_num * 720.0 / 1280.0;
+		float hor_period = hor_period_num * dlp_height / dlp_width;
 
 
 		unwrap_ver /= ver_period;
@@ -361,7 +454,10 @@ bool calibrate_stereo(std::string patterns_path, std::string calib_path)
 
 		std::vector<cv::Point2f> dlp_points;
 
-		ret = calib_function.cameraPointsToDlp(select_board_points_list[g_i], unwrap_hor, unwrap_ver, 1, 1280, 720, dlp_points);
+		calib_function.fillThePhaseHole(unwrap_hor, true);
+		calib_function.fillThePhaseHole(unwrap_ver, false);
+
+		ret = calib_function.cameraPointsToDlp(select_board_points_list[g_i], unwrap_hor, unwrap_ver, 1, dlp_width, dlp_height, dlp_points);
 
 		if (!ret)
 		{

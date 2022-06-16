@@ -21,6 +21,7 @@
 #define Read_Flash_Start 				0xE3
 #define Read_Flash_Continue				0xE4
 #define Write_Pattern_Order_Table_Entry	0x98
+#define Read_Device_ID					0xD4
 
 class LightCrafter3010
 {
@@ -39,8 +40,12 @@ public:
 	void init();
 		
 	void start_pattern_sequence();
+
+	void stop_pattern_sequence();
 	
 	void write_pattern_table(unsigned char* pattern_index, int len);
+	
+	void write_pattern_table(unsigned char* pattern_index, int len,float camera_exposure);
 
 	void pattern_mode01();
 	void pattern_mode02();
@@ -60,6 +65,9 @@ public:
 	void enable_checkerboard();
 	void disable_checkerboard();
 
+	void enable_solid_field();
+	void disable_solid_field();
+
 	void set_internal_pattern_stop();
 	void set_flash_data_type();
 	bool set_flash_build_data_size(unsigned int data_size);
@@ -69,7 +77,14 @@ public:
 	int write_data_into_the_flash(unsigned char writeFlashCmd, char *TxBuffer, unsigned short dataLen);
 	void read_data_from_the_flash(unsigned char readFlashCmd, char *RxBuffer, unsigned short dataLen);
 	void reload_pattern_order_table_from_flash();
-
 	float get_projector_temperature();
+
+	void set_camera_exposure(float exposure){
+		camera_exposure_ = exposure;
+	}
+
+	void read_dmd_device_id(int& version);
+private:
+	float camera_exposure_;
 };
 

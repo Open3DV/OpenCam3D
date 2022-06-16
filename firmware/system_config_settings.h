@@ -32,12 +32,31 @@ struct SystemConfigParam
 
 };
 
+struct FirmwareConfigParam
+{
+	//生成亮度模式
+	int generate_brightness_model;
+	//生成亮度曝光
+	float generate_brightness_exposure;
+	//混合曝光参数
+	int mixed_exposure_param_list[6];
+	int mixed_led_param_list[6];
+	int mixed_exposure_num;
+	//1:光强融合多曝光模式、2：曝光时间-光强融合多曝光模式
+	int hdr_model; 
+	int use_bilateral_filter;
+	int bilateral_filter_param_d;  
+	float confidence;
+};
+
+
 struct SystemConfigDataStruct
 {
 	SystemConfigDataStruct();
 
 	SystemConfigParam config_param_;
-  
+	FirmwareConfigParam firwmare_param_;
+
 	bool loadFromSettings(const std::string& f);
 	bool saveToSettings(const std::string& f);
  

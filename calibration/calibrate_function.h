@@ -38,7 +38,8 @@ public:
 
 	bool cameraPointsToDlp(std::vector<cv::Point2f> camera_points, cv::Mat unwrap_map_hor, cv::Mat unwrap_map_ver, int group_num,
 		int dlp_width, int dlp_height, std::vector<cv::Point2f>& dlp_points);
-
+	 
+	bool fillThePhaseHole(cv::Mat& phase, bool is_hor);
 
 	double calibrateCamera(std::vector<std::vector<cv::Point2f>> camera_points_list, std::map<int, bool>& select_group);
 
@@ -58,10 +59,16 @@ public:
 
 	std::vector<cv::Point3f> generateSymmetricWorldFeature(float width, float height);
 
+	void setBoardMessage(int rows, int cols, int width, int height);
+
+	void setCalibrationBoard(int board_num);
+
 private:
 
 	cv::Size board_size_;
 	 
+	float board_width_;
+	float board_height_;
 
 	double dlp_width_;
 	double dlp_height_;

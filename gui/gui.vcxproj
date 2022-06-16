@@ -82,6 +82,7 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_calib3d420.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_features2d420.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Command>
     </PostBuildEvent>
+    <ClCompile />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -123,17 +124,20 @@ copy $(ProjectDir)..\3rdparty\opencv420\bin\opencv_flann420.dll $(TargetDir)</Co
     <ClCompile Include="file_io_function.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PrecisionTest.cpp" />
+    <ClCompile Include="select_calibration_board_gui.cpp" />
     <ClCompile Include="settings_file_function.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="calibration_param_gui.ui" />
     <QtUic Include="camera_capture_gui.ui" />
     <QtUic Include="camera_gui.ui" />
+    <QtUic Include="select_calibration_board_gui.ui" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="camera_gui.h" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="select_calibration_board_gui.h" />
     <QtMoc Include="calibration_param_gui.h" />
     <ClInclude Include="PrecisionTest.h" />
     <ClInclude Include="resource.h" />

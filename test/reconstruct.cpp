@@ -1,13 +1,14 @@
-#include "reconstruct.h"
+Ôªø#include "reconstruct.h"
 #include <iostream> 
 #include <fstream>
 #include "triangulation.h"
 #include <opencv2/imgcodecs.hpp>
+#include "../firmware/protocol.h"
 
 DF_Reconstruct::DF_Reconstruct()
 {
-	dlp_width_ = 1280;
-	dlp_height_ = 720;
+	dlp_width_ = 1920;
+	dlp_height_ = 1080;
 
 
 	//calib_path_ = "./param.txt";
@@ -37,8 +38,42 @@ DF_Reconstruct::DF_Reconstruct()
 
 DF_Reconstruct::~DF_Reconstruct()
 {
+
 }
 
+
+bool DF_Reconstruct::setCameraVersion(int version)
+{
+
+	switch (version)
+	{
+	case DFX_800:
+	{
+		dlp_width_ = 1280;
+		dlp_height_ = 720;
+
+		return true;
+	}
+	break;
+
+	case DFX_1800:
+	{
+
+		dlp_width_ = 1920;
+		dlp_height_ = 1080;
+
+		return true;
+	}
+	break;
+
+	default:
+		break;
+	}
+
+	return false;
+
+
+}
 
 bool DF_Reconstruct::setCalibData(CameraCalibParam param)
 {
@@ -148,25 +183,25 @@ bool DF_Reconstruct::readCalibData(cv::Mat& camera_intrinsic, cv::Mat& project_i
 		return 0;
 	}
 
-	double I[40] = {0};
+	double I[40] = { 0 };
 
-	//¥”data1Œƒº˛÷–∂¡»Îint ˝æ›
+	//‰ªédata1Êñá‰ª∂‰∏≠ËØªÂÖ•intÊï∞ÊçÆ
 	for (int i = 0; i < 40; i++)
 	{
- 
-			myfile >> I[i];
-			//std::cout << I[i]<<std::endl;
-	 
+
+		myfile >> I[i];
+		//std::cout << I[i]<<std::endl;
+
 	}
- 
+
 	myfile.close();
 
 	camera_intrinsic = cv::Mat(3, 3, CV_64F, cv::Scalar(0.0));
-	camera_distortion = cv::Mat(1, 5, CV_64F, cv::Scalar(0.0)); 
+	camera_distortion = cv::Mat(1, 5, CV_64F, cv::Scalar(0.0));
 
 	project_intrinsic = cv::Mat(3, 3, CV_64F, cv::Scalar(0.0));
 	projector_distortion = cv::Mat(1, 5, CV_64F, cv::Scalar(0.0));
-	 
+
 	rotation_matrix = cv::Mat(3, 3, CV_64F, cv::Scalar(0.0));
 	translation_matrix = cv::Mat(3, 1, CV_64F, cv::Scalar(0.0));
 
@@ -263,7 +298,7 @@ bool DF_Reconstruct::setCalibrateData(cv::Mat camera_intrinsic, cv::Mat project_
 		|| !projector_distortion.data || !rotation_matrix.data || !translation_matrix.data)
 	{
 		return false;
-	} 
+	}
 
 	cv::Mat E_1 = cv::Mat::eye(3, 4, CV_64FC1);
 	cv::Mat E_2 = cv::Mat::zeros(3, 4, CV_64FC1);
@@ -324,27 +359,27 @@ bool DF_Reconstruct::undistortedImage(cv::Mat distort_img, cv::Mat& undistort_im
 
 }
 
-bool DF_Reconstruct::undistortedPoints(std::vector<cv::Point2d> distortPoints, cv::Mat intrinsic, cv::Mat distortion, std::vector<cv::Point2d> &undisted_points)
+bool DF_Reconstruct::undistortedPoints(std::vector<cv::Point2d> distortPoints, cv::Mat intrinsic, cv::Mat distortion, std::vector<cv::Point2d>& undisted_points)
 {
-	
-	if(!intrinsic.data)
+
+	if (!intrinsic.data)
 	{
 		return false;
 	}
 
-	if(!distortion.data)
+	if (!distortion.data)
 	{
 		return false;
 	}
 
-	if(distortPoints.empty())
+	if (distortPoints.empty())
 	{
 		return false;
 	}
 
 
-	double fc_x = intrinsic.at<double>(0,0);
-	double fc_y = intrinsic.at<double>(1, 1); 
+	double fc_x = intrinsic.at<double>(0, 0);
+	double fc_y = intrinsic.at<double>(1, 1);
 	double cc_x = intrinsic.at<double>(0, 2);
 	double cc_y = intrinsic.at<double>(1, 2);
 
@@ -357,25 +392,25 @@ bool DF_Reconstruct::undistortedPoints(std::vector<cv::Point2d> distortPoints, c
 
 	undisted_points.clear();
 
-	for(int i= 0;i< distortPoints.size();i++)
+	for (int i = 0; i < distortPoints.size(); i++)
 	{
 		cv::Point2d n_p;
-		
-		normalizePoint(distortPoints[i].x, distortPoints[i].y,fc_x,  fc_y,
-			 cc_x,  cc_y,k1,  k2,  k3,  p1,  p2,n_p.x, n_p.y);
+
+		normalizePoint(distortPoints[i].x, distortPoints[i].y, fc_x, fc_y,
+			cc_x, cc_y, k1, k2, k3, p1, p2, n_p.x, n_p.y);
 
 		undisted_points.push_back(n_p);
 	}
- 
+
 
 	return true;
 }
 
 
-bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::vector<cv::Point2d> dlp_points, std::vector<cv::Point3d> &rebuild_points, std::vector<double> &error_list)
+bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::vector<cv::Point2d> dlp_points, std::vector<cv::Point3d>& rebuild_points, std::vector<double>& error_list)
 {
-	
-	if(camera_points.size() != dlp_points.size() || camera_points.empty())
+
+	if (camera_points.size() != dlp_points.size() || camera_points.empty())
 	{
 		return false;
 	}
@@ -388,11 +423,11 @@ bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::
 	rebuild_points.resize(camera_points.size());
 	error_list.clear();
 	error_list.resize(camera_points.size());
-	
-	#pragma omp parallel for
-	for(int i= 0;i< camera_points.size();i++)
+
+#pragma omp parallel for
+	for (int i = 0; i < camera_points.size(); i++)
 	{
-		
+
 		double X_L;
 		double Y_L;
 		double Z_L;
@@ -405,9 +440,9 @@ bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::
 		triangulation(camera_points[i].x, camera_points[i].y,
 			dlp_points[i].x, dlp_points[i].y,
 			R_data, T_data,
-			X_L, Y_L, Z_L,X_R, Y_R,Z_R,error);
+			X_L, Y_L, Z_L, X_R, Y_R, Z_R, error);
 
-		 
+
 		error_list[i] = error;
 		rebuild_points[i] = cv::Point3d(X_L, Y_L, Z_L);
 
@@ -441,12 +476,12 @@ bool DF_Reconstruct::pointError(cv::Mat point_cloud_0, cv::Mat point_cloud_1, cv
 		{
 
 			double x = ptr_p1[c][0] - ptr_p0[c][0];
-			double y= ptr_p1[c][1] - ptr_p0[c][1];
+			double y = ptr_p1[c][1] - ptr_p0[c][1];
 			double z = ptr_p1[c][2] - ptr_p0[c][2];
 
 			double err = std::sqrt(x * x + y * y + z * z);
 
-			ptr_err[c] = 1.0* err;
+			ptr_err[c] = 1.0 * err;
 		}
 	}
 
@@ -505,7 +540,7 @@ bool DF_Reconstruct::depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_
 					//	camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
 
 					/*********************************************************/
-					 
+
 					cv::Point3d p;
 					p.z = ptr_d[c];
 
@@ -574,14 +609,14 @@ bool DF_Reconstruct::depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_
 
 		point_cloud_map = points_map.clone();
 	}
-	 
-	 
+
+
 	return true;
 }
 
 
 
-bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::vector<cv::Point2d> dlp_points, std::vector<cv::Point3d> &rebuild_points)
+bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::vector<cv::Point2d> dlp_points, std::vector<cv::Point3d>& rebuild_points)
 {
 	if (!M_1_.data || !M_2_.data)
 	{
@@ -596,8 +631,8 @@ bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::
 	rebuild_points.clear();
 	rebuild_points.resize(camera_points.size());
 
-	#pragma omp parallel for
-	for (int p_i = 0; p_i< camera_points.size(); p_i++)
+#pragma omp parallel for
+	for (int p_i = 0; p_i < camera_points.size(); p_i++)
 	{
 		cv::Point2d camera_p = camera_points[p_i];
 		cv::Point2d dlp_p = dlp_points[p_i];
@@ -608,30 +643,30 @@ bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::
 		cv::Mat point = cv::Mat::zeros(3, 1, CV_64FC1);
 
 
-		leftM.at<double>(0, 0) = camera_p.x*M_1_.at<double>(2, 0) - M_1_.at<double>(0, 0);
-		leftM.at<double>(0, 1) = camera_p.x*M_1_.at<double>(2, 1) - M_1_.at<double>(0, 1);
-		leftM.at<double>(0, 2) = camera_p.x*M_1_.at<double>(2, 2) - M_1_.at<double>(0, 2);
+		leftM.at<double>(0, 0) = camera_p.x * M_1_.at<double>(2, 0) - M_1_.at<double>(0, 0);
+		leftM.at<double>(0, 1) = camera_p.x * M_1_.at<double>(2, 1) - M_1_.at<double>(0, 1);
+		leftM.at<double>(0, 2) = camera_p.x * M_1_.at<double>(2, 2) - M_1_.at<double>(0, 2);
 
-		leftM.at<double>(1, 0) = camera_p.y*M_1_.at<double>(2, 0) - M_1_.at<double>(1, 0);
-		leftM.at<double>(1, 1) = camera_p.y*M_1_.at<double>(2, 1) - M_1_.at<double>(1, 1);
-		leftM.at<double>(1, 2) = camera_p.y*M_1_.at<double>(2, 2) - M_1_.at<double>(1, 2);
-
-
-		leftM.at<double>(2, 0) = dlp_p.x*M_2_.at<double>(2, 0) - M_2_.at<double>(0, 0);
-		leftM.at<double>(2, 1) = dlp_p.x*M_2_.at<double>(2, 1) - M_2_.at<double>(0, 1);
-		leftM.at<double>(2, 2) = dlp_p.x*M_2_.at<double>(2, 2) - M_2_.at<double>(0, 2);
-
-		leftM.at<double>(3, 0) = dlp_p.y*M_2_.at<double>(2, 0) - M_2_.at<double>(1, 0);
-		leftM.at<double>(3, 1) = dlp_p.y*M_2_.at<double>(2, 1) - M_2_.at<double>(1, 1);
-		leftM.at<double>(3, 2) = dlp_p.y*M_2_.at<double>(2, 2) - M_2_.at<double>(1, 2);
+		leftM.at<double>(1, 0) = camera_p.y * M_1_.at<double>(2, 0) - M_1_.at<double>(1, 0);
+		leftM.at<double>(1, 1) = camera_p.y * M_1_.at<double>(2, 1) - M_1_.at<double>(1, 1);
+		leftM.at<double>(1, 2) = camera_p.y * M_1_.at<double>(2, 2) - M_1_.at<double>(1, 2);
 
 
+		leftM.at<double>(2, 0) = dlp_p.x * M_2_.at<double>(2, 0) - M_2_.at<double>(0, 0);
+		leftM.at<double>(2, 1) = dlp_p.x * M_2_.at<double>(2, 1) - M_2_.at<double>(0, 1);
+		leftM.at<double>(2, 2) = dlp_p.x * M_2_.at<double>(2, 2) - M_2_.at<double>(0, 2);
 
-		rightM.at<double>(0, 0) = M_1_.at<double>(0, 3) - camera_p.x*M_1_.at<double>(2, 3);
-		rightM.at<double>(1, 0) = M_1_.at<double>(1, 3) - camera_p.y*M_1_.at<double>(2, 3);
+		leftM.at<double>(3, 0) = dlp_p.y * M_2_.at<double>(2, 0) - M_2_.at<double>(1, 0);
+		leftM.at<double>(3, 1) = dlp_p.y * M_2_.at<double>(2, 1) - M_2_.at<double>(1, 1);
+		leftM.at<double>(3, 2) = dlp_p.y * M_2_.at<double>(2, 2) - M_2_.at<double>(1, 2);
 
-		rightM.at<double>(2, 0) = M_2_.at<double>(0, 3) - dlp_p.x*M_2_.at<double>(2, 3);
-		rightM.at<double>(3, 0) = M_2_.at<double>(1, 3) - dlp_p.y*M_2_.at<double>(2, 3);
+
+
+		rightM.at<double>(0, 0) = M_1_.at<double>(0, 3) - camera_p.x * M_1_.at<double>(2, 3);
+		rightM.at<double>(1, 0) = M_1_.at<double>(1, 3) - camera_p.y * M_1_.at<double>(2, 3);
+
+		rightM.at<double>(2, 0) = M_2_.at<double>(0, 3) - dlp_p.x * M_2_.at<double>(2, 3);
+		rightM.at<double>(3, 0) = M_2_.at<double>(1, 3) - dlp_p.y * M_2_.at<double>(2, 3);
 
 		cv::solve(leftM, rightM, point, cv::DECOMP_SVD);
 
@@ -642,7 +677,7 @@ bool DF_Reconstruct::rebuildPoints(std::vector<cv::Point2d> camera_points, std::
 		rebuild_points[p_i] = result_p;
 
 	}
-	 
+
 
 	return true;
 }
@@ -658,7 +693,7 @@ bool DF_Reconstruct::phaseToCoord(cv::Mat unwrap_map, float size, cv::Mat& coord
 	int nr = unwrap_map.rows;
 	int nc = unwrap_map.cols;
 
-	cv::Mat map(nr,nc, CV_64F, cv::Scalar(0));
+	cv::Mat map(nr, nc, CV_64F, cv::Scalar(0));
 
 	for (int r = 0; r < nr; r++)
 	{
@@ -731,7 +766,7 @@ bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int
 	/*********************************************************************************/
 
 
-	//ª˚±‰–£’˝
+	//Áï∏ÂèòÊ†°Ê≠£
 	std::vector<cv::Point2d> correct_camera_points;
 	std::vector<cv::Point2d> correct_dlp_points;
 
@@ -798,12 +833,12 @@ bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int
 	err_map = error_map.clone();
 	/***************************************************************************************************************/
 
- 
+
 
 	return true;
 }
 
-bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int period_nun, cv::Mat &deep_map)
+bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int period_nun, cv::Mat& deep_map)
 {
 	if (!M_1_.data || !M_2_.data)
 	{
@@ -814,49 +849,49 @@ bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int
 	{
 		return false;
 	}
-	 
 
-	double phase_max = 2 * CV_PI*period_nun; 
+
+	double phase_max = 2 * CV_PI * period_nun;
 
 	int nr = unwrap_map_x.rows;
 	int nc = unwrap_map_x.cols;
 
-	 
-	cv::Mat mask(nr, nc, CV_8U, cv::Scalar(0)); 
+
+	cv::Mat mask(nr, nc, CV_8U, cv::Scalar(0));
 
 	std::vector<cv::Point2d> camera_points;
 	std::vector<cv::Point2d> dlp_points;
 	std::vector<double> error_list;
 	//map to dlp pos
 
-	for (int r = 0; r< nr; r++)
-	{ 
+	for (int r = 0; r < nr; r++)
+	{
 		double* ptr_x = unwrap_map_x.ptr<double>(r);
-		double* ptr_y = unwrap_map_y.ptr<double>(r); 
+		double* ptr_y = unwrap_map_y.ptr<double>(r);
 		uchar* ptr_m = mask.ptr<uchar>(r);
-		for (int c = 0; c< nc; c++)
+		for (int c = 0; c < nc; c++)
 		{
 			if (0 != ptr_x[c])
 			{
 				cv::Point2d dlp_p;
-				dlp_p.x = dlp_width_*ptr_x[c] / phase_max;
-				dlp_p.y = dlp_height_* ptr_y[c] / phase_max;
-				 
+				dlp_p.x = dlp_width_ * ptr_x[c] / phase_max;
+				dlp_p.y = dlp_height_ * ptr_y[c] / phase_max;
+
 				cv::Point2d camera_p(c, r);
 				camera_points.push_back(camera_p);
 				dlp_points.push_back(dlp_p);
 
 				ptr_m[c] = 255;
- 
+
 			}
- 
+
 		}
 	}
 	/*********************************************************************************/
 
 
-	//ª˚±‰–£’˝
-	std::vector<cv::Point2d> correct_camera_points ;
+	//Áï∏ÂèòÊ†°Ê≠£
+	std::vector<cv::Point2d> correct_camera_points;
 	std::vector<cv::Point2d> correct_dlp_points;
 
 
@@ -864,42 +899,42 @@ bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int
 
 	undistortedPoints(camera_points, camera_intrinsic_, camera_distortion_, correct_camera_points);
 	undistortedPoints(dlp_points, project_intrinsic_, projector_distortion_, correct_dlp_points);
-	 
+
 
 	//std::vector<cv::Point2d> correct_camera_points_user;
 	//std::vector<cv::Point2d> correct_dlp_points_user;
 	//cv::undistortPoints(camera_points, correct_camera_points_user, camera_intrinsic_, camera_distortion_, cv::noArray(), camera_intrinsic_);
 	//cv::undistortPoints(dlp_points, correct_dlp_points_user, project_intrinsic_, projector_distortion_, cv::noArray(), project_intrinsic_);
 
- 
+
 
 	std::vector<cv::Point3d> rebuild_points_test;
 	std::vector<cv::Point3d> rebuild_points;
- 
+
 	rebuildPoints(correct_camera_points, correct_dlp_points, rebuild_points, error_list);
 
-	int points_num = 0; 
-	 
+	int points_num = 0;
+
 	cv::Mat deep_map_real_data(nr, nc, CV_64FC3, cv::Scalar(0, 0, 0));
 	cv::Mat deep_map_real_data_test(nr, nc, CV_64FC3, cv::Scalar(0, 0, 0));
 	cv::Mat error_map(nr, nc, CV_64FC1, cv::Scalar(0));
 
 	for (int r = 0; r < nr; r++)
-	{ 
+	{
 		uchar* ptr_m = mask.ptr<uchar>(r);
-		cv::Vec3d * ptr_dr = deep_map_real_data.ptr<cv::Vec3d>(r);
+		cv::Vec3d* ptr_dr = deep_map_real_data.ptr<cv::Vec3d>(r);
 		cv::Vec3d* ptr_dr_test = deep_map_real_data_test.ptr<cv::Vec3d>(r);
 		double* ptr_err = error_map.ptr<double>(r);
 		for (int c = 0; c < nc; c++)
 		{
 			if (0 != ptr_m[c])
-			{  
-				if(points_num< rebuild_points.size())
+			{
+				if (points_num < rebuild_points.size())
 				{
-					 
+
 					ptr_err[c] = error_list[points_num];
 
-					if(error_list[points_num]< 2)
+					if (error_list[points_num] < 2)
 					{
 						ptr_dr[c][0] = rebuild_points[points_num].x;
 						ptr_dr[c][1] = rebuild_points[points_num].y;
@@ -914,7 +949,7 @@ bool DF_Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int
 
 		}
 
-	} 
+	}
 
 
 	deep_map = deep_map_real_data.clone();
