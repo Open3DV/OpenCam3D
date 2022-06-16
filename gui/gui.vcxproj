@@ -67,7 +67,11 @@
       <AdditionalDependencies>$(TargetDir)open_cam3d_sdk.lib;opencv_calib3d420.lib;opencv_core420.lib;opencv_dnn420.lib;opencv_features2d420.lib;opencv_flann420.lib;opencv_gapi420.lib;opencv_highgui420.lib;opencv_imgcodecs420.lib;opencv_imgproc420.lib;opencv_ml420.lib;opencv_objdetect420.lib;opencv_photo420.lib;opencv_stitching420.lib;opencv_ts420.lib;opencv_video420.lib;opencv_videoio420.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\platforms\qwindows.dll $(TargetDir)
+      <Command>mkdir $(TargetDir)platforms
+copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\platforms\qdirect2d.dll $(TargetDir)platforms
+copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\platforms\qminimal.dll $(TargetDir)platforms
+copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\platforms\qoffscreen.dll $(TargetDir)platforms
+copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\platforms\qwindows.dll $(TargetDir)platforms 
 copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\Qt5Core.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\Qt5Xml.dll $(TargetDir)
 copy $(ProjectDir)..\3rdparty\Qt5.9.3\bin\Qt5Widgets.dll $(TargetDir)
