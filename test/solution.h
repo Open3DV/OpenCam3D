@@ -51,6 +51,8 @@ public:
 
 	bool findMaskBaseConfidence(cv::Mat confidence_map, int threshold, cv::Mat& mask);
 
+	bool findMaskBaseConfidenceLocalGrads(cv::Mat confidence_map, float threshold, cv::Mat& mask);
+
 private:
 	int camera_version_;
 
