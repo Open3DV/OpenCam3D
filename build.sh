@@ -48,7 +48,6 @@ cp ../../tools/open_cam3d_gui.sh ./bin
 cd ./bin
 ./pack.sh
 rm pack.sh
-rm open_cam3d_gui.sh
 
 cd ../../../
 mkdir release_camera
