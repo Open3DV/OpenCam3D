@@ -132,7 +132,7 @@ std::string get_timestamp()
 //网格掉线
 int on_dropped(void* param)
 {
-	std::cout << "Network dropped!" << std::endl;
+	LOG(INFO) << "Network dropped!" << std::endl;
 	return 0;
 }
 
