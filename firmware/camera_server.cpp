@@ -1499,12 +1499,6 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
  
         float exposure = camera_exposure_list[i];
 
-<<<<<<< HEAD
-        lc3010.pattern_mode03();
-    
-        camera.captureFrame03ToGpu();
-        parallel_cuda_copy_result_to_hdr(i);
-=======
         if (exposure > max_camera_exposure_)
         {
             exposure = max_camera_exposure_;
@@ -1770,7 +1764,6 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
     
         camera.captureFrame03ToGpu();   
         parallel_cuda_copy_result_to_hdr(i,30); 
->>>>>>> dev
     }
 
     
@@ -3668,16 +3661,6 @@ int handle_get_firmware_version(int client_sock)
     
     return DF_SUCCESS;
 }
-<<<<<<< HEAD
-//*****************************************************************************************/
-float get_projector_temperature()
-{
-    float val = 0.0;
-
-    val = lc3010.get_projector_temperature();
-
-    return val;
-=======
 
 bool check_trigger_line()
 {
@@ -3752,7 +3735,6 @@ int handle_cmd_self_test(int client_sock)
     }
     
     return DF_SUCCESS;
->>>>>>> dev
 }
 
 int handle_get_projector_temperature(int client_sock)
@@ -3764,11 +3746,8 @@ int handle_get_projector_temperature(int client_sock)
 
     LOG(INFO)<<"get projector temperature!";
 
-<<<<<<< HEAD
-    float temperature = get_projector_temperature();
-=======
     float temperature = lc3010.get_projector_temperature();
->>>>>>> dev
+
     int ret = send_buffer(client_sock, (char*)(&temperature), sizeof(temperature));
     if(ret == DF_FAILED)
     {
@@ -3778,11 +3757,7 @@ int handle_get_projector_temperature(int client_sock)
     
     return DF_SUCCESS;
 }
-<<<<<<< HEAD
-=======
 
-
->>>>>>> dev
 /*****************************************************************************************/
 int handle_commands(int client_sock)
 {
@@ -3959,8 +3934,6 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_STANDARD_PLANE_EXTERNAL_PARAM";   
     	handle_cmd_set_param_standard_param_external(client_sock);  
 	    break;
-<<<<<<< HEAD
-=======
 	case DF_CMD_SET_PARAM_GENERATE_BRIGHTNESS:
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_GENERATE_BRIGHTNESS";   
     	handle_cmd_set_param_generate_brightness(client_sock);  
@@ -4032,7 +4005,6 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_SELF_TEST";   
     	handle_cmd_self_test(client_sock);
 	    break;
->>>>>>> dev
 	case DF_CMD_GET_PROJECTOR_TEMPERATURE:
 	    LOG(INFO)<<"DF_CMD_GET_PROJECTOR_TEMPERATURE";
 	    handle_get_projector_temperature(client_sock);
