@@ -67,6 +67,11 @@ CameraCaptureGui::~CameraCaptureGui()
 }
 
 
+void CameraCaptureGui::setOnDrop(int (*p_function)(void*))
+{
+	m_p_OnDropped_ = p_function;
+}
+
 void CameraCaptureGui::setCalibrationBoard(int flag)
 {
 
@@ -1263,6 +1268,9 @@ void  CameraCaptureGui::do_pushButton_connect()
 		//addLogMessage(QString::fromUtf8("连接相机："));
 		addLogMessage(u8"连接相机：");
 		int ret_code = DfConnect(camera_ip_.toStdString().c_str());
+
+		DfRegisterOnDropped(m_p_OnDropped_);
+
 
 		if (0 == ret_code)
 		{

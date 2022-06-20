@@ -35,12 +35,34 @@ camera_gui::camera_gui(QWidget* parent)
 	connect(ui.action_exit, SIGNAL(triggered()), this, SLOT(do_action_exit()));
 	connect(ui.action_get_calibration_param, SIGNAL(triggered()), this, SLOT(do_action_show_calibration_param()));
 	connect(ui.action_select_calibration_board, SIGNAL(triggered()), this, SLOT(do_action_select_calibration_board()));
-
+	connect(this, SIGNAL(send_network_drop()), this, SLOT(do_slot_handle_network()));
 }
 
 camera_gui::~camera_gui()
 {
 
+}
+
+void  camera_gui::do_slot_handle_network()
+{
+	ui.tab_capture->addLogMessage(u8"心跳停止");
+	ui.tab_capture->do_pushButton_disconnect();
+	ui.tab_capture->addLogMessage(u8"重新连接...");
+	ui.tab_capture->do_pushButton_connect();
+}
+
+bool camera_gui::handle_network_drop()
+{
+	//ui.tab_capture->do_pushButton_disconnect();
+
+	emit send_network_drop();
+
+	return true;
+}
+
+void camera_gui::setOnDrop(int (*p_function)(void*))
+{
+	ui.tab_capture->setOnDrop(p_function);
 }
 
 void camera_gui::do_action_load_camera_config()
