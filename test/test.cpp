@@ -5,16 +5,24 @@
 #include "solution.h"
 #include "../firmware/camera_param.h"
 #include "../cmd/getopt.h"
-
+#include <string.h>  
+#include <windows.h>
+#include <iomanip>
 
 const char* help_info =
 "Examples:\n\
 \n\
 1.Capture:\n\
-test.exe --capture --ip 192.168.x.x --patterns ./patterns_data --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
+test.exe --capture --ip 192.168.x.x --model patterns-04 --patterns ./patterns_data --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
 \n\
 2.Read:\n\
-test.exe --read --patterns ./patterns_data  --calib ./param.txt --version DFX800  --pointcloud ./pointcloud_data\n\
+test.exe --read --model patterns-04 --patterns ./patterns_data  --calib ./param.txt --version DFX800  --pointcloud ./pointcloud_data\n\
+\n\
+3.Capture:\n\
+test.exe --capture --ip 192.168.x.x --model patterns-03 --patterns ./patterns_data --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
+\n\
+4.Read:\n\
+test.exe --read --model patterns-03 --patterns ./patterns_data  --calib ./param.txt --version DFX800  --pointcloud ./pointcloud_data\n\
 \n\
 3.Read:\n\
 test.exe --reconstruct --use look-table --patterns ./patterns_data  --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
@@ -35,7 +43,9 @@ enum opt_set
 	CALIB,
 	POINTCLOUD,
 	VERSION,
-	HELP
+	HELP,
+	MODEL,
+	REPETITION
 };
 
 static struct option long_options[] =
@@ -50,19 +60,27 @@ static struct option long_options[] =
 	{"pointcloud", required_argument, NULL, POINTCLOUD},
 	{"version", required_argument, NULL, VERSION},
 	{"help",no_argument,NULL,HELP},
+	{"model", required_argument, NULL, MODEL},
+	{"repetition", required_argument, NULL, REPETITION},
 };
 
 const char* camera_ip = "";
 const char* patterns_path = "";
 const char* calib_path = "";
 const char* pointcloud_path = "";
-const char* use_type = "";
+const char* use_type = "look-table";
 const char* char_version = "";
+const char* c_model = "patterns-04";
+const char* c_repetition_count = "2";
 int command = HELP;
 
 
-void capture();
-void read();
+void capture_03();
+void capture_04();
+void read_03();
+void read_04();
+void capture_04_repetition(int repetition);
+void read_04_repetition();
 void reconstruct_base_looktable();
 
 const char* camera_id;
@@ -109,6 +127,12 @@ int main(int argc, char* argv[])
 				version_number = 1800;
 			}
 		}
+		break;
+		case MODEL:
+			c_model = optarg;
+			break;
+		case REPETITION:
+			c_repetition_count = optarg;
 			break;
 		case '?':
 			printf("unknow option:%c\n", optopt);
@@ -125,11 +149,41 @@ int main(int argc, char* argv[])
 		printf(help_info);
 		break;
 	case  CAPTURE:
-		capture();
-		break;
+	{
+		std::string model(c_model);
+		if ("patterns-03" == model)
+		{
+			capture_03();
+		}
+		else if ("patterns-04" == model)
+		{
+			capture_04();
+		}
+		else if ("patterns-04-repetition" == model)
+		{
+			int num = std::atoi(c_repetition_count);
+			capture_04_repetition(num);
+		}
+	}
+	break;
 	case READ:
-		read();
-		break;
+	{
+		std::string model(c_model);
+		if ("patterns-03" == model)
+		{
+			read_03();
+		}
+		else if ("patterns-04" == model)
+		{
+			read_04();
+		}
+		else if ("patterns-04-repetition" == model)
+		{
+			read_04_repetition();
+		}
+
+	}
+	break;
 	case RECONSTRUCT:
 	{
 		std::string cmd(use_type);
@@ -149,8 +203,101 @@ int main(int argc, char* argv[])
 
 }
 
+void capture_04_repetition(int repetition)
+{
 
-void capture()
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+	std::vector<std::vector<cv::Mat>> patterns_list_;
+
+	std::string folderPath = std::string(patterns_path);
+	folderPath = solution_machine_.replaceAll(folderPath, "/", "\\");
+	std::string mkdir_cmd = std::string("mkdir ") + folderPath;
+	system(mkdir_cmd.c_str());
+
+	bool ret = false;
+
+	for (int i = 0; i < repetition; i++)
+	{
+		ret = solution_machine_.captureModel04Patterns(camera_ip, patterns_);
+
+		if (ret)
+		{
+			patterns_list_.push_back(patterns_);
+		}
+	}
+
+
+	for (int i = 0; i < patterns_list_.size(); i++)
+	{
+		std::stringstream ss;
+		ss << std::setw(2) << std::setfill('0') << i;
+		std::string path = folderPath + "\\" + ss.str();
+		solution_machine_.savePatterns(path, patterns_list_[i]);
+	}
+
+
+	ret = solution_machine_.getCameraCalibData(camera_ip, calibration_param_);
+
+	if (ret)
+	{
+		solution_machine_.saveCameraCalibData(calib_path, calibration_param_);
+	}
+	else
+	{
+		std::cout << "Get Camera Calib Data Failure!";
+	}
+
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
+
+
+	solution_machine_.reconstructPatterns04RepetitionBaseTable(patterns_list_, calibration_param_, pointcloud_path);
+}
+
+
+void capture_04()
+{
+
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+
+	bool ret = solution_machine_.captureModel04Patterns(camera_ip, patterns_);
+
+	if (ret)
+	{
+		solution_machine_.savePatterns(patterns_path, patterns_);
+	}
+
+	ret = solution_machine_.getCameraCalibData(camera_ip, calibration_param_);
+
+	if (ret)
+	{
+		solution_machine_.saveCameraCalibData(calib_path, calibration_param_);
+	}
+	else
+	{
+		std::cout << "Get Camera Calib Data Failure!";
+	}
+
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
+
+
+	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseTable(patterns_, calibration_param_, pointcloud_path);
+}
+
+void capture_03()
 {
 
 	struct CameraCalibParam calibration_param_;
@@ -174,10 +321,10 @@ void capture()
 	{
 		std::cout << "Get Camera Calib Data Failure!";
 	}
-	 
+
 	ret = solution_machine_.setCameraVersion(version_number);
 	if (!ret)
-	{  
+	{
 		std::cout << "Set Camera Version Error!" << std::endl;
 		return;
 	}
@@ -204,19 +351,19 @@ void reconstruct_base_looktable()
 	{
 		std::cout << "Read Calib Param Error!" << std::endl;
 	}
-	 
+
 	ret = solution_machine_.setCameraVersion(version_number);
 	if (!ret)
-	{ 
+	{
 		std::cout << "Set Camera Version Error!" << std::endl;
 		return;
 	}
 
-	
+
 	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseTable(patterns_, calibration_param_, pointcloud_path);
 }
 
-void read()
+void read_03()
 {
 	struct CameraCalibParam calibration_param_;
 	DfSolution solution_machine_;
@@ -235,13 +382,71 @@ void read()
 	{
 		std::cout << "Read Calib Param Error!" << std::endl;
 	}
-	 
+
 	ret = solution_machine_.setCameraVersion(version_number);
 	if (!ret)
-	{ 
+	{
 		std::cout << "Set Camera Version Error!" << std::endl;
 		return;
 	}
 
 	solution_machine_.reconstructMixedVariableWavelengthPatternsBaseXYSR(patterns_, calibration_param_, pointcloud_path);
+}
+
+
+void read_04_repetition()
+{
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+
+	std::vector <std::vector<cv::Mat>> patterns_list_;
+	std::cout << "patterns_path: " << patterns_path << std::endl;
+	bool ret = solution_machine_.readFolderImages(patterns_path, patterns_list_);
+
+	if (!ret)
+	{
+		std::cout << "Read Image Error!";
+	}
+
+
+	ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
+
+	if (!ret)
+	{
+		std::cout << "Read Calib Param Error!" << std::endl;
+	}
+
+	solution_machine_.reconstructPatterns04RepetitionBaseTable(patterns_list_, calibration_param_, pointcloud_path);
+
+}
+
+void read_04()
+{
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+
+	bool ret = solution_machine_.readImages(patterns_path, patterns_);
+
+	if (!ret)
+	{
+		std::cout << "Read Image Error!";
+	}
+
+	ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
+
+	if (!ret)
+	{
+		std::cout << "Read Calib Param Error!" << std::endl;
+	}
+
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
+
+
+	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseTable(patterns_, calibration_param_, pointcloud_path);
 }

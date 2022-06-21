@@ -225,6 +225,46 @@ bool DfSolution::getCameraCalibData(std::string ip, struct CameraCalibParam& par
 	return true;
 }
 
+
+bool DfSolution::captureModel04Patterns(std::string ip, std::vector<cv::Mat>& patterns)
+{
+	DfRegisterOnDropped(on_dropped_solution);
+
+	int ret = DfConnectNet(ip.c_str());
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int width, height;
+	DfGetCameraResolution(&width, &height);
+
+	int image_size = width * height;
+
+	int capture_num = 19;
+
+	unsigned char* raw_buf = new unsigned char[(long)(image_size * capture_num)];
+
+	ret = DfGetCameraRawData04(raw_buf, image_size * capture_num);
+
+
+	patterns.clear();
+
+	for (int i = 0; i < capture_num; i++)
+	{
+		std::stringstream ss;
+		cv::Mat image(1200, 1920, CV_8UC1, raw_buf + (long)(image_size * i));
+
+		patterns.push_back(image.clone());
+	}
+
+	delete[] raw_buf;
+
+	DfDisconnectNet();
+
+	return true;
+}
+
 bool DfSolution::captureMixedVariableWavelengthPatterns(std::string ip, std::vector<cv::Mat>& patterns)
 {
 	DfRegisterOnDropped(on_dropped_solution);
@@ -317,6 +357,29 @@ void  DfSolution::getFiles(std::string path, std::vector<std::string>& files)
 
 }
 
+
+bool DfSolution::readFolderImages(std::string dir, std::vector<std::vector<cv::Mat>>& patterns_list)
+{
+	//读取多组标定条纹图案图像
+	std::vector<std::vector<std::string>> files_list;
+	getFilesList(dir, files_list);
+
+	for (int l_i = 0; l_i < files_list.size(); l_i++)
+	{
+		std::vector<std::string> files = files_list[l_i];
+		std::vector<cv::Mat> patterns;
+
+		for (int p_i = 0; p_i < files.size(); p_i++)
+		{
+			cv::Mat img = cv::imread(files[p_i], 0);
+
+			patterns.push_back(img.clone());
+			std::cout << "read: " << files[p_i] << std::endl;
+		}
+
+		patterns_list.push_back(patterns);
+	}
+}
 
 bool DfSolution::readImages(std::string dir, std::vector<cv::Mat>& patterns)
 {
@@ -873,6 +936,179 @@ bool  DfSolution::findMaskBaseConfidence(cv::Mat confidence_map, int threshold, 
 
 	mask = result.clone();
 
+
+	return true;
+}
+
+
+bool DfSolution::reconstructPatterns04RepetitionBaseTable(std::vector<std::vector<cv::Mat>> patterns_list, struct CameraCalibParam calib_param, std::string pointcloud_path)
+{
+	/***********************************************************************************/
+
+	clock_t startTime, endTime;
+	startTime = clock();//��ʱ��ʼ
+
+
+	LookupTableFunction lookup_table_machine_;
+	lookup_table_machine_.setCalibData(calib_param);
+	lookup_table_machine_.setCameraVersion(camera_version_);
+
+	cv::Mat xL_rotate_x;
+	cv::Mat xL_rotate_y;
+	cv::Mat R1;
+	cv::Mat pattern_mapping;
+	lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+
+	//lookup_table_machine_.readTable("../", 1200, 1920);
+
+
+	endTime = clock();//��ʱ����
+	std::cout << "The run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+
+	/************************************************************************************/
+
+	std::vector<cv::Mat> patterns;
+
+	DF_Encode encode_machine_;
+	encode_machine_.mergePatterns(patterns_list, patterns);
+
+	if (19 != patterns.size())
+	{
+		return false;
+	}
+
+	bool ret = true;
+
+	int ver_pstterns_num = 18;
+
+	int nr = patterns[0].rows;
+	int nc = patterns[0].cols;
+
+	std::vector<cv::Mat> ver_patterns_img(patterns.begin(), patterns.begin() + ver_pstterns_num);
+
+	std::vector<cv::Mat> ver_wrap_img_4;
+	cv::Mat ver_confidence_map_4;
+
+	std::vector<cv::Mat> ver_wrap_img_6;
+	cv::Mat ver_confidence_map_6;
+
+	cv::Mat org_mask_(nr, nc, CV_8U, cv::Scalar(255));
+	cv::rectangle(org_mask_, cv::Point(0, 0), cv::Point(nc - 1, nr - 1), cv::Scalar(0), 3);
+
+
+	cv::Mat test_mask_ = org_mask_.clone();
+
+
+	std::vector<cv::Mat> ver_patterns_img_4(ver_patterns_img.begin(), ver_patterns_img.begin() + ver_pstterns_num - 6);
+	std::vector<cv::Mat> ver_patterns_img_6(ver_patterns_img.begin() + ver_pstterns_num - 6, ver_patterns_img.begin() + ver_pstterns_num);
+
+
+
+
+	ret = encode_machine_.computePhaseBaseFourStep(ver_patterns_img_4, ver_wrap_img_4, test_mask_, ver_confidence_map_4);
+	ret = encode_machine_.computePhaseBaseSixStep(ver_patterns_img_6, ver_wrap_img_6, test_mask_, ver_confidence_map_6);
+
+	std::vector<double> variable_wrap_rate;
+	variable_wrap_rate.push_back(8);
+	variable_wrap_rate.push_back(4);
+	variable_wrap_rate.push_back(4);
+
+
+	cv::Mat unwrap_mask = test_mask_.clone();
+
+	std::vector<cv::Mat> select_ver_wrap_img = ver_wrap_img_4;
+	select_ver_wrap_img.push_back(ver_wrap_img_6[0]);
+
+
+	cv::Mat unwrap_ver;
+	float ver_period_num = 1;
+
+	for (int r_i = 0; r_i < variable_wrap_rate.size(); r_i++)
+	{
+		ver_period_num *= variable_wrap_rate[r_i];
+	}
+
+	ret = encode_machine_.unwrapVariableWavelengthPatterns(select_ver_wrap_img, variable_wrap_rate, unwrap_ver, unwrap_mask);
+	if (!ret)
+	{
+		std::cout << "unwrap Error!";
+		return false;
+	}
+	cv::Mat wrap_0 = ver_wrap_img_4[0].clone();
+	cv::Mat wrap_1 = ver_wrap_img_4[1].clone();
+	cv::Mat wrap_2 = ver_wrap_img_4[2].clone();
+	cv::Mat wrap_3 = ver_wrap_img_6[0].clone();
+
+	float confidence_val = 5;
+
+	float ver_period = ver_period_num;
+	unwrap_ver /= ver_period;
+
+	encode_machine_.selectMaskBaseConfidence(ver_confidence_map_6, confidence_val, unwrap_mask);
+	encode_machine_.maskMap(unwrap_mask, unwrap_ver);
+
+	cv::Mat confidence_mask;
+	//findMaskBaseConfidence(ver_confidence_map_6, 3, confidence_mask);
+	////findMaskBaseConfidenceLocalGrads(ver_confidence_map_6, 3.0, confidence_mask);
+	//encode_machine_.maskMap(confidence_mask, unwrap_ver);
+
+	cv::Mat texture_map = patterns[18];
+	texture_map /= patterns_list.size();
+	texture_map.convertTo(texture_map, CV_8U);
+	cv::Mat undistort_img;
+	lookup_table_machine_.undistortedImage(texture_map, undistort_img);
+	texture_map = undistort_img.clone();
+
+	cv::Mat z_map_table;
+	//����ؽ���deep_map ��ͨ��Ϊx y z��ͨ����double ����
+	lookup_table_machine_.rebuildData(unwrap_ver, 1, z_map_table, unwrap_mask);
+
+	cv::Mat deep_map_table;
+
+	std::vector<cv::Point3f> points_cloud;
+	ret = lookup_table_machine_.generate_pointcloud(z_map_table, unwrap_mask, deep_map_table);
+
+
+	//startTime = clock();//��ʱ��ʼ   
+	//FilterModule filter_machine;
+	////相机像素为5.4um、焦距12mm。dot_spacing = 5.4*distance/12000 mm，典型值0.54mm（1200） 
+	//filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.8, 3, 4);
+	////filter_machine.statisticOutlierRemoval(deep_map_table, 6, 1);
+	//endTime = clock();//��ʱ����
+	//std::cout << "statisticOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+
+	/*********************************************************************************/
+
+	std::string work_path_ = pointcloud_path + "/test";
+
+
+	std::vector<cv::Mat> deep_channels;
+	cv::split(deep_map_table, deep_channels);
+	cv::Mat z_map;
+	deep_channels[2].convertTo(z_map, CV_32F);
+
+
+	std::string save_err_tiff = work_path_ + "_err_table.tiff";
+	std::string save_depth_tiff = work_path_ + "_depth_table.tiff";
+	std::string save_points_dir = work_path_ + "_points_table.xyz";
+	std::string save_depth_txt_dir = work_path_ + "_depth_table.txt";
+	std::string save_confidence_dir = work_path_ + "_confidence_table.bmp";
+	std::string save_depth_dir = work_path_ + "_depth_table.bmp";
+	std::string save_brightness_dir = work_path_ + "_brightness_table.bmp";
+	std::string save_points_z_dir = work_path_ + "point_z_table.tiff";
+
+	cv::Mat color_map, grey_map;
+	MapToColor(deep_map_table, color_map, grey_map, 300, 2000);
+	MaskZMap(color_map, unwrap_mask);
+
+
+	//cv::imwrite(save_err_tiff, err_map);
+	cv::imwrite(save_depth_tiff, z_map);
+	cv::imwrite(save_brightness_dir, texture_map);
+	cv::imwrite(save_depth_dir, color_map);
+	SavePointToTxt(deep_map_table, save_points_dir, texture_map);
+
+	std::cout << "pointcloud: " << save_points_dir;
 
 	return true;
 }
