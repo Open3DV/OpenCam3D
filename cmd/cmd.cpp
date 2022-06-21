@@ -5,7 +5,6 @@
 #elif __linux
 #include "../sdk/open_cam3d.h" 
 #include <cstring>
-#include <iomanip>
 #include <stdio.h> 
 #define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
 #endif 
@@ -18,6 +17,7 @@
 #include <fstream>
 #include <string.h>
 #include "getopt.h" 
+#include <iomanip>
 #include "../test/LookupTableFunction.h"
 
 using namespace std;
@@ -190,11 +190,11 @@ enum opt_set
 	GET_CAMERA_EXPOSURE,
 	SET_OFFSET,
 	OFFSET,
-	GET_CAMERA_VERSION, 
+	GET_CAMERA_VERSION,
 	SET_AUTO_EXPOSURE_BASE_ROI,
-	SET_AUTO_EXPOSURE_BASE_BOARD, 
+	SET_AUTO_EXPOSURE_BASE_BOARD,
 	SELF_TEST,
-	GET_PROJECTOR_TEMPERATURE 
+	GET_PROJECTOR_TEMPERATURE
 };
 
 static struct option long_options[] =
@@ -232,11 +232,11 @@ static struct option long_options[] =
 	{"set-camera-exposure-param",no_argument,NULL,SET_CAMERA_EXPOSURE},
 	{"get-camera-exposure-param",no_argument,NULL,GET_CAMERA_EXPOSURE},
 	{"set-offset-param",no_argument,NULL,SET_OFFSET},
-	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION}, 
+	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION},
 	{"set-auto-exposure-roi",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_ROI},
-	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD}, 
+	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD},
 	{"self-test",no_argument,NULL,SELF_TEST},
-	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE}, 
+	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE},
 };
 
 
@@ -394,7 +394,7 @@ int main(int argc, char* argv[])
 	{
 		get_camera_version(camera_id);
 	}
-	break; 
+	break;
 	case SET_AUTO_EXPOSURE_BASE_ROI:
 	{
 		set_auto_exposure_base_roi(camera_id);
@@ -404,13 +404,13 @@ int main(int argc, char* argv[])
 	{
 		set_auto_exposure_base_board(camera_id);
 	}
-	break; 
+	break;
 	case SELF_TEST:
 		self_test(camera_id);
 		break;
 	case GET_PROJECTOR_TEMPERATURE:
 		get_projector_temperature(camera_id);
-		break; 
+		break;
 	default:
 		break;
 	}
