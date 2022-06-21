@@ -314,6 +314,13 @@ DF_SDK_API int DfGetCameraRawData03(unsigned char* raw, int raw_buf_size);
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraRawData04(unsigned char* raw, int raw_buf_size);
 
+//函数名： DfGetCameraRawData04Repetition
+//功能： 采集一组相移图，一共13+6*repetition_count幅，12个四步相移条纹图+6*repetition_count个垂直方向的六步相移条纹图+一个亮度图
+//输入参数：raw_buf_size（13+6*repetition_count张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraRawData04Repetition(unsigned char* raw, int raw_buf_size, int repetition_count);
+
 //函数名： depthTransformPointcloud
 //功能： 深度图转点云接口
 //输入参数：depth_map（深度图）

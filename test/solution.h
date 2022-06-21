@@ -29,6 +29,8 @@ public:
 
 	bool reconstructPatterns04RepetitionBaseTable(std::vector <std::vector<cv::Mat>> patterns_list, struct CameraCalibParam calib_param, std::string pointcloud_path = "./");
 
+	bool reconstructPatterns04Repetition01BaseTable(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path = "./");
+
 	bool testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string err_map_path = "./");
 
 	bool testCalibrationParamBaseBoard(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string err_map_path = "./");
@@ -46,6 +48,8 @@ public:
 	bool captureMixedVariableWavelengthPatterns(std::string ip, std::vector<cv::Mat>& patterns);
 
 	bool captureModel04Patterns(std::string ip, std::vector<cv::Mat>& patterns);
+
+	bool captureModel04RepetitionPatterns(std::string ip, int repetition_count, std::vector<cv::Mat>& patterns);
 
 	void getFiles(std::string path, std::vector<std::string>& files);
 

@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerWorkingDirectory>..\x64\Release</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>--capture --ip 192.168.0.122 --model patterns-04-repetition --repetition 3 --patterns .\capture\patterns --calib .\capture\param.txt --version DFX800 --pointcloud .\capture</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>--capture --ip 192.168.0.122 --model patterns-04-repetition-01 --repetition 6 --patterns .\capture\patterns --calib .\capture\param.txt --version DFX800 --pointcloud .\capture</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>--capture --ip 192.168.0.123 --patterns .\capture\test --calib .\capture\param.txt --pointcloud .\capture</LocalDebuggerCommandArguments>

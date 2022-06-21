@@ -40,7 +40,6 @@ bool DF_Encode::mergePatterns(std::vector<std::vector<cv::Mat>> patterns_list, s
 
 		}
 
-		std::cout << "merge: " << i << std::endl;
 
 		patterns.push_back(pattern.clone());
 	}

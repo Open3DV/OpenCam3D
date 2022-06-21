@@ -24,7 +24,7 @@ test.exe --capture --ip 192.168.x.x --model patterns-03 --patterns ./patterns_da
 4.Read:\n\
 test.exe --read --model patterns-03 --patterns ./patterns_data  --calib ./param.txt --version DFX800  --pointcloud ./pointcloud_data\n\
 \n\
-3.Read:\n\
+5.Read:\n\
 test.exe --reconstruct --use look-table --patterns ./patterns_data  --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
 \n\
 ";
@@ -79,8 +79,10 @@ void capture_03();
 void capture_04();
 void read_03();
 void read_04();
-void capture_04_repetition(int repetition);
-void read_04_repetition();
+void capture_04_repetition_02(int repetition);
+void read_04_repetition_02();
+void capture_04_repetition_01(int repetition);
+void read_04_repetition_01();
 void reconstruct_base_looktable();
 
 const char* camera_id;
@@ -159,10 +161,15 @@ int main(int argc, char* argv[])
 		{
 			capture_04();
 		}
-		else if ("patterns-04-repetition" == model)
+		else if ("patterns-04-repetition-02" == model)
 		{
 			int num = std::atoi(c_repetition_count);
-			capture_04_repetition(num);
+			capture_04_repetition_02(num);
+		}
+		else if ("patterns-04-repetition-01" == model)
+		{
+			int num = std::atoi(c_repetition_count);
+			capture_04_repetition_01(num);
 		}
 	}
 	break;
@@ -177,9 +184,13 @@ int main(int argc, char* argv[])
 		{
 			read_04();
 		}
-		else if ("patterns-04-repetition" == model)
+		else if ("patterns-04-repetition-02" == model)
 		{
-			read_04_repetition();
+			read_04_repetition_02();
+		}
+		else if ("patterns-04-repetition-01" == model)
+		{
+			read_04_repetition_01();
 		}
 
 	}
@@ -203,7 +214,55 @@ int main(int argc, char* argv[])
 
 }
 
-void capture_04_repetition(int repetition)
+
+void capture_04_repetition_01(int repetition)
+{
+
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+
+	std::string folderPath = std::string(patterns_path);
+	folderPath = solution_machine_.replaceAll(folderPath, "/", "\\");
+
+	std::string del_cmd = std::string("rd /s/q ") + folderPath;
+	system(del_cmd.c_str());
+
+	std::string mkdir_cmd = std::string("mkdir ") + folderPath;
+	system(mkdir_cmd.c_str());
+
+	bool ret = false;
+
+	ret = solution_machine_.captureModel04RepetitionPatterns(camera_ip, repetition, patterns_);
+
+	solution_machine_.savePatterns(folderPath, patterns_);
+
+
+
+	ret = solution_machine_.getCameraCalibData(camera_ip, calibration_param_);
+
+	if (ret)
+	{
+		solution_machine_.saveCameraCalibData(calib_path, calibration_param_);
+	}
+	else
+	{
+		std::cout << "Get Camera Calib Data Failure!";
+	}
+
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
+
+	solution_machine_.reconstructPatterns04Repetition01BaseTable(patterns_, calibration_param_, pointcloud_path);
+
+	//solution_machine_.reconstructPatterns04RepetitionBaseTable(patterns_list_, calibration_param_, pointcloud_path);
+}
+
+void capture_04_repetition_02(int repetition)
 {
 
 	struct CameraCalibParam calibration_param_;
@@ -213,6 +272,10 @@ void capture_04_repetition(int repetition)
 
 	std::string folderPath = std::string(patterns_path);
 	folderPath = solution_machine_.replaceAll(folderPath, "/", "\\");
+
+	std::string del_cmd = std::string("rd /s/q ") + folderPath;
+	system(del_cmd.c_str());
+
 	std::string mkdir_cmd = std::string("mkdir ") + folderPath;
 	system(mkdir_cmd.c_str());
 
@@ -268,6 +331,15 @@ void capture_04()
 	DfSolution solution_machine_;
 	std::vector<cv::Mat> patterns_;
 
+	std::string folderPath = std::string(patterns_path);
+	folderPath = solution_machine_.replaceAll(folderPath, "/", "\\");
+
+	std::string del_cmd = std::string("rd /s/q ") + folderPath;
+	system(del_cmd.c_str());
+
+	std::string mkdir_cmd = std::string("mkdir ") + folderPath;
+	system(mkdir_cmd.c_str());
+
 	bool ret = solution_machine_.captureModel04Patterns(camera_ip, patterns_);
 
 	if (ret)
@@ -303,6 +375,15 @@ void capture_03()
 	struct CameraCalibParam calibration_param_;
 	DfSolution solution_machine_;
 	std::vector<cv::Mat> patterns_;
+
+	std::string folderPath = std::string(patterns_path);
+	folderPath = solution_machine_.replaceAll(folderPath, "/", "\\");
+
+	std::string del_cmd = std::string("rd /s/q ") + folderPath;
+	system(del_cmd.c_str());
+
+	std::string mkdir_cmd = std::string("mkdir ") + folderPath;
+	system(mkdir_cmd.c_str());
 
 	bool ret = solution_machine_.captureMixedVariableWavelengthPatterns(camera_ip, patterns_);
 
@@ -394,7 +475,37 @@ void read_03()
 }
 
 
-void read_04_repetition()
+void read_04_repetition_01()
+{
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+
+	bool ret = solution_machine_.readImages(patterns_path, patterns_);
+
+	if (!ret)
+	{
+		std::cout << "Read Image Error!";
+	}
+
+	ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
+
+	if (!ret)
+	{
+		std::cout << "Read Calib Param Error!" << std::endl;
+	}
+
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
+
+	solution_machine_.reconstructPatterns04Repetition01BaseTable(patterns_, calibration_param_, pointcloud_path);
+}
+
+void read_04_repetition_02()
 {
 	struct CameraCalibParam calibration_param_;
 	DfSolution solution_machine_;
