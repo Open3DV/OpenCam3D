@@ -1146,6 +1146,83 @@ int handle_cmd_get_brightness(int client_sock)
 }
 
 
+
+int handle_cmd_get_raw_04_repetition(int client_sock)
+{
+
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int repetition_count = 1;
+    //接收重复数
+    int ret = recv_buffer(client_sock, (char*)(&repetition_count), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+
+
+    lc3010.pattern_mode04_repetition(repetition_count);
+
+    int image_num= 19 + 6*(repetition_count-1);
+
+    //cv::Mat image = get_mat();
+    //lc3010.start_pattern_sequence();
+    int buffer_size = 1920*1200*image_num;
+    char* buffer = new char[buffer_size];
+    camera.captureRawTest(image_num,buffer);
+
+    printf("start send image, buffer_size=%d\n", buffer_size);
+    ret = send_buffer(client_sock, buffer, buffer_size);
+    printf("ret=%d\n", ret);
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	delete [] buffer;
+	return DF_FAILED;
+    }
+    printf("image sent!\n");
+    delete [] buffer;
+    return DF_SUCCESS;
+}
+
+
+int handle_cmd_get_raw_04(int client_sock)
+{
+    lc3010.pattern_mode04();
+
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+
+    int image_num= 19;
+
+    //cv::Mat image = get_mat();
+    //lc3010.start_pattern_sequence();
+    int buffer_size = 1920*1200*image_num;
+    char* buffer = new char[buffer_size];
+    camera.captureRawTest(image_num,buffer);
+
+    printf("start send image, buffer_size=%d\n", buffer_size);
+    int ret = send_buffer(client_sock, buffer, buffer_size);
+    printf("ret=%d\n", ret);
+    if(ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+	delete [] buffer;
+	return DF_FAILED;
+    }
+    printf("image sent!\n");
+    delete [] buffer;
+    return DF_SUCCESS;
+}
+
+
 int handle_cmd_get_raw_03(int client_sock)
 {
     lc3010.pattern_mode03();
@@ -3801,6 +3878,15 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_RAW_03"; 
 	    handle_cmd_get_raw_03(client_sock);
 	    break;
+    case DF_CMD_GET_RAW_04:
+	    LOG(INFO)<<"DF_CMD_GET_RAW_04"; 
+	    handle_cmd_get_raw_04(client_sock);
+	    break;
+    case DF_CMD_GET_RAW_04_REPETITION:
+	    LOG(INFO)<<"DF_CMD_GET_RAW_04_REPETITION"; 
+	    handle_cmd_get_raw_04_repetition(client_sock);
+	    break;
+        
 	case DF_CMD_GET_FRAME_01:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_01"; 
 	    handle_cmd_get_frame_01(client_sock); 
