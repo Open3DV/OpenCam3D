@@ -2263,7 +2263,7 @@ __global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * 
 
 		float unwrap_value =  2*DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
 		float err = unwrap_value - (rate * d_in_wrap_abs[idy * img_width + idx]);
-		if(abs(err)> 1.0)
+		if(abs(err)> 1.5)
 		{
 			d_out[idy * img_width + idx] = -10.0; 
 		}

@@ -1896,6 +1896,142 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
 }
 
 
+int handle_cmd_get_frame_04_repetition_parallel(int client_sock)
+{
+    /**************************************************************************************/
+
+    if(check_token(client_sock) == DF_FAILED)
+    {
+	return DF_FAILED;
+    }
+	
+    
+    int repetition_count = 1;
+
+    int ret = recv_buffer(client_sock, (char*)(&repetition_count), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+    LOG(INFO)<<"repetition_count: "<<repetition_count<<"\n";
+    /***************************************************************************************/
+
+
+    int depth_buf_size = 1920*1200*4;
+    float* depth_map = new float[depth_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+
+    if(repetition_count< 1)
+    {
+      repetition_count = 1;
+    }
+    
+    if(repetition_count> 10)
+    {
+      repetition_count = 10;
+    }
+
+    
+    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+
+    lc3010.pattern_mode04_repetition(repetition_count); 
+    camera.captureFrame04RepetitionToGpu(repetition_count);
+   
+  
+    camera.copyBrightness((char*)brightness);
+    // reconstruct_copy_brightness_from_cuda_memory(brightness); 
+    LOG(INFO)<<"copy depth";
+    reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
+ 
+    LOG(INFO)<<"Reconstruct Frame04 Finished!";
+
+    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    { 
+        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+        LOG(INFO) << "Bilateral";
+
+
+    }
+
+    //基于置信图最大轮廓滤波
+    if(false)
+    {
+        int nr = 1200;
+        int nc = 1920;
+        cv::Mat confidence_mat(nr,nc,CV_32FC1,cv::Scalar(0.));
+        reconstruct_copy_confidence_from_cuda_memory((float*)confidence_mat.data);
+        cv::Mat confidence_mask;
+        findMaskBaseConfidence(confidence_mat,15,confidence_mask);
+
+        for(int r= 0;r< nr;r++)
+        {
+            uchar* ptr_m = confidence_mask.ptr<uchar>(r);
+            for(int c = 0;c< nc;c++)
+            {
+                if(0 == ptr_m[c])
+                {
+                    depth_map[r*nc+c] = 0.0;
+                }
+            }
+
+        }
+        
+        LOG(INFO) << "filter base confidence";
+    }
+
+ 
+
+    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
+    printf("depth ret=%d\n", ret);
+
+    if (ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+
+    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
+    printf("brightness ret=%d\n", ret);
+
+    LOG(INFO) << "Send Frame04";
+
+    float temperature = read_temperature(0);
+
+    LOG(INFO) << "temperature: " << temperature << " deg";
+
+    if (ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+    printf("frame sent!\n");
+    // delete [] buffer;
+    delete[] depth_map;
+    delete[] brightness;
+    return DF_SUCCESS;
+
+    
+
+}
+
+
+
 int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
 {
     /**************************************************************************************/
@@ -3910,6 +4046,10 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_REPETITION_FRAME_03:
 	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_03";   
         handle_cmd_get_frame_03_repetition_parallel(client_sock);
+	    break; 
+    case DF_CMD_GET_REPETITION_FRAME_04:
+	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_04";   
+        handle_cmd_get_frame_04_repetition_parallel(client_sock);
 	    break; 
 	case DF_CMD_GET_FRAME_04:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_04";   
