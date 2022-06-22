@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <QObject>
 #include "../firmware/system_config_settings.h"
@@ -12,10 +12,11 @@ struct  GuiConfigDataStruct
 
 	QString ip;
 	bool use_hdr_model;
-	
+
 	int calibration_board;
-	
-  
+	int repetition_count;
+
+
 	bool loadFromSettings(const QString& f);
 	bool saveToSettings(const QString& f);
 
@@ -53,7 +54,7 @@ public:
 	bool saveProcessingSettingsFile(QString path);
 
 private:
-	struct SystemConfigDataStruct camera_config_; 
+	struct SystemConfigDataStruct camera_config_;
 	struct FirmwareConfigParam firmware_config_param_;
 	struct  GuiConfigDataStruct gui_config_;
 };

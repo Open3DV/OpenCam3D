@@ -59,6 +59,7 @@ SettingsFileFunction::SettingsFileFunction()
 	gui_config_.Instance().low_z_value = 300;
 	gui_config_.Instance().high_z_value = 3000;
 	gui_config_.Instance().calibration_board = 20;
+	gui_config_.Instance().repetition_count = 0;
 
 	firmware_config_param_.generate_brightness_exposure = 12000;
 	firmware_config_param_.generate_brightness_model = 1;
@@ -239,6 +240,11 @@ bool SettingsFileFunction::loadProcessingSettingsFile(QString path)
 		{
 			gui_config_.Instance().calibration_board = gui_Obj.value("calibration_board").toInt();
 		}
+
+		if (gui_Obj.contains("repetition_count") && gui_Obj["repetition_count"].isDouble())
+		{
+			gui_config_.Instance().repetition_count = gui_Obj.value("repetition_count").toInt();
+		}
 	}
 
 
@@ -334,6 +340,7 @@ bool SettingsFileFunction::saveProcessingSettingsFile(QString path)
 	jsonObject_gui.insert("ip", gui_config_.Instance().ip);
 	jsonObject_gui.insert("use_hdr_model", gui_config_.Instance().use_hdr_model);
 	jsonObject_gui.insert("calibration_board", gui_config_.Instance().calibration_board);
+	jsonObject_gui.insert("repetition_count", gui_config_.Instance().repetition_count);
 
 	rootObject.insert("gui", jsonObject_gui);
 
