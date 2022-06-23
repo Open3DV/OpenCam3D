@@ -23,6 +23,7 @@ void BubbleSort(float  *p, int length, int * ind_diff);
 /***************************************************************************************/
 //用于查找表
 bool generate_pointcloud_base_table();
+bool generate_pointcloud_base_minitable();
 
 void reconstruct_cuda_malloc_memory();
 void reconstruct_cuda_free_memory();

@@ -27,8 +27,6 @@
 
 INITIALIZE_EASYLOGGINGPP
 #define OUTPUT_PIN     12       // BOARD pin 32, BCM pin 12
-#define cv std
-#define Mat cout
 
 std::random_device rd;
 std::mt19937 rand_num(rd());
