@@ -61,6 +61,8 @@ public:
 
 	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 
+	bool setLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+
 	virtual bool readTableFloat(std::string dir_path, cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 
 	bool setCameraVersion(int version);
@@ -113,6 +115,8 @@ public:
 
 	// 生成压缩的map
 	virtual bool generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_minimapping);
+
+	bool generateBigLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_minimapping);
 
 	double findTheColByRowAndCol(cv::Mat& _cameraMatrix, cv::Mat& _distCoeffs,
 		cv::Mat& _matR, double _rowUndistorted, double _colDistorted);//2.2

@@ -435,6 +435,17 @@ bool LookupTableFunction::getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_
 	return true;
 }
 
+bool LookupTableFunction::setLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping)
+{
+
+	xL_rotate_x_ = xL_rotate_x.clone();
+	xL_rotate_y_ = xL_rotate_y.clone();
+	R_1_ = rectify_R1.clone();
+	single_pattern_mapping_ = pattern_mapping.clone();
+
+	return true;
+}
+
 void LookupTableFunction::setCalibData(struct CameraCalibParam calib_param)
 {
 	cv::Mat camera_intrinsic = cv::Mat(3, 3, CV_32F, calib_param.camera_intrinsic);
@@ -1238,6 +1249,55 @@ bool MiniLookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& x
 }
 
 
+bool MiniLookupTableFunction::generateBigLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_minimapping)
+{
+
+	if (!camera_intrinsic_.data || !camera_distortion_.data || !project_intrinsic_.data ||
+		!projector_distortion_.data || !rotation_matrix_.data || !translation_matrix_.data)
+	{
+		return false;
+	}
+
+	cv::Mat R1, R2, P1, P2, Q, V1, V2;
+
+	cv::stereoRectify(camera_intrinsic_, camera_distortion_, project_intrinsic_, projector_distortion_,
+		image_size_, rotation_matrix_, translation_matrix_,
+		R1, R2, P1, P2, Q);
+
+	int nr = image_size_.height;
+	int nc = image_size_.width;
+
+	cv::Mat xL_undistort_map_x(nr, nc, CV_64F, cv::Scalar(-2));
+	cv::Mat xL_undistort_map_y(nr, nc, CV_64F, cv::Scalar(-2));
+
+	cv::Mat xR_undistort_map_x(nr, nc, CV_64F, cv::Scalar(-2));
+	cv::Mat xR_undistort_map_y(nr, nc, CV_64F, cv::Scalar(-2));
+
+	//cv::Mat mask(nr, nc, CV_8U, cv::Scalar(0));
+
+
+	generateRotateTable(camera_intrinsic_, camera_distortion_, R1, image_size_, xL_undistort_map_x, xL_undistort_map_y);
+	generateRotateTable(project_intrinsic_, projector_distortion_, R2, cv::Size(1920, 1200), xR_undistort_map_x, xR_undistort_map_y);
+
+
+	cv::Mat mapping, mini_mapping;
+	generateMiniGridMapping(mapping, mini_mapping);
+
+	single_pattern_mapping_ = mapping.clone();
+	xL_rotate_x_ = xL_undistort_map_x.clone();
+	xL_rotate_y_ = xL_undistort_map_y.clone();
+	R_1_ = R1.clone();
+
+	xL_rotate_x = xL_undistort_map_x.clone();
+	xL_rotate_y = xL_undistort_map_y.clone();
+	rectify_R1 = R1.clone();
+	pattern_minimapping = mapping.clone();
+
+
+	return true;
+}
+
+
 // 注意事项：这里的行是归一化后的row经过式子：(row+1)*2000
 // 输入参数：1.一个数是去畸变后的行；2.一个数是未去畸变的列；
 // 输出参数：返回值是一个畸变矫正后的列
@@ -1598,13 +1658,27 @@ bool MiniLookupTableFunction::generateMiniGridMapping(cv::Mat& _LookupTable, cv:
 
 	}
 
+	//将插值的数据存入theBigLookUpTable，以便使用
+	cv::Mat theBigLookUpTable(4000, 2000, CV_32F, cv::Scalar(-2));
+	for (int row = 0; row < 4000; row += 1)
+	{
+		float* ptr_before = theLookUpTable.ptr<float>(row);
+		float* ptr_after = theBigLookUpTable.ptr<float>(row);
+		for (int col = 0; col < 2000; col += 1)
+		{
+			ptr_after[col] = ptr_before[col];
+		}
+
+	}
+
 
 	cv::Mat MiniLookupTable;
-	LookupTable.convertTo(LookupTable, CV_64F);
-	theMiniMap.convertTo(MiniLookupTable, CV_64F);
+	LookupTable.convertTo(LookupTable, CV_64F);		//插值还原的表
+	theMiniMap.convertTo(MiniLookupTable, CV_64F);		//压缩表
+	theBigLookUpTable.convertTo(theBigLookUpTable, CV_64F);		//计算得出的表
 
 	_MiniLookupTable = MiniLookupTable.clone();
-	_LookupTable = LookupTable.clone();
+	_LookupTable = theBigLookUpTable.clone();
 
 	// 将计算结果写入成员变量
 	single_pattern_mapping_ = LookupTable.clone();

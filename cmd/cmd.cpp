@@ -1044,7 +1044,9 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 	ifile.close();
 	std::cout << "Read Param" << std::endl;
 	LookupTableFunction looktable_machine;
+	MiniLookupTableFunction minilooktable_machine;
 	looktable_machine.setCalibData(calibration_param);
+	minilooktable_machine.setCalibData(calibration_param);
 	//looktable_machine.readCalibData(calib_param_path);
 	cv::Mat xL_rotate_x;
 	cv::Mat xL_rotate_y;
@@ -1054,7 +1056,7 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 
 	std::cout << "Start Generate LookTable Param" << std::endl;
 	bool ok = looktable_machine.generateLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
-
+	bool ok1 = minilooktable_machine.generateBigLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
 	std::cout << "Finished Generate LookTable Param: " << ok << std::endl;
 
 	xL_rotate_x.convertTo(xL_rotate_x, CV_32F);

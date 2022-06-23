@@ -886,15 +886,21 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 
 
 	LookupTableFunction lookup_table_machine_;
+	MiniLookupTableFunction mini_lookup_table_machine_;
 	//LookupTableFunction lookup_table_machine;
 	lookup_table_machine_.setCalibData(calib_param);
+	mini_lookup_table_machine_.setCalibData(calib_param);
 	lookup_table_machine_.setCameraVersion(camera_version_);
+	mini_lookup_table_machine_.setCameraVersion(camera_version_);
 
 	cv::Mat xL_rotate_x;
 	cv::Mat xL_rotate_y;
 	cv::Mat R1;
 	cv::Mat pattern_mapping;
+
 	lookup_table_machine_.generateLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+	mini_lookup_table_machine_.generateBigLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
+	lookup_table_machine_.setLookTable(xL_rotate_x, xL_rotate_y, R1, pattern_mapping);
 
 	//lookup_table_machine_.readTable("../", 1200, 1920);
 
