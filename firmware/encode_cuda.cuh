@@ -47,14 +47,21 @@ bool transform_pointcloud(float* rotate,float* translation,float * const transfo
 bool parallel_cuda_copy_repetition_signal_patterns(unsigned char* patterns_ptr,int serial_flag);
 
 bool parallel_cuda_merge_repetition_patterns(int repetition_serial);
+bool parallel_cuda_merge_repetition_02_patterns(int repetition_serial);
+bool parallel_cuda_clear_repetition_02_patterns();
+
 
 bool parallel_cuda_compute_merge_phase(int repetition_count); 
+bool parallel_cuda_compute_mergerepetition_02_phase(int repetition_count); 
 
 __global__ void cuda_merge_pattern(unsigned char * const d_in_pattern,uint32_t img_height, uint32_t img_width,unsigned short * const d_out_merge_pattern);
 
 __global__ void cuda_merge_six_step_phase_shift(unsigned short * const d_in_0, unsigned short * const d_in_1, unsigned short * const d_in_2, 
 	unsigned short * const d_in_3,unsigned short* const d_in_4,unsigned short* const d_in_5,int repetition_count,
 	uint32_t img_height, uint32_t img_width,float * const d_out, float * const confidence);
+
+__global__ void cuda_merge_four_step_phase_shift(unsigned short * const d_in_0, unsigned short * const d_in_1, unsigned short * const d_in_2, 
+	unsigned short * const d_in_3,int repetition_count,float * const d_out, float * const confidence);
 /**********************************************************************************************/
 bool parallel_cuda_copy_signal_patterns(unsigned char* patterns_ptr,int serial_flag);
 

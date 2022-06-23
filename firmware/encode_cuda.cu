@@ -52,6 +52,9 @@ unsigned char* d_hdr_brightness_;
 #define D_REPETITIONB_MAX_NUM 10
 unsigned char* d_repetition_patterns_list_[6*D_REPETITIONB_MAX_NUM]; 
 unsigned short* d_repetition_merge_patterns_list_[6];  
+
+#define D_REPETITION_02_MAX_NUM 37
+__device__ unsigned short* d_repetition_02_merge_patterns_list_[D_REPETITION_02_MAX_NUM];  
 /*****************************************************************************/
 
 texture<unsigned char, 1, cudaReadModeElementType> texture_patterns_0;
@@ -193,6 +196,26 @@ bool parallel_cuda_copy_repetition_signal_patterns(unsigned char* patterns_ptr,i
 }
 
 
+bool parallel_cuda_clear_repetition_02_patterns()
+{
+	for(int i = 0;i< D_REPETITION_02_MAX_NUM;i++)
+	{ 
+		 cudaMemset(d_repetition_02_merge_patterns_list_[i], 0,image_width_* image_height_*sizeof(ushort));
+		// CHECK(cudaMemcpyAsync(d_repetition_02_merge_patterns_list_[i], &val,image_width_* image_height_*sizeof(ushort), cudaMemcpyHostToDevice));
+	}
+	// cudaDeviceSynchronize();
+  
+  return true;
+}
+
+bool parallel_cuda_merge_repetition_02_patterns(int repetition_serial)
+{
+	int merge_serial = repetition_serial%19; 
+	cuda_merge_pattern<< <blocksPerGrid, threadsPerBlock >> >(d_patterns_list[repetition_serial],image_height_, image_width_,d_repetition_02_merge_patterns_list_[merge_serial]);
+
+	return true;
+}
+
 bool parallel_cuda_merge_repetition_patterns(int repetition_serial)
 {
 
@@ -216,6 +239,25 @@ __global__ void cuda_merge_pattern(unsigned char * const d_in_pattern,uint32_t i
 	}
 }
 
+
+bool parallel_cuda_compute_mergerepetition_02_phase(int repetition_count)
+{
+	
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[0], d_repetition_02_merge_patterns_list_[1],
+		d_repetition_02_merge_patterns_list_[2],d_repetition_02_merge_patterns_list_[3],repetition_count, d_wrap_map_list[0], d_confidence_list[0]);
+			
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[4], d_repetition_02_merge_patterns_list_[5],
+		d_repetition_02_merge_patterns_list_[6],d_repetition_02_merge_patterns_list_[7],repetition_count, d_wrap_map_list[1], d_confidence_list[1]);
+
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[8], d_repetition_02_merge_patterns_list_[9],
+		d_repetition_02_merge_patterns_list_[10],d_repetition_02_merge_patterns_list_[11],repetition_count, d_wrap_map_list[2], d_confidence_list[2]);
+	
+	cuda_merge_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[12], d_repetition_02_merge_patterns_list_[13],
+		d_repetition_02_merge_patterns_list_[14],d_repetition_02_merge_patterns_list_[15],d_repetition_02_merge_patterns_list_[16],d_repetition_02_merge_patterns_list_[17] ,
+		repetition_count,image_height_, image_width_, d_wrap_map_list[3], d_confidence_list[3]);
+
+	return true;
+}
 
 bool parallel_cuda_compute_merge_phase(int repetition_count)
 {
@@ -250,11 +292,11 @@ __global__ void cuda_merge_six_step_phase_shift(unsigned short * const d_in_0, u
 	if (idx < img_width && idy < img_height)
 	{
 
-		float a = (c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset])/repetition_count;
-		float b = (s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset])/repetition_count;
+		float a = c_0 *d_in_3[offset] + c_1 *d_in_4[offset] + c_2 *d_in_5[offset] + c_3* d_in_0[offset] +c_4*d_in_1[offset] + c_5*d_in_2[offset];
+		float b = s_0 *d_in_3[offset] + s_1 *d_in_4[offset] + s_2 *d_in_5[offset] + s_3* d_in_0[offset] +s_4*d_in_1[offset] + s_5*d_in_2[offset];
 
   
-		confidence[offset] = std::sqrt(a*a + b*b)*repetition_count;
+		confidence[offset] = std::sqrt(a*a + b*b);
 		d_out[offset] = DF_PI + std::atan2(a, b);
 	}
 
@@ -1273,6 +1315,11 @@ bool cuda_malloc_memory()
 		cudaMalloc((void**)&d_repetition_merge_patterns_list_[i], image_height_*image_width_ * sizeof(unsigned short)); 
 	}
  
+ 	for(int i= 0;i< D_REPETITION_02_MAX_NUM;i++)
+	{
+		cudaMalloc((void**)&d_repetition_02_merge_patterns_list_[i], image_height_*image_width_ * sizeof(unsigned short)); 
+	}
+ 
 	
 	
 	reconstruct_cuda_malloc_memory();
@@ -1374,10 +1421,18 @@ bool cuda_free_memory()
 	{
 		cudaFree(d_repetition_patterns_list_[i]); 
 	}
+
 	for(int i= 0;i< 6;i++)
 	{
 		cudaFree(d_repetition_merge_patterns_list_[i]);  
 	}
+
+	for(int i= 0;i< D_REPETITION_02_MAX_NUM;i++)
+	{
+		cudaFree(d_repetition_02_merge_patterns_list_[i]);  
+	}
+
+	
  
 	reconstruct_cuda_free_memory();
 
@@ -2173,6 +2228,52 @@ __global__ void cuda_four_step_phase_shift_texture(int serial_flag,float * const
 	}
 }
 
+__global__ void cuda_merge_four_step_phase_shift(unsigned short * const d_in_0, unsigned short * const d_in_1, unsigned short * const d_in_2, 
+	unsigned short * const d_in_3,int repetition_count,float * const d_out, float * const confidence)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * d_image_width_ + idx;
+
+	int max_pixel = 255*repetition_count;
+
+	if (idx < d_image_width_ && idy < d_image_height_)
+	{
+
+		float a = d_in_3[offset] - d_in_1[offset];
+		float b = d_in_0[offset] - d_in_2[offset];
+
+		int over_num = 0;
+		if(d_in_0[offset]>= max_pixel)
+		{
+			over_num++;
+		}
+		if (d_in_1[offset] >= max_pixel)
+		{
+			over_num++;
+		}
+		if (d_in_2[offset] >= max_pixel)
+		{
+			over_num++;
+		}
+		if (d_in_3[offset] >= max_pixel)
+		{
+			over_num++;
+		}
+
+		if(over_num> 1)
+		{
+			confidence[offset] = 0;
+			d_out[offset] = -1;
+		}
+		else
+		{
+			confidence[offset] = std::sqrt(a*a + b*b);
+			d_out[offset] = DF_PI + std::atan2(a, b);
+		}
+  
+	}
+}
 
 __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigned char * const d_in_1, unsigned char * const d_in_2, unsigned char * const d_in_3,
 	uint32_t img_height, uint32_t img_width,float * const d_out, float * const confidence)
