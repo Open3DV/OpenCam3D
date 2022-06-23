@@ -1277,6 +1277,7 @@ bool cuda_malloc_memory()
 	
 	
 	reconstruct_cuda_malloc_memory();
+	reconstruct_cuda_minimalloc_memory();
 
 	cudaDeviceSynchronize();
 

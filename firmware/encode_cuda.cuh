@@ -26,6 +26,7 @@ bool generate_pointcloud_base_table();
 bool generate_pointcloud_base_minitable();
 
 void reconstruct_cuda_malloc_memory();
+void reconstruct_cuda_minimalloc_memory();
 void reconstruct_cuda_free_memory();
 void reconstruct_cuda_free_minimemory();
 void reconstruct_set_baseline(float b);
