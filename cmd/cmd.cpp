@@ -40,76 +40,82 @@ open_cam3d.exe --get-frame-01 --ip 192.168.x.x --path ./frame_01\n\
 5.Get Frame 03:\n\
 open_cam3d.exe --get-frame-03 --ip 192.168.x.x --path ./frame_03\n\
 \n\
-6.Get Frame Hdr:\n\
+6.Get Frame 05:\n\
+open_cam3d.exe --get-frame-05 --ip 192.168.x.x --path ./frame_05\n\
+\n\
+7.Get Frame Hdr:\n\
 open_cam3d.exe --get-frame-hdr --ip 192.168.x.x --path ./frame_hdr\n\
 \n\
-7.Get calibration parameters: \n\
+8.Get calibration parameters: \n\
 open_cam3d.exe --get-calib-param --ip 192.168.x.x --path ./param.txt\n\
 \n\
-8.Set calibration parameters: \n\
+9.Set calibration parameters: \n\
 open_cam3d.exe--set-calib-param --ip 192.168.x.x --path ./param.txt\n\
 \n\
-9.Get raw images (Mode 01): \n\
+10.Get raw images (Mode 01): \n\
 open_cam3d.exe --get-raw-01 --ip 192.168.x.x --path ./raw01_image_dir\n\
 \n\
-10.Get raw images (Mode 02): \n\
+11.Get raw images (Mode 02): \n\
 open_cam3d.exe --get-raw-02 --ip 192.168.x.x --path ./raw02_image_dir\n\
 \n\
-11.Get raw images (Mode 03): \n\
+12.Get raw images (Mode 03): \n\
 open_cam3d.exe --get-raw-03 --ip 192.168.x.x --path ./raw03_image_dir\n\
 \n\
-12.Enable checkerboard: \n\
+13.Enable checkerboard: \n\
 open_cam3d.exe --enable-checkerboard --ip 192.168.x.x\n\
 \n\
-13.Disable checkerboard: \n\
+14.Disable checkerboard: \n\
 open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
 \n\
-14.Get Repetition Frame 03: \n\
+15.Get Repetition Frame 03: \n\
 open_cam3d.exe --get-repetition-frame-03 --count 6 --ip 192.168.x.x --path ./frame03_repetition\n\
 \n\
-15.Load pattern data: \n\
+16.Load pattern data: \n\
 open_cam3d.exe --load-pattern-data --ip 192.168.x.x\n\
 \n\
-16.Program pattern data: \n\
+17.Program pattern data: \n\
 open_cam3d.exe --program-pattern-data --ip 192.168.x.x\n\
 \n\
-17.Get network bandwidth: \n\
+18.Get network bandwidth: \n\
 open_cam3d.exe --get-network-bandwidth --ip 192.168.x.x\n\
 \n\
-18.Get firmware version: \n\
+19.Get firmware version: \n\
 open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
 \n\
-19.Test camera calibration parameters: \n\
+20.Test camera calibration parameters: \n\
 open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\n\
 \n\
-20.Set calibration lookTable: \n\
+21.Set calibration lookTable: \n\
 open_cam3d.exe --set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
 \n\
-21.Set Generate Brightness Param: \n\
+22.Set calibration minilookTable: \n\
+open_cam3d.exe --set-calib-minilooktable --ip 192.168.x.x --path ./param.txt\n\
+\n\
+23.Set Generate Brightness Param: \n\
 open_cam3d.exe --set-generate-brigntness-param --ip 192.168.x.x --model 1 --exposure 12000\n\
 \n\
-22.Get Generate Brightness Param: \n\
+24.Get Generate Brightness Param: \n\
 open_cam3d.exe --get-generate-brigntness-param --ip 192.168.x.x\n\
 \n\
-23.Set Camera Exposure Param: \n\
+25.Set Camera Exposure Param: \n\
 open_cam3d.exe --set-camera-exposure-param --ip 192.168.x.x --exposure 12000\n\
 \n\
-24.Get Camera Exposure Param: \n\
+26.Get Camera Exposure Param: \n\
 open_cam3d.exe --get-camera-exposure-param --ip 192.168.x.x\n\
 \n\
-25.Set Offset Param: \n\
+27.Set Offset Param: \n\
 open_cam3d.exe --set-offset-param --offset 12 --ip 192.168.x.x\n\
 \n\
-26.Get Camera Version: \n\
+28.Get Camera Version: \n\
 open_cam3d.exe --get-camera-version --ip 192.168.x.x\n\
 \n\
-27.Set Auto Exposure: \n\
+29.Set Auto Exposure: \n\
 open_cam3d.exe --set-auto-exposure-roi  --ip 192.168.x.x\n\
 \n\
-28.Self-test: \n\
+30.Self-test: \n\
 open_cam3d.exe --self-test --ip 192.168.x.x\n\
 \n\
-29.Get projector temperature: \n\
+31.Get projector temperature: \n\
 \n\
 open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
 \n\
@@ -119,6 +125,7 @@ void help_with_version(const char* help);
 bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map);
 int get_frame_01(const char* ip, const char* frame_path);
 int get_frame_03(const char* ip, const char* frame_path);
+int get_frame_05(const char* ip, const char* frame_path);
 int get_repetition_frame_03(const char* ip, int count, const char* frame_path);
 int get_frame_hdr(const char* ip, const char* frame_path);
 void save_frame(float* depth_buffer, unsigned char* bright_buffer, const char* frame_path);
@@ -139,6 +146,7 @@ int set_camera_exposure_param(const char* ip, float exposure);
 int get_camera_exposure_param(const char* ip, float& exposure);
 int set_offset_param(const char* ip, float offset);
 int set_calib_looktable(const char* ip, const char* calib_param_path);
+int set_calib_minilooktable(const char* ip, const char* calib_param_path);
 int test_calib_param(const char* ip, const char* result_path);
 int get_temperature(const char* ip);
 int enable_checkerboard(const char* ip);
@@ -165,6 +173,7 @@ enum opt_set
 	GET_CALIB_PARAM,
 	SET_CALIB_PARAM,
 	SET_CALIB_LOOKTABLE,
+	SET_CALIB_MINILOOKTABLE,
 	TEST_CALIB_PARAM,
 	USE,
 	GET_RAW_01,
@@ -173,6 +182,7 @@ enum opt_set
 	GET_POINTCLOUD,
 	GET_FRAME_01,
 	GET_FRAME_03,
+	GET_FRAME_05,
 	GET_REPETITION_FRAME_03,
 	GET_FRAME_HDR,
 	GET_BRIGHTNESS,
@@ -211,6 +221,7 @@ static struct option long_options[] =
 	{"get-calib-param",no_argument,NULL,GET_CALIB_PARAM},
 	{"set-calib-param",no_argument,NULL,SET_CALIB_PARAM},
 	{"set-calib-looktable",no_argument,NULL,SET_CALIB_LOOKTABLE},
+	{"set-calib-minilooktable",no_argument,NULL,SET_CALIB_MINILOOKTABLE},
 	{"test-calib-param",no_argument,NULL,TEST_CALIB_PARAM},
 	{"get-raw-01",no_argument,NULL,GET_RAW_01},
 	{"get-raw-02",no_argument,NULL,GET_RAW_02},
@@ -218,6 +229,7 @@ static struct option long_options[] =
 	{"get-pointcloud",no_argument,NULL,GET_POINTCLOUD},
 	{"get-frame-01",no_argument,NULL,GET_FRAME_01},
 	{"get-frame-03",no_argument,NULL,GET_FRAME_03},
+	{"get-frame-05",no_argument,NULL,GET_FRAME_05},
 	{"get-repetition-frame-03",no_argument,NULL,GET_REPETITION_FRAME_03},
 	{"get-frame-hdr",no_argument,NULL,GET_FRAME_HDR},
 	{"get-brightness",no_argument,NULL,GET_BRIGHTNESS},
@@ -308,6 +320,9 @@ int main(int argc, char* argv[])
 	case SET_CALIB_LOOKTABLE:
 		set_calib_looktable(camera_id, path);
 		break;
+	case SET_CALIB_MINILOOKTABLE:
+		set_calib_minilooktable(camera_id, path);
+		break;
 	case TEST_CALIB_PARAM:
 		test_calib_param(camera_id, path);
 		break;
@@ -325,6 +340,9 @@ int main(int argc, char* argv[])
 		break;
 	case GET_FRAME_03:
 		get_frame_03(camera_id, path);
+		break;
+	case GET_FRAME_05:
+		get_frame_05(camera_id, path);
 		break;
 	case GET_REPETITION_FRAME_03:
 	{
@@ -728,6 +746,48 @@ int get_frame_03(const char* ip, const char* frame_path)
 	return 1;
 }
 
+
+int get_frame_05(const char* ip, const char* frame_path)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int width, height;
+	DfGetCameraResolution(&width, &height);
+
+
+	ret = DfGetCalibrationParam(calibration_param_);
+
+	int image_size = width * height;
+
+	int depth_buf_size = image_size * 1 * 4;
+	float* depth_buf = (float*)(new char[depth_buf_size]);
+
+	int brightness_bug_size = image_size;
+	unsigned char* brightness_buf = new unsigned char[brightness_bug_size];
+
+	ret = DfGetFrame05(depth_buf, depth_buf_size, brightness_buf, brightness_bug_size);
+
+	DfDisconnectNet();
+
+	save_frame(depth_buf, brightness_buf, frame_path);
+
+
+
+	delete[] depth_buf;
+	delete[] brightness_buf;
+
+
+
+	return 1;
+}
+
+
 int get_frame_01(const char* ip, const char* frame_path)
 {
 	DfRegisterOnDropped(on_dropped);
@@ -1022,6 +1082,60 @@ int set_calib_looktable(const char* ip, const char* calib_param_path)
 	return 1;
 }
 
+int set_calib_minilooktable(const char* ip, const char* calib_param_path)
+{
+	/*************************************************************************************************/
+
+	struct CameraCalibParam calibration_param;
+	std::ifstream ifile;
+	ifile.open(calib_param_path);
+	for (int i = 0; i < sizeof(calibration_param) / sizeof(float); i++)
+	{
+		ifile >> ((float*)(&calibration_param))[i];
+		std::cout << ((float*)(&calibration_param))[i] << std::endl;
+	}
+	ifile.close();
+	std::cout << "Read Param" << std::endl;
+	MiniLookupTableFunction looktable_machine;
+	looktable_machine.setCalibData(calibration_param);
+	//looktable_machine.readCalibData(calib_param_path);
+	cv::Mat xL_rotate_x;
+	cv::Mat xL_rotate_y;
+	cv::Mat rectify_R1;
+	cv::Mat pattern_minimapping;
+
+	std::cout << "Start Generate LookTable Param" << std::endl;
+	bool ok = looktable_machine.generateLookTable(xL_rotate_x, xL_rotate_y, rectify_R1, pattern_minimapping);
+
+	std::cout << "Finished Generate LookTable Param: " << ok << std::endl;
+
+	xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
+	xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
+	rectify_R1.convertTo(rectify_R1, CV_32F);
+	pattern_minimapping.convertTo(pattern_minimapping, CV_32F);
+	std::cout << "生成压缩查找表成功！！！" << pattern_minimapping.size() << std::endl;
+	/**************************************************************************************************/
+
+	DfRegisterOnDropped(on_dropped);
+
+
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		std::cout << "相机连接失败，程序退出" << std::endl;
+		return 0;
+	}
+
+
+
+	DfSetCalibrationMiniLookTable(calibration_param, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)rectify_R1.data, (float*)pattern_minimapping.data);
+
+
+
+	DfDisconnectNet();
+	return 1;
+}
 
 int get_camera_exposure_param(const char* ip, float& exposure)
 {

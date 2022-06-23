@@ -364,6 +364,14 @@ DF_SDK_API int DfGetFrame03(float* depth, int depth_buf_size,
 DF_SDK_API int DfGetFrame04(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetFrame05
+//功能： 获取一帧数据（亮度图+深度图），基于压缩表
+//输入参数：depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetFrame05(float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size);
+
 //函数名： DfGetRepetitionFrame03
 //功能： 获取一帧数据（亮度图+深度图），基于Raw03相位图，6步相移的图重复count次
 //输入参数：count（重复次数）、depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
@@ -392,6 +400,14 @@ DF_SDK_API int DfSetCalibrationParam(const struct CameraCalibParam& calibration_
 //输出参数：无
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfSetCalibrationLookTable(const struct CameraCalibParam& calibration_param, float* rotate_x,
+	float* rotate_y, float* rectify_r1, float* mapping);
+
+//函数名： DfSetCalibrationMiniLookTable
+//功能：设置标定参数接口
+//输入参数：calibration_param（标定参数）,rotate_x、rotate_y, rectify_r1, mapping
+//输出参数：无
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfSetCalibrationMiniLookTable(const struct CameraCalibParam& calibration_param, float* rotate_x,
 	float* rotate_y, float* rectify_r1, float* mapping);
 
 //函数名： DfGetDeviceTemperature

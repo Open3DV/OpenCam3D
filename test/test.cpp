@@ -19,6 +19,9 @@ test.exe --read --patterns ./patterns_data  --calib ./param.txt --version DFX800
 3.Read:\n\
 test.exe --reconstruct --use look-table --patterns ./patterns_data  --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
 \n\
+4.Read:\n\
+test.exe --reconstruct --use minilook-table --patterns ./patterns_data  --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
+\n\
 ";
 
 extern int optind, opterr, optopt;
@@ -64,6 +67,7 @@ int command = HELP;
 void capture();
 void read();
 void reconstruct_base_looktable();
+void reconstruct_base_minilooktable();
 
 const char* camera_id;
 const char* path;
@@ -137,7 +141,10 @@ int main(int argc, char* argv[])
 		{
 			reconstruct_base_looktable();
 		}
-
+		else if ("minilook-table" == cmd)
+		{
+			reconstruct_base_minilooktable();
+		}
 
 	}
 	break;
@@ -215,6 +222,34 @@ void reconstruct_base_looktable()
 	
 	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseTable(patterns_, calibration_param_, pointcloud_path);
 }
+
+
+void reconstruct_base_minilooktable()
+{
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+
+	bool ret = solution_machine_.readImages(patterns_path, patterns_);
+
+	if (!ret)
+	{
+		std::cout << "Read Image Error!";
+	}
+
+	ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
+
+	if (!ret)
+	{
+		std::cout << "Read Calib Param Error!" << std::endl;
+	}
+
+
+
+
+	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseMiniTable(patterns_, calibration_param_, pointcloud_path);
+}
+
 
 void read()
 {

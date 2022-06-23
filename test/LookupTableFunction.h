@@ -11,7 +11,7 @@ public:
 	LookupTableFunction();
 	~LookupTableFunction();
 
-	bool rebuildData(cv::Mat unwrap_map_x, int group_num, cv::Mat& deep_map, cv::Mat& mask);
+	virtual bool rebuildData(cv::Mat unwrap_map_x, int group_num, cv::Mat& deep_map, cv::Mat& mask);
 
 	bool mat_double_to_float(cv::Mat org_mat, cv::Mat& dst_mat);
 
@@ -19,7 +19,7 @@ public:
 
 	bool generate_pointcloud(cv::Mat z, cv::Mat& mask, cv::Mat& map_xyz);
 
-	double depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b, double& disparity);
+	virtual double depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b, double& disparity);
 
 	double Bilinear_interpolation(double x, double y, cv::Mat& mapping);
 
@@ -45,7 +45,7 @@ public:
 
 	bool readTable(std::string dir_path, int rows, int cols);
 
-	bool generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+	virtual bool generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 
 	bool generateRotateTable(cv::Mat camera_intrinsic_, cv::Mat camera_distortion_, cv::Mat rectify_R,
 		cv::Size size, cv::Mat& rotate_x, cv::Mat& rotate_y);
@@ -61,10 +61,10 @@ public:
 
 	bool getLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 
-	bool readTableFloat(std::string dir_path, cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
+	virtual bool readTableFloat(std::string dir_path, cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_mapping);
 
 	bool setCameraVersion(int version);
-private:
+protected:
 	void normalizePoint(
 		double x, double y,
 		double fc_x, double fc_y,
@@ -72,7 +72,7 @@ private:
 		double k1, double k2, double k3, double p1, double p2,
 		double& x_norm, double& y_norm);
 
-private:
+protected:
 
 	cv::Mat single_pattern_mapping_;
 	cv::Mat xL_rotate_x_;
@@ -96,5 +96,48 @@ private:
 	float dlp_width_;
 	float dlp_height_;
 
+};
+
+
+class MiniLookupTableFunction : public LookupTableFunction
+{
+public:
+
+	virtual bool rebuildData(cv::Mat unwrap_map_x, int group_num, cv::Mat& deep_map, cv::Mat& mask);
+
+	virtual double depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b);
+
+	double Bilinear_mini_interpolation(double x, double y, cv::Mat& mapping);
+
+	virtual bool readTableFloat(std::string dir_path, cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_minimapping);
+
+	// 生成压缩的map
+	virtual bool generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& xL_rotate_y, cv::Mat& rectify_R1, cv::Mat& pattern_minimapping);
+
+	double findTheColByRowAndCol(cv::Mat& _cameraMatrix, cv::Mat& _distCoeffs,
+		cv::Mat& _matR, double _rowUndistorted, double _colDistorted);//2.2
+
+	bool cutTheMap(cv::Mat& _originalMap, cv::Mat& _cuttedMap);//3
+
+
+	bool makeMapFull(cv::Mat& _cameraMatrix, cv::Mat& _distCoeffs,
+		cv::Mat& _matR, cv::Mat& _notFullData, cv::Mat& _theMask, cv::Mat& _isFullData);//2.1
+
+	//bool readBinMappingFloat(int rows, int cols, std::string mapping_file, cv::Mat& out_map);//0
+
+	bool generateMiniLookupTable(cv::Mat _theFullGridMap, cv::Mat& _theMiniMap);//4
+
+	bool takeMiniMapBack(cv::Mat& _theMiniMap, cv::Mat& _theOriginalMap, cv::Mat& _theFullSizeMask);//5
+
+	double calculateNormalizedCol(cv::InputArray _cameraMatrix, cv::InputArray _distCoeffs,
+		cv::InputArray _matR, cv::InputArray _newCameraMatrix, double _row_undistorted, double _col_distorted);//2.3
+
+	bool generateMiniGridMapping(cv::Mat& _LookupTable, cv::Mat& _MiniLookupTable);
+
+	bool readCameraCalibData(std::string path, struct CameraCalibParam& param);
+
+protected:
+
+	cv::Mat the_mini_map_;
 };
 
