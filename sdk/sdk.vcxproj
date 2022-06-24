@@ -180,6 +180,7 @@ copy $(TargetDir)\open_cam3d_sdk.dll $(ProjectDir)..\example</Command>
     <PreBuildEvent>
       <Command>$(ProjectDir)
 cd ..\version
+dos2unix.exe -k build.sh
 build.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
