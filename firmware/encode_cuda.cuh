@@ -191,7 +191,7 @@ __global__ void cuda_merge_brightness(unsigned char * const d_in_0, unsigned cha
 __global__ void cuda_normalize_phase(float * const d_in_unwrap_x,float rate_x, float * const d_in_unwrap_y, float rate_y, uint32_t img_height, uint32_t img_width, float * const d_out_normal_x,float * const d_out_normal_y);
  
 
-__global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * const d_in_wrap_high, float const rate, uint32_t img_height, uint32_t img_width, float * const d_out);
+__global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * const d_in_wrap_high, float const rate, uint32_t img_height, uint32_t img_width, float threshold,float * const d_out);
  
 __global__ void cuda_mul_phase_unwrap(float * const d_in_wrap_0, float * const d_in_wrap_1, float * const d_in_wrap_2,
 	uint32_t img_height, uint32_t img_width, float * const d_out);

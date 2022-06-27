@@ -400,7 +400,7 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		{ 
 			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
             cuda_variable_phase_unwrap<< <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
-				image_height_, image_width_, d_unwrap_map_list[0]);
+				image_height_, image_width_,CV_PI, d_unwrap_map_list[0]);
             // CHECK ( cudaGetLastError () );
 
 			// cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[0], d_wrap_map_list[1], 8.0,
@@ -413,7 +413,7 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		{ 
 			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_wrap_map_list[2], 4.0,
-				image_height_, image_width_, d_unwrap_map_list[0]); 
+				image_height_, image_width_,CV_PI, d_unwrap_map_list[0]); 
 			// CHECK ( cudaGetLastError () );
 		}
 		break;
@@ -421,7 +421,7 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		{ 
 			// CHECK( cudaFuncSetCacheConfig (cuda_variable_phase_unwrap, cudaFuncCachePreferL1) );
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_wrap_map_list[3], 4.0,
-				image_height_, image_width_, d_unwrap_map_list[0]); 
+				image_height_, image_width_,1.5, d_unwrap_map_list[0]); 
 
 			// CHECK ( cudaGetLastError () );
 		}
@@ -434,13 +434,13 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		case 5:
 		{
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_wrap_map_list[4], d_wrap_map_list[5], 8.0,
-				image_height_, image_width_, d_unwrap_map_list[1]);
+				image_height_, image_width_,CV_PI, d_unwrap_map_list[1]);
 		}
 		break;
 		case 6:
 		{
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[1], d_wrap_map_list[6], 4.0,
-				image_height_, image_width_, d_unwrap_map_list[1]);
+				image_height_, image_width_,CV_PI, d_unwrap_map_list[1]);
 			cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],128.0, d_unwrap_map_list[1],18.0,
 			image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
 			
@@ -1559,7 +1559,7 @@ bool cuda_unwrap_phase_03()
 
 	
 	cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0], d_wrap_map_list[3], 4.0,
-			image_height_, image_width_, d_unwrap_map_list[0]);
+			image_height_, image_width_, 1.5,d_unwrap_map_list[0]);
 	
 
 	
@@ -2345,7 +2345,7 @@ __global__ void cuda_normalize_phase(float * const d_in_unwrap_x, float rate_x,f
 	}
 }
 
-__global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * const d_in_wrap_high,float const rate,uint32_t img_height, uint32_t img_width, float * const d_out)
+__global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * const d_in_wrap_high,float const rate,uint32_t img_height, uint32_t img_width,float threshold, float * const d_out)
 {
 	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -2364,7 +2364,7 @@ __global__ void cuda_variable_phase_unwrap(float * const d_in_wrap_abs, float * 
 
 		float unwrap_value =  2*DF_PI*k + d_in_wrap_high[idy * img_width + idx]; 
 		float err = unwrap_value - (rate * d_in_wrap_abs[idy * img_width + idx]);
-		if(abs(err)> 1.5)
+		if(abs(err)> threshold)
 		{
 			d_out[idy * img_width + idx] = -10.0; 
 		}
@@ -2768,7 +2768,8 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
     	float Xcr = bilinear_interpolation(idx, idy,1920, xL_rotate_x);
         float Ycr = bilinear_interpolation(idx, idy, 1920,xL_rotate_y);
         float Xpr = bilinear_interpolation(Xp, (Ycr + 1) * 2000, 2000, single_pattern_mapping);
-        float delta_X = std::abs(Xcr - Xpr);
+        // float delta_X = std::abs(Xcr - Xpr);
+		float delta_X = Xpr -Xcr;
         float Z = b / delta_X;
 	
 		float X_L = Z * Xcr * R_1[0] + Z * Ycr * R_1[1] + Z * R_1[2];
@@ -2794,7 +2795,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 		}
 
 		
-		if (-2 == Xcr || -2 == Ycr || -2 == Xpr)
+		if (-2 == Xcr || -2 == Ycr || -2 == Xpr || delta_X< 0.005)
 		{
 			pointcloud[3 * serial_id + 0] = 0;
 		    pointcloud[3 * serial_id + 1] = 0;
