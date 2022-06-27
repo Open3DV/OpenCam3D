@@ -33,6 +33,9 @@ void reconstruct_copy_depth_from_cuda_memory(float* depth);
 void reconstruct_copy_confidence_from_cuda_memory(float* confidence);
 void reconstruct_copy_brightness_from_cuda_memory(unsigned char* brightness);
 
+void copy_phase_from_cuda_memory(float* phase_x,float* phase_y);
+void copy_merge_brightness_from_cuda_memory(unsigned char* brightness);
+
 __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,float * const xL_rotate_y,float * const single_pattern_mapping,float * const R_1,float * const confidence_map,
                                                         float * const phase_x,uint32_t img_height, uint32_t img_width,float b, float * const pointcloud,float * const depth);
 
@@ -52,9 +55,12 @@ bool parallel_cuda_clear_repetition_02_patterns();
 
 
 bool parallel_cuda_compute_merge_phase(int repetition_count); 
-bool parallel_cuda_compute_mergerepetition_02_phase(int repetition_count); 
+bool parallel_cuda_compute_merge_repetition_02_phase(int repetition_count); 
+bool parallel_cuda_compute_model_02_merge_repetition_02_phase(int repetition_count); 
 
 __global__ void cuda_merge_pattern(unsigned char * const d_in_pattern,uint32_t img_height, uint32_t img_width,unsigned short * const d_out_merge_pattern);
+
+__global__ void cuda_merge_brigntness_map(unsigned short * const merge_brightness,int repetition_count, unsigned char* brightness);
 
 __global__ void cuda_merge_six_step_phase_shift(unsigned short * const d_in_0, unsigned short * const d_in_1, unsigned short * const d_in_2, 
 	unsigned short * const d_in_3,unsigned short* const d_in_4,unsigned short* const d_in_5,int repetition_count,

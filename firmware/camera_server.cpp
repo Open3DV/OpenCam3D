@@ -1895,6 +1895,107 @@ int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
 
 }
 
+int handle_cmd_get_phase_02_repetition_02_parallel(int client_sock)
+{
+    /**************************************************************************************/
+
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;
+    }
+	
+    
+    int repetition_count = 1;
+
+    int ret = recv_buffer(client_sock, (char*)(&repetition_count), sizeof(int));
+    if(ret == DF_FAILED)
+    {
+        LOG(INFO)<<"send error, close this connection!\n";
+    	return DF_FAILED;
+    }
+    LOG(INFO)<<"repetition_count: "<<repetition_count<<"\n";
+    /***************************************************************************************/
+
+    int phase_buf_size = 1920 * 1200 * 4;
+    float *phase_map_x = new float[phase_buf_size];
+    float *phase_map_y = new float[phase_buf_size];
+
+    int brightness_buf_size = 1920 * 1200 * 1;
+    unsigned char *brightness = new unsigned char[brightness_buf_size];
+
+    if (repetition_count < 1)
+    {
+        repetition_count = 1;
+    }
+
+    if (repetition_count > 10)
+    {
+        repetition_count = 10;
+    }
+
+    // lc3010.pattern_mode04_repetition(repetition_count);
+    camera.capturePhase02Repetition02ToGpu(repetition_count);
+
+    copy_phase_from_cuda_memory(phase_map_x, phase_map_y);
+    copy_merge_brightness_from_cuda_memory(brightness);
+
+    LOG(INFO) << "start send depth, buffer_size= " << phase_buf_size;
+    ret = send_buffer(client_sock, (const char *)phase_map_x, phase_buf_size);
+    LOG(INFO) << "depth ret= " << ret;
+
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!";
+        // delete [] buffer;
+        delete[] phase_map_x;
+        delete[] phase_map_y;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+
+    LOG(INFO) << "start send depth, buffer_size=" << phase_buf_size;
+    ret = send_buffer(client_sock, (const char *)phase_map_y, phase_buf_size);
+    LOG(INFO) << "depth ret= " << ret;
+
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!";
+        // delete [] buffer;
+        delete[] phase_map_x;
+        delete[] phase_map_y;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+
+    LOG(INFO) << "start send brightness, buffer_size= " << brightness_buf_size;
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
+    LOG(INFO) << "brightness ret= " << ret;
+
+    LOG(INFO) << "Send Frame04";
+
+    float temperature = read_temperature(0);
+
+    LOG(INFO) << "temperature: " << temperature << " deg";
+
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!";
+
+        delete[] phase_map_x;
+        delete[] phase_map_y;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+    LOG(INFO) << "frame sent!";
+    delete[] phase_map_x;
+    delete[] phase_map_y;
+    delete[] brightness;
+    return DF_SUCCESS;
+}
+
 
 int handle_cmd_get_frame_04_repetition_02_parallel(int client_sock)
 {
@@ -4370,6 +4471,10 @@ int handle_commands(int client_sock)
 	case DF_CMD_GET_PROJECTOR_TEMPERATURE:
 	    LOG(INFO)<<"DF_CMD_GET_PROJECTOR_TEMPERATURE";
 	    handle_get_projector_temperature(client_sock);
+	    break;
+    case DF_CMD_GET_PHASE_02_REPETITION:
+    	LOG(INFO)<<"DF_CMD_GET_PHASE_02_REPETITION";
+	    handle_cmd_get_phase_02_repetition_02_parallel(client_sock);
 	    break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";

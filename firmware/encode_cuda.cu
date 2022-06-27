@@ -240,7 +240,46 @@ __global__ void cuda_merge_pattern(unsigned char * const d_in_pattern,uint32_t i
 }
 
 
-bool parallel_cuda_compute_mergerepetition_02_phase(int repetition_count)
+bool parallel_cuda_compute_model_02_merge_repetition_02_phase(int repetition_count)
+{
+	int i = 0;
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],repetition_count, d_wrap_map_list[0], d_confidence_list[0]);
+			
+	i = 4;
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],repetition_count, d_wrap_map_list[1], d_confidence_list[1]);
+
+	i = 8;
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],repetition_count, d_wrap_map_list[2], d_confidence_list[2]);
+	
+	i = 12;
+	cuda_merge_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],d_repetition_02_merge_patterns_list_[i+ 4],d_repetition_02_merge_patterns_list_[i+ 5] ,
+		repetition_count,image_height_, image_width_, d_wrap_map_list[3], d_confidence_list[3]);
+
+	i = 18;
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],repetition_count, d_wrap_map_list[4], d_confidence_list[4]);
+			
+	i = 22;
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],repetition_count, d_wrap_map_list[5], d_confidence_list[5]);
+
+	i = 26;
+	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],repetition_count, d_wrap_map_list[6], d_confidence_list[6]);
+	
+	i = 30;
+	cuda_merge_six_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[i+ 0], d_repetition_02_merge_patterns_list_[i+ 1],
+		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],d_repetition_02_merge_patterns_list_[i+ 4],d_repetition_02_merge_patterns_list_[i+ 5] ,
+		repetition_count,image_height_, image_width_, d_wrap_map_list[7], d_confidence_list[7]);
+
+	cuda_merge_brigntness_map<< <blocksPerGrid, threadsPerBlock >> >(d_repetition_02_merge_patterns_list_[37],repetition_count,d_brightness_);
+}
+
+bool parallel_cuda_compute_merge_repetition_02_phase(int repetition_count)
 {
 	
 	cuda_merge_four_step_phase_shift << <blocksPerGrid, threadsPerBlock >> > (d_repetition_02_merge_patterns_list_[0], d_repetition_02_merge_patterns_list_[1],
@@ -441,10 +480,21 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		{
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[1], d_wrap_map_list[6], 4.0,
 				image_height_, image_width_,CV_PI, d_unwrap_map_list[1]);
-			cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],128.0, d_unwrap_map_list[1],18.0,
-			image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
+			// cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],128.0, d_unwrap_map_list[1],18.0,
+			// image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
 			
 			LOG(INFO)<<"unwrap 6:  ";
+
+		}
+		break;
+		case 7:
+		{
+			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[1], d_wrap_map_list[7], 4.0,
+				image_height_, image_width_,CV_PI, d_unwrap_map_list[1]);
+			cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],128.0, d_unwrap_map_list[1],72.0,
+			image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
+			
+			LOG(INFO)<<"unwrap 7:  ";
 
 		}
 		break;
@@ -2228,6 +2278,21 @@ __global__ void cuda_four_step_phase_shift_texture(int serial_flag,float * const
 	}
 }
 
+
+__global__ void cuda_merge_brigntness_map(unsigned short * const merge_brightness,int repetition_count, unsigned char* brightness)
+{
+	const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	const unsigned int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	const unsigned int offset = idy * d_image_width_ + idx;
+ 
+
+	if (idx < d_image_width_ && idy < d_image_height_)
+	{ 
+		brightness[offset] = 0.5 + (merge_brightness[offset]/repetition_count); 
+  	 
+	}
+}
+
 __global__ void cuda_merge_four_step_phase_shift(unsigned short * const d_in_0, unsigned short * const d_in_1, unsigned short * const d_in_2, 
 	unsigned short * const d_in_3,int repetition_count,float * const d_out, float * const confidence)
 {
@@ -2514,8 +2579,8 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 	{
 		/****************************************************************************/
 		//phase to position
-		float dlp_x = d_in_unwrap_x[idy * d_image_width_ + idx] * d_dlp_width_ / d_max_phase_;
-		float dlp_y = d_in_unwrap_y[idy * d_image_width_ + idx] * d_dlp_height_ / d_max_phase_;
+		float dlp_x = d_in_unwrap_x[idy * d_image_width_ + idx] * d_dlp_width_ / (128.0*2*DF_PI);
+		float dlp_y = d_in_unwrap_y[idy * d_image_width_ + idx] * d_dlp_height_ / (18.0*2*DF_PI);
 
 		//if(100 == idx && 100 == idy)
 		//{
@@ -2849,7 +2914,17 @@ void reconstruct_copy_brightness_from_cuda_memory(unsigned char* brightness)
 }
 
   
+void copy_phase_from_cuda_memory(float* phase_x,float* phase_y)
+{
+	CHECK(cudaMemcpy(phase_x, d_unwrap_map_list[0], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost)); 
+	CHECK(cudaMemcpy(phase_y, d_unwrap_map_list[1], image_height_*image_width_ * sizeof(float), cudaMemcpyDeviceToHost)); 
  
+}
+ 
+void copy_merge_brightness_from_cuda_memory(unsigned char* brightness)
+{ 
+	CHECK(cudaMemcpy(brightness, d_brightness_, image_height_*image_width_ * sizeof(unsigned char), cudaMemcpyDeviceToHost)); 
+}
 
 void reconstruct_cuda_malloc_memory()
 {

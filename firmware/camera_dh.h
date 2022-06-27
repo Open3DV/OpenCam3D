@@ -70,6 +70,8 @@ public:
 	bool captureFrame03RepetitionToGpu(int repetition_count);
 	
 	bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, float offset_value);
+	
+	bool capturePhase02Repetition02ToGpu(int repetition_count);
 
 private:
 
