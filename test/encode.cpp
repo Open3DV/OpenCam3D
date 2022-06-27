@@ -492,7 +492,7 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 }
 
 
-bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, double rate, cv::Mat& h_unwrap, cv::Mat& k_Mat, cv::Mat err_mat)
+bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, double rate, cv::Mat& h_unwrap, cv::Mat& k_Mat, float threshold, cv::Mat& err_mat)
 {
 
 	if (l_unwrap.empty() || h_wrap.empty())
@@ -541,7 +541,7 @@ bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, doubl
 
 			k_ptr[c] = k;
 
-			if (ptr_err[c] > 1.5)
+			if (ptr_err[c] > threshold)
 			{
 				h_unwrap_ptr[c] = -10;
 
@@ -672,6 +672,21 @@ bool DF_Encode::unwrapVariableWavelengthPatterns(std::vector<cv::Mat> wrap_img_l
 		return false;
 	}
 
+	std::vector<float> threshold_list;
+
+	for (int i = 0; i < rate_list.size(); i++)
+	{
+		threshold_list.push_back(CV_PI);
+	}
+
+
+	if (threshold_list.size() >= 3)
+	{
+		threshold_list[0] = CV_PI;
+		threshold_list[1] = CV_PI;
+		threshold_list[2] = 1.5;
+	}
+
 
 	int nr = wrap_img_list[0].rows;
 	int nc = wrap_img_list[0].cols;
@@ -696,8 +711,9 @@ bool DF_Encode::unwrapVariableWavelengthPatterns(std::vector<cv::Mat> wrap_img_l
 	{
 		cv::Mat wrap_map = wrap_img_list[g_i];
 		cv::Mat h_unwrap_map(nr, nc, CV_64F, cv::Scalar(0));
+		cv::Mat err_map;
 
-		unwrapVariableWavelength(unwrap_map, wrap_map, rate_list[g_i - 1], h_unwrap_map, k_mat);
+		unwrapVariableWavelength(unwrap_map, wrap_map, rate_list[g_i - 1], h_unwrap_map, k_mat, threshold_list[g_i - 1], err_map);
 
 		unwrap_map = h_unwrap_map.clone();
 	}

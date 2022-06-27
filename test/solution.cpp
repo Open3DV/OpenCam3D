@@ -1454,7 +1454,7 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	cv::Mat wrap_2 = ver_wrap_img_4[2].clone();
 	cv::Mat wrap_3 = ver_wrap_img_6[0].clone();
 
-	float confidence_val = 10;
+	float confidence_val = 2;
 
 	float ver_period = ver_period_num;
 	unwrap_ver /= ver_period;
@@ -1482,13 +1482,13 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 	ret = lookup_table_machine_.generate_pointcloud(z_map_table, unwrap_mask, deep_map_table);
 
 
-	//startTime = clock();//��ʱ��ʼ   
-	//FilterModule filter_machine;
-	////相机像素为5.4um、焦距12mm。dot_spacing = 5.4*distance/12000 mm，典型值0.54mm（1200） 
-	//filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.8, 3, 4);
-	////filter_machine.statisticOutlierRemoval(deep_map_table, 6, 1);
-	//endTime = clock();//��ʱ����
-	//std::cout << "statisticOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+	startTime = clock();//��ʱ��ʼ   
+	FilterModule filter_machine;
+	//相机像素为5.4um、焦距12mm。dot_spacing = 5.4*distance/12 m，典型值0.54mm（1200） 
+	//filter_machine.RadiusOutlierRemoval(deep_map_table, unwrap_mask, 0.5, 3, 3);
+	//filter_machine.statisticOutlierRemoval(deep_map_table, 6, 1);
+	endTime = clock();//��ʱ����
+	std::cout << "statisticOutlierRemoval run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
 
 	/*********************************************************************************/
 

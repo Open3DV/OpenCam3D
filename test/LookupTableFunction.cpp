@@ -767,12 +767,19 @@ double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double 
 	}
 
 
-	double delta_X = std::abs(Xcr - Xpr);
+	//double delta_X = Xcr - Xpr;
+
+	double delta_X = Xpr - Xcr;
 	double Z = b / delta_X;
 
 
 
 	disparity = delta_X * 1000;
+
+	if (disparity < 5)
+	{
+		return 0;
+	}
 
 	//if (disparity < 50 || disparity> 85)
 	//{
@@ -921,13 +928,14 @@ bool LookupTableFunction::rebuildData(cv::Mat unwrap_map_x, int group_num, cv::M
 
 				if (0 == ptr_d[Xc])
 				{
-					ptr_m[Xc] == 0;
+					ptr_m[Xc] = 0;
 				}
 
 				ptr_disparity[Xc] = d;
 			}
 			else {
 				ptr_d[Xc] = 0;
+				ptr_m[Xc] = 0;
 			}
 
 
