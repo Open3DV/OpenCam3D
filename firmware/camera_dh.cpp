@@ -287,17 +287,20 @@ bool CameraDh::capturePhase02Repetition02ToGpu(int repetition_count)
     }
 
     //关闭相机流
-    std::thread stop_thread(GXStreamOff, hDevice_);
-    stop_thread.detach();
-    LOG(INFO) << "GXStreamOff";
-    parallel_cuda_compute_merge_repetition_02_phase(repetition_count);
+    // std::thread stop_thread(GXStreamOff, hDevice_);
+    // stop_thread.detach();
+    // LOG(INFO) << "GXStreamOff";
+
+    parallel_cuda_compute_model_02_merge_repetition_02_phase(repetition_count);
+
     LOG(INFO) << "parallel_cuda_compute_mergerepetition_02_phase";
     parallel_cuda_unwrap_phase(1);
     parallel_cuda_unwrap_phase(2);
     parallel_cuda_unwrap_phase(3);
+    parallel_cuda_unwrap_phase(5);
+    parallel_cuda_unwrap_phase(6);
+    parallel_cuda_unwrap_phase(7);
     LOG(INFO) << "parallel_cuda_unwrap_phase";
-    generate_pointcloud_base_table();
-    LOG(INFO) << "generate_pointcloud_base_table";
 
     return true;
 }
@@ -372,19 +375,17 @@ bool CameraDh::captureFrame04Repetition02ToGpu(int repetition_count)
     }
 
         //关闭相机流
-        std::thread stop_thread(GXStreamOff, hDevice_);
-        stop_thread.detach();
-        LOG(INFO) << "GXStreamOff";
-        parallel_cuda_compute_model_02_merge_repetition_02_phase(repetition_count);
-         
+        // std::thread stop_thread(GXStreamOff, hDevice_);
+        // stop_thread.detach();
+        // LOG(INFO) << "GXStreamOff";
+        parallel_cuda_compute_merge_repetition_02_phase(repetition_count);
         LOG(INFO) << "parallel_cuda_compute_mergerepetition_02_phase";
         parallel_cuda_unwrap_phase(1);
         parallel_cuda_unwrap_phase(2);
         parallel_cuda_unwrap_phase(3);
-        parallel_cuda_unwrap_phase(5);
-        parallel_cuda_unwrap_phase(6);
-        parallel_cuda_unwrap_phase(7);
-        LOG(INFO) << "parallel_cuda_unwrap_phase"; 
+        LOG(INFO) << "parallel_cuda_unwrap_phase";
+        generate_pointcloud_base_table();
+        LOG(INFO) << "generate_pointcloud_base_table";
 
         return true;
 }
