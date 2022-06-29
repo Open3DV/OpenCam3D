@@ -394,6 +394,14 @@ DF_SDK_API int DfGetRepetitionFrame04(int count, float* depth, int depth_buf_siz
 DF_SDK_API int DfGetRepetitionFrame03(int count, float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetRepetitionPhase02
+//功能： 获取一帧数据（亮度图+相位图），基于Raw02相位图，所有条纹图重复count次
+//输入参数：count（重复次数）、phase_buf_size（相位图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：phase_x（相位图x）、phase_y（相位图y）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetRepetitionPhase02(int count, float* phase_x, float* phase_y, int phase_buf_size,
+	unsigned char* brightness, int brightness_buf_size);
+
 //函数名： DfGetCalibrationParam
 //功能：获取标定参数接口
 //输入参数：无

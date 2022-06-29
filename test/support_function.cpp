@@ -176,7 +176,7 @@ void getJustCurrentDir(std::string path, std::vector<std::string>& dirs)
 		do {
 			if ((fileinfo.attrib & _A_SUBDIR)) {
 				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
-					dirs.push_back(path + "\\" + fileinfo.name);
+					dirs.push_back(path + "" + fileinfo.name);
 					//files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 
 				}

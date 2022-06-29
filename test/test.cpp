@@ -27,6 +27,9 @@ test.exe --read --model patterns-03 --patterns ./patterns_data  --calib ./param.
 5.Read:\n\
 test.exe --reconstruct --use look-table --patterns ./patterns_data  --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
 \n\
+6.Read:\n\
+test.exe --read --model phase-02 --patterns ./patterns_data  --calib ./param.txt --version DFX800 --pointcloud ./pointcloud_data\n\
+\n\
 ";
 
 extern int optind, opterr, optopt;
@@ -84,6 +87,7 @@ void read_04_repetition_02();
 void capture_04_repetition_01(int repetition);
 void read_04_repetition_01();
 void reconstruct_base_looktable();
+void read_phase_02();
 
 const char* camera_id;
 const char* path;
@@ -191,6 +195,10 @@ int main(int argc, char* argv[])
 		else if ("patterns-04-repetition-01" == model)
 		{
 			read_04_repetition_01();
+		}
+		else if ("phase-02" == model)
+		{
+			read_phase_02();
 		}
 
 	}
@@ -442,6 +450,40 @@ void reconstruct_base_looktable()
 
 
 	solution_machine_.reconstructMixedVariableWavelengthXPatternsBaseTable(patterns_, calibration_param_, pointcloud_path);
+}
+
+
+void read_phase_02()
+{
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+
+	cv::Mat phase_x = cv::imread(std::string(patterns_path) + "\\01.tiff", -1);
+	cv::Mat phase_y = cv::imread(std::string(patterns_path) + "\\02.tiff", -1);
+	cv::Mat brightness = cv::imread(std::string(patterns_path) + "\\03.bmp", 0);
+
+
+	if (phase_x.empty() || phase_y.empty() || brightness.empty())
+	{
+		std::cout << "Read Image Error!";
+	}
+
+
+	bool ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
+
+	if (!ret)
+	{
+		std::cout << "Read Calib Param Error!" << std::endl;
+	}
+
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
+
+	solution_machine_.reconstructBasePhase02(phase_x, phase_y, brightness, calibration_param_, pointcloud_path);
 }
 
 void read_03()

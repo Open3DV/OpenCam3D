@@ -292,44 +292,47 @@ double Calibrate_Function::calibrateStereo(std::vector<std::vector<cv::Point2f>>
 
 
 	//�궨
-	bool mustInitUndistort = true;
-	int flag = 0;
+	//bool mustInitUndistort = true;
+	//int flag = 0;
 
-	std::vector<cv::Mat> left_rvecs, left_tvecs;
-	std::vector<cv::Mat> right_rvecs, right_tvecs;
+	//std::vector<cv::Mat> left_rvecs, left_tvecs;
+	//std::vector<cv::Mat> right_rvecs, right_tvecs;
 
-	cv::Mat camera_intrinsic, projector_intrinsic;
-	cv::Mat camera_distortion, projector_distortion;
+	//cv::Mat camera_intrinsic, projector_intrinsic;
+	//cv::Mat camera_distortion, projector_distortion;
+	//cv::Mat _R, _T, _E, _F;
+
+	//double cameraError = cv::calibrateCamera(world_feature_points,
+	//	camera_points_list,
+	//	board_size_,
+	//	camera_intrinsic,
+	//	camera_distortion,
+	//	left_rvecs, left_tvecs,
+	//	flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON));
+
+	//std::cout << "camera intrinsic: " << "\n" << camera_intrinsic << "\n";
+
+	//double dlpError = cv::calibrateCamera(world_feature_points,
+	//	dlp_points_list,
+	//	board_size_,
+	//	projector_intrinsic,
+	//	projector_distortion,
+	//	right_rvecs, right_tvecs,
+	//	flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON));
+
+
 	cv::Mat _R, _T, _E, _F;
 
-	double cameraError = cv::calibrateCamera(world_feature_points,
-		camera_points_list,
-		board_size_,
-		camera_intrinsic,
-		camera_distortion,
-		left_rvecs, left_tvecs,
-		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
-
-
-	double dlpError = cv::calibrateCamera(world_feature_points,
-		dlp_points_list,
-		board_size_,
-		projector_intrinsic,
-		projector_distortion,
-		right_rvecs, right_tvecs,
-		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 100, DBL_EPSILON));
-
-
-
-	cv::Mat s_camera_intrinsic = camera_intrinsic.clone(), s_project_intrinsic = projector_intrinsic.clone();
-	cv::Mat s_camera_distortion = camera_distortion.clone(), s_projector_distortion = projector_distortion.clone();
+	cv::Mat s_camera_intrinsic = camera_intrinsic_.clone(), s_project_intrinsic = project_intrinsic_.clone();
+	cv::Mat s_camera_distortion = camera_distortion_.clone(), s_projector_distortion = projector_distortion_.clone();
 
 	cv::TermCriteria term_criteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON);
 
 	double stereoError = cv::stereoCalibrate(world_feature_points, camera_points_list, dlp_points_list, s_camera_intrinsic, s_camera_distortion,
 		s_project_intrinsic, s_projector_distortion, board_size_, _R, _T, _E, _F,/*cv::CALIB_FIX_INTRINSIC*/ cv::CALIB_USE_INTRINSIC_GUESS /*+ cal_flags*/, term_criteria);
 
-
+	//double stereoError = cv::stereoCalibrate(world_feature_points, camera_points_list, dlp_points_list, s_camera_intrinsic, s_camera_distortion,
+	//	s_project_intrinsic, s_projector_distortion, board_size_, _R, _T, _E, _F, cv::CALIB_FIX_INTRINSIC /*+ cal_flags*/, term_criteria);
 	/***********************************************************************************************************/
 
 
@@ -396,7 +399,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 	int flag = 0;
 	/* ���б궨���� */
 	double err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
-		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON));
 
 	//std::cout << "First calibrate error: " << err_first << std::endl;
 
@@ -482,7 +485,7 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 			max_err = 0;
 
 			err_first = cv::calibrateCamera(world_feature_points, dlp_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
-				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON));
 
 			//std::cout << "Dlp error: " << err_first << std::endl;
 
@@ -494,6 +497,10 @@ double Calibrate_Function::calibrateProjector(std::vector<std::vector<cv::Point2
 
 	}
 
+	project_intrinsic_ = cameraMatrix.clone();
+	projector_distortion_ = distCoeffs.clone();
+	std::cout << "project_intrinsic_: " << "\n" << project_intrinsic_ << "\n";
+	std::cout << "projector_distortion_: " << "\n" << projector_distortion_ << "\n";
 	/******************************************************************************************************/
 	return select_err;
 }
@@ -799,7 +806,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 
 	/* ���б궨���� */
 	double err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
-		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+		flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON));
 
 	//std::cout << "First calibrate error: " << err_first<<std::endl;
 
@@ -885,7 +892,7 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 			max_err = 0;
 
 			err_first = cv::calibrateCamera(world_feature_points, camera_points_list, board_size_, cameraMatrix, distCoeffs, rvecsMat, tvecsMat,
-				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 50, DBL_EPSILON));
+				flag, cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 500, DBL_EPSILON));
 
 			//std::cout  << "calibrate error: " << err_first << std::endl;
 
@@ -898,9 +905,12 @@ double Calibrate_Function::calibrateCamera(std::vector<std::vector<cv::Point2f>>
 	}
 
 	/******************************************************************************************************/
+	camera_intrinsic_ = cameraMatrix.clone();
+	camera_distortion_ = distCoeffs.clone();
 
 
-	//std::cout << "cameraMatrix: " << "\n" << cameraMatrix << "\n";
+	std::cout << "camera_intrinsic_: " << "\n" << camera_intrinsic_ << "\n";
+	std::cout << "camera_distortion_: " << "\n" << camera_distortion_ << "\n";
 
 	return select_err;
 

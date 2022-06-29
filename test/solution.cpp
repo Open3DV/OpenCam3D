@@ -1528,6 +1528,95 @@ bool DfSolution::reconstructMixedVariableWavelengthXPatternsBaseTable(std::vecto
 }
 
 
+bool DfSolution::reconstructBasePhase02(cv::Mat phase_x, cv::Mat phase_y, cv::Mat brightness, struct CameraCalibParam calib_param, std::string pointcloud_path)
+{
+	if (phase_x.empty() || phase_y.empty() || brightness.empty())
+	{
+		return false;
+	}
+
+	phase_x.convertTo(phase_x, CV_64FC1);
+	phase_y.convertTo(phase_y, CV_64FC1);
+
+	cv::Mat deep_map;
+
+
+	DF_Reconstruct reconstruct_machine_;
+	reconstruct_machine_.setCalibData(calib_param);
+	reconstruct_machine_.setCameraVersion(camera_version_);
+
+	cv::Mat err_map;
+
+	bool ret = reconstruct_machine_.rebuildData(phase_x, phase_y, 1, deep_map, err_map);
+	if (!ret)
+	{
+		std::cout << "Rebuild Error!";
+
+		return false;
+
+	}
+
+	cv::Mat color_err_map;
+	cv::Mat gray_err_map;
+	renderErrorMap(err_map, color_err_map, gray_err_map, 0., 0.1);
+
+	AnalyseError analyse_err_machine;
+
+	double err_value = analyse_err_machine.computeError(err_map);
+	std::cout << "calibrate err: " << err_value << std::endl;
+
+	cv::Mat texture_map = brightness.clone();
+
+	cv::Mat undistort_img;
+	reconstruct_machine_.undistortedImage(texture_map, undistort_img);
+	texture_map = undistort_img.clone();
+
+	err_map.convertTo(err_map, CV_32F);
+	/*********************************************************************************/
+
+
+	std::string work_path_ = pointcloud_path + "/test_";
+
+
+
+	std::vector<cv::Mat> deep_channels;
+
+	cv::split(deep_map, deep_channels);
+
+	cv::Mat depth_map;
+
+	deep_channels[2].convertTo(depth_map, CV_32F);
+
+
+	std::string save_err_tiff = work_path_ + "phase_02_err.tiff";
+	std::string save_depth_tiff = work_path_ + "phase_02_depth.tiff";
+	std::string save_points_dir = work_path_ + "phase_02_points.xyz";
+	std::string save_depth_txt_dir = work_path_ + "phase_02_depth.txt";
+	std::string save_confidence_dir = work_path_ + "phase_02_confidence.bmp";
+	std::string save_depth_dir = work_path_ + "phase_02_depth.bmp";
+	std::string save_brightness_dir = work_path_ + "phase_02_brightness.bmp";
+	std::string save_points_z_dir = work_path_ + "phase_02_point_z.tiff";
+
+	cv::Mat color_map, grey_map;
+	MapToColor(deep_map, color_map, grey_map, 300, 2000);
+	//MaskZMap(color_map, unwrap_mask);
+
+
+
+	cv::imwrite(save_err_tiff, err_map);
+	cv::imwrite(save_depth_tiff, depth_map);
+	cv::imwrite(save_brightness_dir, texture_map);
+	cv::imwrite(save_depth_dir, color_map);
+	SavePointToTxt(deep_map, save_points_dir, texture_map);
+	//file_io_machine.saveDepthMapToTxt(deep_map, save_depth_txt_dir);
+
+
+
+	std::cout << "pointcloud: " << save_points_dir;
+
+	return true;
+}
+
 bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path)
 {
 
