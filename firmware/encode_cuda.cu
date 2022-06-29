@@ -210,8 +210,8 @@ bool parallel_cuda_clear_repetition_02_patterns()
 
 bool parallel_cuda_merge_repetition_02_patterns(int repetition_serial)
 {
-	int merge_serial = repetition_serial%19; 
-	cuda_merge_pattern<< <blocksPerGrid, threadsPerBlock >> >(d_patterns_list[repetition_serial],image_height_, image_width_,d_repetition_02_merge_patterns_list_[merge_serial]);
+	// int merge_serial = repetition_serial%19; 
+	cuda_merge_pattern<< <blocksPerGrid, threadsPerBlock >> >(d_patterns_list[repetition_serial],image_height_, image_width_,d_repetition_02_merge_patterns_list_[repetition_serial]);
 
 	return true;
 }
@@ -276,7 +276,7 @@ bool parallel_cuda_compute_model_02_merge_repetition_02_phase(int repetition_cou
 		d_repetition_02_merge_patterns_list_[i+ 2],d_repetition_02_merge_patterns_list_[i+ 3],d_repetition_02_merge_patterns_list_[i+ 4],d_repetition_02_merge_patterns_list_[i+ 5] ,
 		repetition_count,image_height_, image_width_, d_wrap_map_list[7], d_confidence_list[7]);
 
-	cuda_merge_brigntness_map<< <blocksPerGrid, threadsPerBlock >> >(d_repetition_02_merge_patterns_list_[37],repetition_count,d_brightness_);
+	cuda_merge_brigntness_map<< <blocksPerGrid, threadsPerBlock >> >(d_repetition_02_merge_patterns_list_[36],repetition_count,d_brightness_);
 }
 
 bool parallel_cuda_compute_merge_repetition_02_phase(int repetition_count)
