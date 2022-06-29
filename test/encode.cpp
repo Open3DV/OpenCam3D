@@ -11,6 +11,41 @@ DF_Encode::~DF_Encode()
 }
 
 
+
+bool DF_Encode::mergePatterns(std::vector<std::vector<cv::Mat>> patterns_list, std::vector<cv::Mat>& patterns)
+{
+	if (patterns_list.empty())
+	{
+		return false;
+	}
+
+	int nr = patterns_list[0][0].rows;
+	int nc = patterns_list[0][0].cols;
+	int patterns_num = patterns_list[0].size();
+
+	for (int i = 0; i < patterns_num; i++)
+	{
+		cv::Mat pattern(nr, nc, CV_16U, cv::Scalar(0));
+
+		for (int r = 0; r < nr; r++)
+		{
+
+			for (int c = 0; c < nc; c++)
+			{
+				for (int l_i = 0; l_i < patterns_list.size(); l_i++)
+				{
+					pattern.at<ushort>(r, c) += patterns_list[l_i][i].at<uchar>(r, c);
+				}
+			}
+
+		}
+
+
+		patterns.push_back(pattern.clone());
+	}
+
+}
+
 bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence)
 {
 	if (6 != patterns.size())
@@ -64,96 +99,197 @@ bool DF_Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_m
 
 		}
 	}
-#pragma omp parallel for
-	for (int r = 0; r < nl; r++)
+
+	if (CV_16U == img0.type())
 	{
 
-		uchar* ptr0 = img0.ptr<uchar>(r);
-		uchar* ptr1 = img1.ptr<uchar>(r);
-		uchar* ptr2 = img2.ptr<uchar>(r);
-		uchar* ptr3 = img3.ptr<uchar>(r);
-		uchar* ptr4 = img4.ptr<uchar>(r);
-		uchar* ptr5 = img5.ptr<uchar>(r);
-		uchar* ptr_m = mask.ptr<uchar>(r);
-		double* ptr_con = confidence_map.ptr<double>(r);
-
-		double* optr = result.ptr<double>(r);
-		for (int c = 0; c < nc; c++)
+#pragma omp parallel for
+		for (int r = 0; r < nl; r++)
 		{
-			int exposure_num = 0;
-			if (ptr_m[c])
+
+			ushort* ptr0 = img0.ptr<ushort>(r);
+			ushort* ptr1 = img1.ptr<ushort>(r);
+			ushort* ptr2 = img2.ptr<ushort>(r);
+			ushort* ptr3 = img3.ptr<ushort>(r);
+			ushort* ptr4 = img4.ptr<ushort>(r);
+			ushort* ptr5 = img5.ptr<ushort>(r);
+			uchar* ptr_m = mask.ptr<uchar>(r);
+			double* ptr_con = confidence_map.ptr<double>(r);
+
+			double* optr = result.ptr<double>(r);
+			for (int c = 0; c < nc; c++)
 			{
-				//double a = ptr4[j] - ptr2[j];
-				//double b = ptr1[j] - ptr3[j];
-				if (255 == ptr0[c])
+				int exposure_num = 0;
+				if (ptr_m[c])
 				{
-					exposure_num++;
+					//double a = ptr4[j] - ptr2[j];
+					//double b = ptr1[j] - ptr3[j];
+					if (255 == ptr0[c])
+					{
+						exposure_num++;
+					}
+
+					if (255 == ptr1[c])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr2[c])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr3[c])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr4[c])
+					{
+						exposure_num++;
+					}
+
+					if (255 == ptr5[c])
+					{
+						exposure_num++;
+					}
+
+
+					double b = ptr0[c] * std::sin(0 * CV_2PI / 6.0) + ptr1[c] * std::sin(1 * CV_2PI / 6.0) + ptr2[c] * std::sin(2 * CV_2PI / 6.0)
+						+ ptr3[c] * std::sin(3 * CV_2PI / 6.0) + ptr4[c] * std::sin(4 * CV_2PI / 6.0) + ptr5[c] * std::sin(5 * CV_2PI / 6.0);
+
+
+					double a = ptr0[c] * std::cos(0 * CV_2PI / 6.0) + ptr1[c] * std::cos(1 * CV_2PI / 6.0) + ptr2[c] * std::cos(2 * CV_2PI / 6.0)
+						+ ptr3[c] * std::cos(3 * CV_2PI / 6.0) + ptr4[c] * std::cos(4 * CV_2PI / 6.0) + ptr5[c] * std::cos(5 * CV_2PI / 6.0);
+
+					double r = std::sqrt(a * a + b * b);
+
+					//if (r > 255)
+					//{
+					//	r = 255;
+					//}
+
+					ptr_con[c] = r;
+
+					/***********************************************************************/
+
+					if (exposure_num > 3)
+					{
+						ptr_m[c] = 0;
+						ptr_con[c] = 0;
+						optr[c] = -1;
+					}
+					else
+					{
+						optr[c] = CV_PI + std::atan2(a, b);
+					}
+
 				}
-
-				if (255 == ptr1[c])
-				{
-					exposure_num++;
-				}
-				if (255 == ptr2[c])
-				{
-					exposure_num++;
-				}
-				if (255 == ptr3[c])
-				{
-					exposure_num++;
-				}
-				if (255 == ptr4[c])
-				{
-					exposure_num++;
-				}
-
-				if (255 == ptr5[c])
-				{
-					exposure_num++;
-				}
-
-
-				double b = ptr0[c] * std::sin(0 * CV_2PI / 6.0) + ptr1[c] * std::sin(1 * CV_2PI / 6.0) + ptr2[c] * std::sin(2 * CV_2PI / 6.0)
-					+ ptr3[c] * std::sin(3 * CV_2PI / 6.0) + ptr4[c] * std::sin(4 * CV_2PI / 6.0) + ptr5[c] * std::sin(5 * CV_2PI / 6.0);
-
-
-				double a = ptr0[c] * std::cos(0 * CV_2PI / 6.0) + ptr1[c] * std::cos(1 * CV_2PI / 6.0) + ptr2[c] * std::cos(2 * CV_2PI / 6.0)
-					+ ptr3[c] * std::cos(3 * CV_2PI / 6.0) + ptr4[c] * std::cos(4 * CV_2PI / 6.0) + ptr5[c] * std::cos(5 * CV_2PI / 6.0);
-
-				double r = std::sqrt(a * a + b * b);
-
-				//if (r > 255)
-				//{
-				//	r = 255;
-				//}
-
-				ptr_con[c] = r;
-
-				/***********************************************************************/
-
-				if (exposure_num > 3)
-				{
-					ptr_m[c] = 0;
-					ptr_con[c] = 0;
-					optr[c] = -1;
-				}
-				else
-				{
-					optr[c] = CV_PI + std::atan2(a, b);
-				}
-
 			}
 		}
+
+
+		/*****************************************************************************************************************************/
+
+		confidence = confidence_map.clone();
+
+		wrap_map = result.clone();
+
+		return true;
+	}
+	else if (CV_8U == img0.type())
+	{
+
+#pragma omp parallel for
+		for (int r = 0; r < nl; r++)
+		{
+
+			uchar* ptr0 = img0.ptr<uchar>(r);
+			uchar* ptr1 = img1.ptr<uchar>(r);
+			uchar* ptr2 = img2.ptr<uchar>(r);
+			uchar* ptr3 = img3.ptr<uchar>(r);
+			uchar* ptr4 = img4.ptr<uchar>(r);
+			uchar* ptr5 = img5.ptr<uchar>(r);
+			uchar* ptr_m = mask.ptr<uchar>(r);
+			double* ptr_con = confidence_map.ptr<double>(r);
+
+			double* optr = result.ptr<double>(r);
+			for (int c = 0; c < nc; c++)
+			{
+				int exposure_num = 0;
+				if (ptr_m[c])
+				{
+					//double a = ptr4[j] - ptr2[j];
+					//double b = ptr1[j] - ptr3[j];
+					if (255 == ptr0[c])
+					{
+						exposure_num++;
+					}
+
+					if (255 == ptr1[c])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr2[c])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr3[c])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr4[c])
+					{
+						exposure_num++;
+					}
+
+					if (255 == ptr5[c])
+					{
+						exposure_num++;
+					}
+
+
+					double b = ptr0[c] * std::sin(0 * CV_2PI / 6.0) + ptr1[c] * std::sin(1 * CV_2PI / 6.0) + ptr2[c] * std::sin(2 * CV_2PI / 6.0)
+						+ ptr3[c] * std::sin(3 * CV_2PI / 6.0) + ptr4[c] * std::sin(4 * CV_2PI / 6.0) + ptr5[c] * std::sin(5 * CV_2PI / 6.0);
+
+
+					double a = ptr0[c] * std::cos(0 * CV_2PI / 6.0) + ptr1[c] * std::cos(1 * CV_2PI / 6.0) + ptr2[c] * std::cos(2 * CV_2PI / 6.0)
+						+ ptr3[c] * std::cos(3 * CV_2PI / 6.0) + ptr4[c] * std::cos(4 * CV_2PI / 6.0) + ptr5[c] * std::cos(5 * CV_2PI / 6.0);
+
+					double r = std::sqrt(a * a + b * b);
+
+					//if (r > 255)
+					//{
+					//	r = 255;
+					//}
+
+					ptr_con[c] = r;
+
+					/***********************************************************************/
+
+					if (exposure_num > 3)
+					{
+						ptr_m[c] = 0;
+						ptr_con[c] = 0;
+						optr[c] = -1;
+					}
+					else
+					{
+						optr[c] = CV_PI + std::atan2(a, b);
+					}
+
+				}
+			}
+		}
+
+
+		/*****************************************************************************************************************************/
+
+		confidence = confidence_map.clone();
+
+		wrap_map = result.clone();
+
+		return true;
 	}
 
-
-	/*****************************************************************************************************************************/
-
-	confidence = confidence_map.clone();
-
-	wrap_map = result.clone();
-
-	return true;
+	return false;
 }
 
 bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence)
@@ -198,80 +334,165 @@ bool DF_Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_
 		}
 
 	}
-#pragma omp parallel for
-	for (int i = 0; i < nl; i++)
+
+
+	if (CV_16U == img1.type())
 	{
-		uchar* ptr1 = img1.ptr<uchar>(i);
-		uchar* ptr2 = img2.ptr<uchar>(i);
-		uchar* ptr3 = img3.ptr<uchar>(i);
-		uchar* ptr4 = img4.ptr<uchar>(i);
-		uchar* ptr_m = mask.ptr<uchar>(i);
-		double* ptr_con = confidence_map.ptr<double>(i);
 
-		double* optr = result.ptr<double>(i);
-		for (int j = 0; j < nc; j++)
+#pragma omp parallel for
+		for (int i = 0; i < nl; i++)
 		{
-			int exposure_num = 0;
-			if (ptr_m[j] == 255)
+			ushort* ptr1 = img1.ptr<ushort>(i);
+			ushort* ptr2 = img2.ptr<ushort>(i);
+			ushort* ptr3 = img3.ptr<ushort>(i);
+			ushort* ptr4 = img4.ptr<ushort>(i);
+			uchar* ptr_m = mask.ptr<uchar>(i);
+			double* ptr_con = confidence_map.ptr<double>(i);
+
+			double* optr = result.ptr<double>(i);
+			for (int j = 0; j < nc; j++)
 			{
-				if (255 == ptr1[j])
+				int exposure_num = 0;
+				if (ptr_m[j] == 255)
 				{
-					exposure_num++;
+					if (255 == ptr1[j])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr2[j])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr3[j])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr4[j])
+					{
+						exposure_num++;
+					}
+
+					double a = ptr4[j] - ptr2[j];
+					double b = ptr1[j] - ptr3[j];
+
+					double r = std::sqrt(a * a + b * b) + 0.5;
+
+					//if(r> 255)
+					//{
+					//	r = 255;
+					//}
+
+					ptr_con[j] = r;
+
+					/***********************************************************************/
+
+					if (exposure_num > 1)
+					{
+						ptr_m[j] = 0;
+						ptr_con[j] = 0;
+						optr[j] = -1;
+					}
+					else
+					{
+						optr[j] = CV_PI + std::atan2(a, b);
+					}
+
 				}
-				if (255 == ptr2[j])
-				{
-					exposure_num++;
-				}
-				if (255 == ptr3[j])
-				{
-					exposure_num++;
-				}
-				if (255 == ptr4[j])
-				{
-					exposure_num++;
-				}
-
-				double a = ptr4[j] - ptr2[j];
-				double b = ptr1[j] - ptr3[j];
-
-				double r = std::sqrt(a * a + b * b) + 0.5;
-
-				//if(r> 255)
-				//{
-				//	r = 255;
-				//}
-
-				ptr_con[j] = r;
-
-				/***********************************************************************/
-
-				if (exposure_num > 1)
-				{
-					ptr_m[j] = 0;
-					ptr_con[j] = 0;
-					optr[j] = -1;
-				}
-				else
-				{
-					optr[j] = CV_PI + std::atan2(a, b);
-				}
-
 			}
 		}
+
+
+		/*****************************************************************************************************************************/
+
+		confidence = confidence_map.clone();
+
+		wrap_map = result.clone();
+
+		return true;
+
+	}
+	else if (CV_8U == img1.type())
+	{
+
+#pragma omp parallel for
+		for (int i = 0; i < nl; i++)
+		{
+			uchar* ptr1 = img1.ptr<uchar>(i);
+			uchar* ptr2 = img2.ptr<uchar>(i);
+			uchar* ptr3 = img3.ptr<uchar>(i);
+			uchar* ptr4 = img4.ptr<uchar>(i);
+			uchar* ptr_m = mask.ptr<uchar>(i);
+			double* ptr_con = confidence_map.ptr<double>(i);
+
+			double* optr = result.ptr<double>(i);
+			for (int j = 0; j < nc; j++)
+			{
+				int exposure_num = 0;
+				if (ptr_m[j] == 255)
+				{
+					if (255 == ptr1[j])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr2[j])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr3[j])
+					{
+						exposure_num++;
+					}
+					if (255 == ptr4[j])
+					{
+						exposure_num++;
+					}
+
+					double a = ptr4[j] - ptr2[j];
+					double b = ptr1[j] - ptr3[j];
+
+					double r = std::sqrt(a * a + b * b) + 0.5;
+
+					//if(r> 255)
+					//{
+					//	r = 255;
+					//}
+
+					ptr_con[j] = r;
+
+					/***********************************************************************/
+
+					if (exposure_num > 1)
+					{
+						ptr_m[j] = 0;
+						ptr_con[j] = 0;
+						optr[j] = -1;
+					}
+					else
+					{
+						optr[j] = CV_PI + std::atan2(a, b);
+					}
+
+				}
+			}
+		}
+
+
+		/*****************************************************************************************************************************/
+
+		confidence = confidence_map.clone();
+
+		wrap_map = result.clone();
+
+		return true;
 	}
 
 
-	/*****************************************************************************************************************************/
 
-	confidence = confidence_map.clone();
-
-	wrap_map = result.clone();
-
-	return true;
+	return false;
 }
 
 
-bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, double rate, cv::Mat& h_unwrap, cv::Mat& k_Mat, cv::Mat err_mat)
+bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, double rate, cv::Mat& h_unwrap, cv::Mat& k_Mat, float threshold, cv::Mat& err_mat)
 {
 
 	if (l_unwrap.empty() || h_wrap.empty())
@@ -320,7 +541,7 @@ bool DF_Encode::unwrapVariableWavelength(cv::Mat l_unwrap, cv::Mat h_wrap, doubl
 
 			k_ptr[c] = k;
 
-			if (ptr_err[c] > 1.5)
+			if (ptr_err[c] > threshold)
 			{
 				h_unwrap_ptr[c] = -10;
 
@@ -451,6 +672,21 @@ bool DF_Encode::unwrapVariableWavelengthPatterns(std::vector<cv::Mat> wrap_img_l
 		return false;
 	}
 
+	std::vector<float> threshold_list;
+
+	for (int i = 0; i < rate_list.size(); i++)
+	{
+		threshold_list.push_back(CV_PI);
+	}
+
+
+	if (threshold_list.size() >= 3)
+	{
+		threshold_list[0] = CV_PI;
+		threshold_list[1] = CV_PI;
+		threshold_list[2] = 1.5;
+	}
+
 
 	int nr = wrap_img_list[0].rows;
 	int nc = wrap_img_list[0].cols;
@@ -475,8 +711,9 @@ bool DF_Encode::unwrapVariableWavelengthPatterns(std::vector<cv::Mat> wrap_img_l
 	{
 		cv::Mat wrap_map = wrap_img_list[g_i];
 		cv::Mat h_unwrap_map(nr, nc, CV_64F, cv::Scalar(0));
+		cv::Mat err_map;
 
-		unwrapVariableWavelength(unwrap_map, wrap_map, rate_list[g_i - 1], h_unwrap_map, k_mat);
+		unwrapVariableWavelength(unwrap_map, wrap_map, rate_list[g_i - 1], h_unwrap_map, k_mat, threshold_list[g_i - 1], err_map);
 
 		unwrap_map = h_unwrap_map.clone();
 	}

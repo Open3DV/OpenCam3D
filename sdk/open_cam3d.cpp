@@ -370,6 +370,52 @@ DF_SDK_API int DfGetCameraResolution(int* width, int* height)
 	return 0;
 }
 
+//函数名： DfCaptureRepetitionData
+//功能： 采集一帧数据并阻塞至返回状态
+//输入参数：repetition_count（重复次数）、 exposure_num（曝光次数）：设置值为1为单曝光，大于1为多曝光模式（具体参数在相机gui中设置）.
+//输出参数： timestamp(时间戳)
+//返回值： 类型（int）:返回0表示获取采集数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfCaptureRepetitionData(int repetition_count, int exposure_num, char* timestamp)
+{
+
+	bool ret = -1;
+
+	//if (exposure_num > 1)
+	//{
+	//	LOG(TRACE) << " Get Frame HDR:";
+	//	ret = DfGetFrameHdr(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+	//}
+	//else
+	//{
+
+	LOG(TRACE) << " Get Repetition Frame04:";
+	ret = DfGetRepetitionFrame04(repetition_count, depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+	//}
+
+
+	//LOG(TRACE) << "Debug Get Temperature:"; 
+	//float temperature_value = 0; 
+	//ret = DfnGetDeviceTemperature(temperature_value); 
+	//LOG(TRACE) << "Temperature: "<< temperature_value;
+
+	//LOG(TRACE) << "Debug Disconnect:";
+	//DfnDisconnect();
+
+
+	//LOG(INFO) << "Debug Disconnect Finished";
+
+	std::string time = get_timestamp();
+	for (int i = 0; i < time.length(); i++)
+	{
+		timestamp[i] = time[i];
+	}
+
+	transform_pointcloud_flag_ = false;
+
+
+	return 0;
+}
+
 //函数名： DfCaptureData
 //功能： 采集一帧数据并阻塞至返回状态
 //输入参数： exposure_num（曝光次数）：大于1的为多曝光模式
@@ -1072,6 +1118,158 @@ DF_SDK_API int DfGetFrameHdr(float* depth, int depth_buf_size,
 	return DF_SUCCESS;
 }
 
+//函数名： DfGetRepetitionPhase02
+//功能： 获取一帧数据（亮度图+相位图），基于Raw02相位图，所有条纹图重复count次
+//输入参数：count（重复次数）、phase_buf_size（相位图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：phase_x（相位图x）、phase_y（相位图y）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetRepetitionPhase02(int count, float* phase_x, float* phase_y, int phase_buf_size,
+	unsigned char* brightness, int brightness_buf_size)
+{
+	LOG(INFO) << "DfGetRepetitionPhase02";
+	assert(phase_buf_size == image_size * sizeof(float) * 1);
+	assert(brightness_buf_size == image_size * sizeof(char) * 1);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_GET_PHASE_02_REPETITION, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		LOG(INFO) << "token checked ok";
+
+		ret = send_buffer((char*)(&count), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer x, phase_buf_size=" << phase_buf_size;
+		ret = recv_buffer((char*)phase_x, phase_buf_size, g_sock);
+		LOG(INFO) << "depth received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer y, phase_buf_size=" << phase_buf_size;
+		ret = recv_buffer((char*)phase_y, phase_buf_size, g_sock);
+		LOG(INFO) << "depth received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer, brightness_buf_size=" << brightness_buf_size;
+		ret = recv_buffer((char*)brightness, brightness_buf_size, g_sock);
+		LOG(INFO) << "brightness received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+
+
+		//brightness = (unsigned char*)depth + depth_buf_size;
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get frame rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	LOG(INFO) << "Get frame success";
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+
+//函数名： DfGetRepetitionFrame04
+//功能： 获取一帧数据（亮度图+深度图），基于Raw04相位图，6步相移的图重复count次
+//输入参数：count（重复次数）、depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetRepetitionFrame04(int count, float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size)
+{
+	LOG(INFO) << "GetRepetition01Frame04";
+	assert(depth_buf_size == image_size * sizeof(float) * 1);
+	assert(brightness_buf_size == image_size * sizeof(char) * 1);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+
+	ret = send_command(DF_CMD_GET_REPETITION_FRAME_04, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		ret = send_buffer((char*)(&count), sizeof(int), g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "token checked ok";
+		LOG(INFO) << "receiving buffer, depth_buf_size=" << depth_buf_size;
+		ret = recv_buffer((char*)depth, depth_buf_size, g_sock);
+		LOG(INFO) << "depth received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer, brightness_buf_size=" << brightness_buf_size;
+		ret = recv_buffer((char*)brightness, brightness_buf_size, g_sock);
+		LOG(INFO) << "brightness received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+
+		//brightness = (unsigned char*)depth + depth_buf_size;
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get frame rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
+	}
+
+	LOG(INFO) << "Get frame success";
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
 DF_SDK_API int DfGetRepetitionFrame03(int count, float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size)
 {
@@ -1125,6 +1323,11 @@ DF_SDK_API int DfGetRepetitionFrame03(int count, float* depth, int depth_buf_siz
 		LOG(INFO) << "Get frame rejected";
 		close_socket(g_sock);
 		return DF_FAILED;
+	}
+	else if (command == DF_CMD_UNKNOWN)
+	{
+		close_socket(g_sock);
+		return DF_UNKNOWN;
 	}
 
 	LOG(INFO) << "Get frame success";
@@ -1383,6 +1586,106 @@ DF_SDK_API int DfGetPointCloud(float* point_cloud, int point_cloud_buf_size)
 	return DF_SUCCESS;
 }
 
+//函数名： DfGetCameraRawData04Repetition
+//功能： 采集一组相移图，一共13+6*repetition_count幅，12个四步相移条纹图+6*repetition_count个垂直方向的六步相移条纹图+一个亮度图
+//输入参数：raw_buf_size（13+6*repetition_count张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraRawData04Repetition(unsigned char* raw, int raw_buf_size, int repetition_count)
+{
+	if (raw)
+	{
+		LOG(INFO) << "GetRaw04Repetition";
+
+		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+		ret = send_command(DF_CMD_GET_RAW_04_REPETITION, g_sock);
+		ret = send_buffer((char*)&token, sizeof(token), g_sock);
+		int command;
+		ret = recv_command(&command, g_sock);
+		if (command == DF_CMD_OK)
+		{
+			ret = send_buffer((char*)(&repetition_count), sizeof(int), g_sock);
+			if (ret == DF_FAILED)
+			{
+				close_socket(g_sock);
+				return DF_FAILED;
+			}
+
+			LOG(INFO) << "token checked ok";
+			LOG(INFO) << "receiving buffer, raw_buf_size=" << raw_buf_size;
+			ret = recv_buffer((char*)raw, raw_buf_size, g_sock);
+			LOG(INFO) << "images received";
+			if (ret == DF_FAILED)
+			{
+				close_socket(g_sock);
+				return DF_FAILED;
+			}
+		}
+		else if (command == DF_CMD_REJECT)
+		{
+			LOG(INFO) << "Get raw rejected";
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "Get raw success";
+		close_socket(g_sock);
+		return DF_SUCCESS;
+	}
+	return DF_FAILED;
+}
+
+//函数名： DfGetCameraRawData04
+//功能： 采集一组相移图，一共19幅，12个四步相移条纹图+6个垂直方向的六步相移条纹图+一个亮度图
+//输入参数：raw_buf_size（19张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraRawData04(unsigned char* raw, int raw_buf_size)
+{
+	if (raw)
+	{
+		LOG(INFO) << "GetRaw04";
+		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 19);
+		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+		ret = send_command(DF_CMD_GET_RAW_04, g_sock);
+		ret = send_buffer((char*)&token, sizeof(token), g_sock);
+		int command;
+		ret = recv_command(&command, g_sock);
+		if (command == DF_CMD_OK)
+		{
+			LOG(INFO) << "token checked ok";
+			LOG(INFO) << "receiving buffer, raw_buf_size=" << raw_buf_size;
+			ret = recv_buffer((char*)raw, raw_buf_size, g_sock);
+			LOG(INFO) << "images received";
+			if (ret == DF_FAILED)
+			{
+				close_socket(g_sock);
+				return DF_FAILED;
+			}
+		}
+		else if (command == DF_CMD_REJECT)
+		{
+			LOG(INFO) << "Get raw rejected";
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "Get raw success";
+		close_socket(g_sock);
+		return DF_SUCCESS;
+	}
+	return DF_FAILED;
+}
 
 DF_SDK_API int DfGetCameraRawData03(unsigned char* raw, int raw_buf_size)
 {

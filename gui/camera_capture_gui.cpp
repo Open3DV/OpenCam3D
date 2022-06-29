@@ -113,6 +113,7 @@ bool CameraCaptureGui::initializeFunction()
 	connect(ui.spinBox_max_z, SIGNAL(valueChanged(int)), this, SLOT(do_spin_max_z_changed(int)));
 	connect(ui.doubleSpinBox_confidence, SIGNAL(valueChanged(double)), this, SLOT(do_doubleSpin_confidence(double)));
 	connect(ui.doubleSpinBox_gain, SIGNAL(valueChanged(double)), this, SLOT(do_doubleSpin_gain(double)));
+	connect(ui.spinBox_repetition_count, SIGNAL(valueChanged(int)), this, SLOT(do_spin_repetition_count_changed(int)));
 
 	connect(ui.spinBox_led, SIGNAL(valueChanged(int)), this, SLOT(do_spin_led_current_changed(int)));
 	connect(ui.spinBox_camera_exposure, SIGNAL(valueChanged(int)), this, SLOT(do_spin_camera_exposure_changed(int)));
@@ -391,6 +392,7 @@ void CameraCaptureGui::setUiData()
 	ui.spinBox_min_z->setValue(processing_gui_settings_data_.Instance().low_z_value);
 	ui.spinBox_max_z->setValue(processing_gui_settings_data_.Instance().high_z_value);
 	ui.lineEdit_ip->setText(processing_gui_settings_data_.Instance().ip);
+	ui.spinBox_repetition_count->setValue(processing_gui_settings_data_.Instance().repetition_count);
 
 	ui.checkBox_hdr->setChecked(processing_gui_settings_data_.Instance().use_hdr_model);
 
@@ -474,6 +476,10 @@ void CameraCaptureGui::do_spin_min_z_changed(int val)
 }
 
 
+void CameraCaptureGui::do_spin_repetition_count_changed(int val)
+{
+	processing_gui_settings_data_.Instance().repetition_count = val;
+}
 
 
 void CameraCaptureGui::do_spin_camera_exposure_changed(int val)
@@ -1194,24 +1200,34 @@ bool CameraCaptureGui::captureOneFrameData()
 
 	int ret_code = 0;
 
-	if (ui.checkBox_hdr->isChecked())
+	//重复曝光
+	if (processing_gui_settings_data_.Instance().repetition_count > 1)
 	{
-		if (connected_flag_)
+		ret_code = DfGetRepetitionFrame04(processing_gui_settings_data_.Instance().repetition_count, (float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+	}
+	else//单曝光
+	{
+		if (ui.checkBox_hdr->isChecked())
 		{
-			bool changed = manyExposureParamHasChanged();
-
-			if (changed)
+			if (connected_flag_)
 			{
-				updateManyExposureParam();
-			}
-		}
+				bool changed = manyExposureParamHasChanged();
 
-		ret_code = DfGetFrameHdr((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+				if (changed)
+				{
+					updateManyExposureParam();
+				}
+			}
+
+			ret_code = DfGetFrameHdr((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+		}
+		else
+		{
+			ret_code = DfGetFrame04((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
+		}
 	}
-	else
-	{
-		ret_code = DfGetFrame04((float*)depth.data, depth_buf_size, (uchar*)brightness.data, brightness_bug_size);
-	}
+
+
 
 	/***************************************************************************/
 	if (0 == ret_code)
@@ -1945,6 +1961,7 @@ bool CameraCaptureGui::captureOneFrameAndRender()
 	}
 	else
 	{
+		addLogMessage(u8"请先连接相机");
 		return false;
 	}
 
@@ -1954,13 +1971,13 @@ bool CameraCaptureGui::captureOneFrameAndRender()
 
 void  CameraCaptureGui::do_pushButton_capture_one_frame()
 {
-	if (!connected_flag_)
-	{
-		do_pushButton_connect();
-		captureOneFrameAndRender();
-		do_pushButton_disconnect();
-		return;
-	}
+	//if (!connected_flag_)
+	//{
+	//	do_pushButton_connect();
+	//	captureOneFrameAndRender();
+	//	do_pushButton_disconnect();
+	//	return;
+	//}
 
 
 

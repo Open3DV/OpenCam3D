@@ -107,7 +107,7 @@ std::vector<std::string> vStringSplit(const std::string& s, const std::string& d
 
 bool getFilesList(std::string dirs, std::vector<std::vector<std::string>>& files_list)
 {
-	std::vector<std::string> dir_list; 
+	std::vector<std::string> dir_list;
 	getJustCurrentDir(dirs, dir_list);
 
 	if (dir_list.empty())
@@ -120,11 +120,11 @@ bool getFilesList(std::string dirs, std::vector<std::vector<std::string>>& files
 	for (int i = 0; i < dir_list.size(); i++)
 	{
 		std::string dir = dir_list[i];
-		
-		std::vector<std::string> files; 
-		getFiles(dir, files); 
 
-		files_list.push_back(files); 
+		std::vector<std::string> files;
+		getFiles(dir, files);
+
+		files_list.push_back(files);
 	}
 
 	return true;
@@ -132,38 +132,38 @@ bool getFilesList(std::string dirs, std::vector<std::vector<std::string>>& files
 
 bool compareNat(const std::string& a, const std::string& b)
 {
-    if (a.empty())
-        return true;
-    if (b.empty())
-        return false;
-    if (std::isdigit(a[0]) && !std::isdigit(b[0]))
-        return true;
-    if (!std::isdigit(a[0]) && std::isdigit(b[0]))
-        return false;
-    if (!std::isdigit(a[0]) && !std::isdigit(b[0]))
-    {
-        if (std::toupper(a[0]) == std::toupper(b[0]))
-            return compareNat(a.substr(1), b.substr(1));
-        return (std::toupper(a[0]) < std::toupper(b[0]));
-    }
+	if (a.empty())
+		return true;
+	if (b.empty())
+		return false;
+	if (std::isdigit(a[0]) && !std::isdigit(b[0]))
+		return true;
+	if (!std::isdigit(a[0]) && std::isdigit(b[0]))
+		return false;
+	if (!std::isdigit(a[0]) && !std::isdigit(b[0]))
+	{
+		if (std::toupper(a[0]) == std::toupper(b[0]))
+			return compareNat(a.substr(1), b.substr(1));
+		return (std::toupper(a[0]) < std::toupper(b[0]));
+	}
 
-    // Both strings begin with digit --> parse both numbers
-    std::istringstream issa(a);
-    std::istringstream issb(b);
-    int ia, ib;
-    issa >> ia;
-    issb >> ib;
-    if (ia != ib)
-        return ia < ib;
+	// Both strings begin with digit --> parse both numbers
+	std::istringstream issa(a);
+	std::istringstream issb(b);
+	int ia, ib;
+	issa >> ia;
+	issb >> ib;
+	if (ia != ib)
+		return ia < ib;
 
-    // Numbers are the same --> remove numbers and recurse
-    std::string anew, bnew;
-    std::getline(issa, anew);
-    std::getline(issb, bnew);
-    return (compareNat(anew, bnew));
+	// Numbers are the same --> remove numbers and recurse
+	std::string anew, bnew;
+	std::getline(issa, anew);
+	std::getline(issb, bnew);
+	return (compareNat(anew, bnew));
 }
 void getJustCurrentDir(std::string path, std::vector<std::string>& dirs)
- { 
+{
 
 #ifdef _WIN32 
 
@@ -176,7 +176,7 @@ void getJustCurrentDir(std::string path, std::vector<std::string>& dirs)
 		do {
 			if ((fileinfo.attrib & _A_SUBDIR)) {
 				if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0) {
-					dirs.push_back(path /*+ "/" */ + fileinfo.name);
+					dirs.push_back(path + "" + fileinfo.name);
 					//files.push_back(p.assign(path).append("\\").append(fileinfo.name));
 
 				}
@@ -186,64 +186,64 @@ void getJustCurrentDir(std::string path, std::vector<std::string>& dirs)
 		_findclose(hFile);
 
 	}
-  
+
 
 #elif __linux
 
-	 DIR *dir = opendir(path.c_str());
-	 struct dirent *entry;
+	DIR* dir = opendir(path.c_str());
+	struct dirent* entry;
 
 	std::vector<std::string> name_list;
 
-	 //然后通过while循环不断readdir，获取目录中的内容
-	 while ((entry = readdir(dir)) != 0)
-	 {
-		   
-		 if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
-		 {
-  
-		//
-		 if (entry->d_type == 4) //如果是子目录，继续递归搜索
-		 { 
-			 //获取该结构体变量的成员函数d_name就得到了待扫描的文件，然后在使用sprintf函数加入文件绝对路径
+	//然后通过while循环不断readdir，获取目录中的内容
+	while ((entry = readdir(dir)) != 0)
+	{
 
-			 std::string name(entry->d_name);
-			//  bool exist_flag = false;
+		if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
+		{
 
-			//  auto iter = name_list.begin();
-			//  while (iter != name_list.end())
-			//  {
-			// 	 if (*iter == name)
-			// 	 { // 这命令可以作为查找vetor元素的方法
-			// 		 // vct_name_.erase(iter);	 // 删除
-			// 		 // iter=vct_name_.erase(iter); //也可以这么写
-			// 		 exist_flag = true;
-			// 	 }
-			// 	 iter++;
-			//  }
+			//
+			if (entry->d_type == 4) //如果是子目录，继续递归搜索
+			{
+				//获取该结构体变量的成员函数d_name就得到了待扫描的文件，然后在使用sprintf函数加入文件绝对路径
 
-			//  if (!exist_flag)
-			//  {
-				 name_list.push_back(name); 
-			//  }
- 
- 
-		 }
-		 }
- 
+				std::string name(entry->d_name);
+				//  bool exist_flag = false;
 
-	 }
+				//  auto iter = name_list.begin();
+				//  while (iter != name_list.end())
+				//  {
+				// 	 if (*iter == name)
+				// 	 { // 这命令可以作为查找vetor元素的方法
+				// 		 // vct_name_.erase(iter);	 // 删除
+				// 		 // iter=vct_name_.erase(iter); //也可以这么写
+				// 		 exist_flag = true;
+				// 	 }
+				// 	 iter++;
+				//  }
 
-	 //最后关闭目录句柄closedir
-	 closedir(dir); 
-	 std::sort(name_list.begin(), name_list.end(), compareNat);
+				//  if (!exist_flag)
+				//  {
+				name_list.push_back(name);
+				//  }
 
-	 for (int i = 0; i < name_list.size(); i++)
-	 {
-		 std::string dir = path + "/" + name_list[i];
-		 dirs.push_back(dir); 
-	 }
- 
+
+			}
+		}
+
+
+	}
+
+	//最后关闭目录句柄closedir
+	closedir(dir);
+	std::sort(name_list.begin(), name_list.end(), compareNat);
+
+	for (int i = 0; i < name_list.size(); i++)
+	{
+		std::string dir = path + "/" + name_list[i];
+		dirs.push_back(dir);
+	}
+
 #endif 
 
 }
@@ -282,8 +282,8 @@ void  getFiles(std::string path, std::vector<std::string>& files)
 	}
 
 #elif __linux 
-	DIR *pDir;
-	struct dirent *entry;
+	DIR* pDir;
+	struct dirent* entry;
 	if (!(pDir = opendir(path.c_str())))
 		return;
 	while ((entry = readdir(pDir)) != 0)
@@ -298,18 +298,18 @@ void  getFiles(std::string path, std::vector<std::string>& files)
 
 				std::string name(entry->d_name);
 
-				if(name.find(".bmp"))
+				if (name.find(".bmp"))
 				{
-					files.push_back(path + "/" + name);	
+					files.push_back(path + "/" + name);
 				}
- 
+
 			}
 		}
 	}
 	closedir(pDir);
 	std::sort(files.begin(), files.end(), compareNat);
 #endif 
- 
+
 
 }
 
@@ -337,7 +337,7 @@ bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map)
 		for (int i = 0; i < nc * nr; i++)
 		{
 			if (point_cloud_buffer[i * 3 + 2] > 0.01)
-				ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] <<std::endl;
+				ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << std::endl;
 		}
 
 	}
@@ -360,7 +360,7 @@ bool SavePointToTxt(cv::Mat deep_map, std::string path, cv::Mat texture_map)
 			{
 				if (point_cloud_buffer[i * 3 + 2] > 0.01)
 					ofile << point_cloud_buffer[i * 3] << " " << point_cloud_buffer[i * 3 + 1] << " " << point_cloud_buffer[i * 3 + 2] << " "
-					<< (int)brightness_buffer[i * 3] << " " << (int)brightness_buffer[i*3+1] << " " << (int)brightness_buffer[i*3+2] << std::endl;
+					<< (int)brightness_buffer[i * 3] << " " << (int)brightness_buffer[i * 3 + 1] << " " << (int)brightness_buffer[i * 3 + 2] << std::endl;
 			}
 		}
 
@@ -428,7 +428,7 @@ bool MaskZMap(cv::Mat& z_map, cv::Mat mask)
 }
 
 
-bool renderBrightnessImage(cv::Mat brightness , cv::Mat& render_brightness)
+bool renderBrightnessImage(cv::Mat brightness, cv::Mat& render_brightness)
 {
 
 	cv::Mat color_map(brightness.size(), CV_8UC3, cv::Scalar(0, 0, 0));
@@ -481,12 +481,12 @@ bool renderErrorMap(cv::Mat err_map, cv::Mat& color_map, cv::Mat& gray_map, floa
 
 		for (int c = 0; c < handle_map.cols; c++)
 		{
- 
+
 			ptr_h[c] = 0.5 + 255.0 * (ptr_dr[c] - low_v) / range;
-		 
+
 		}
 	}
-	  
+
 	gray_map = handle_map.clone();
 
 	cv::applyColorMap(handle_map, color_map, cv::COLORMAP_JET);
@@ -561,7 +561,7 @@ bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, int of
 {
 	if (normal_phase.empty() || brightness.empty())
 		return false;
-	 
+
 	int nr = brightness.rows;
 	int nc = brightness.cols;
 
@@ -572,11 +572,11 @@ bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, int of
 
 	Scharr(sobel_brightness, scharr_x, CV_64F, 1, 0, 1, 0, cv::BORDER_DEFAULT);
 	cv::GaussianBlur(scharr_x, scharr_x, cv::Size(5, 5), 3, 3);
-  
+
 
 	for (int r = 0; r < nr; r++)
 	{
-		double* ptr_sobel = scharr_x.ptr<double>(r); 
+		double* ptr_sobel = scharr_x.ptr<double>(r);
 		double* ptr_phase_map = normal_phase.ptr<double>(r);
 
 		for (int c = 0; c < nc; c++)
@@ -590,7 +590,7 @@ bool compensatePhaseBaseScharr(cv::Mat& normal_phase, cv::Mat brightness, int of
 				if (ptr_phase_map[c] > 0)
 				{
 					ptr_phase_map[c] -= ptr_sobel[c] * 0.0000001 * offset_value;
-				} 
+				}
 			}
 		}
 

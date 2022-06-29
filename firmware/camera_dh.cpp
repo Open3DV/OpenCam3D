@@ -224,6 +224,351 @@ if (normal_phase.empty() || brightness.empty())
 	return true;
 }
 
+
+bool CameraDh::capturePhase02Repetition02ToGpu(int repetition_count)
+{
+
+    PGX_FRAME_BUFFER pFrameBuffer;
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
+    // status = GXStreamOn(hDevice_);
+    parallel_cuda_clear_repetition_02_patterns();
+
+    for (int r = 0; r < repetition_count; r++)
+    {
+        int n = 0;
+        if (status == GX_STATUS_SUCCESS)
+        {
+
+            LOG(INFO) << "pattern_mode04";
+            lc3010.pattern_mode02();
+            status = GXStreamOn(hDevice_);
+            lc3010.start_pattern_sequence();
+            LOG(INFO) << "start_pattern_sequence";
+
+            for (int i = 0; i < 37; i++)
+            {
+                LOG(INFO) << "receiving " << i << "th image";
+                status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+                LOG(INFO) << "status=" << status;
+                if (status == GX_STATUS_SUCCESS)
+                {
+                    if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
+                    {
+                        int img_rows = pFrameBuffer->nHeight;
+                        int img_cols = pFrameBuffer->nWidth;
+                        int img_size = img_rows * img_cols;
+
+                        parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf, i);
+                        parallel_cuda_merge_repetition_02_patterns(i);
+                    }
+
+                    status = GXQBuf(hDevice_, pFrameBuffer);
+                }
+                else
+                {
+                    status = GXStreamOff(hDevice_);
+                    return false;
+                }
+            }
+
+            /*********************************************************************************************/
+            std::thread stop_thread(GXStreamOff, hDevice_);
+            stop_thread.detach();
+            lc3010.stop_pattern_sequence();
+            // status = GXStreamOff(hDevice_);
+            LOG(INFO) << "GXStreamOff";
+            /***********************************************************************************************/
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    //关闭相机流
+    // std::thread stop_thread(GXStreamOff, hDevice_);
+    // stop_thread.detach();
+    // LOG(INFO) << "GXStreamOff";
+
+    parallel_cuda_compute_model_02_merge_repetition_02_phase(repetition_count);
+
+    LOG(INFO) << "parallel_cuda_compute_mergerepetition_02_phase";
+    parallel_cuda_unwrap_phase(1);
+    parallel_cuda_unwrap_phase(2);
+    parallel_cuda_unwrap_phase(3);
+    parallel_cuda_unwrap_phase(5);
+    parallel_cuda_unwrap_phase(6);
+    parallel_cuda_unwrap_phase(7);
+    LOG(INFO) << "parallel_cuda_unwrap_phase";
+
+    return true;
+}
+
+bool CameraDh::captureFrame04Repetition02ToGpu(int repetition_count)
+{
+
+    PGX_FRAME_BUFFER pFrameBuffer; 
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
+    // status = GXStreamOn(hDevice_);  
+    parallel_cuda_clear_repetition_02_patterns();
+
+    for(int r= 0;r< repetition_count;r++)
+    {
+    int n = 0;
+    if (status == GX_STATUS_SUCCESS)
+    {
+ 
+        LOG(INFO) << "pattern_mode04";
+        lc3010.pattern_mode04();
+        status = GXStreamOn(hDevice_); 
+        lc3010.start_pattern_sequence();  
+        LOG(INFO) << "start_pattern_sequence";
+
+        for (int i = 0; i < 19; i++)
+        {
+            LOG(INFO) << "receiving " << i << "th image";
+            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+            LOG(INFO) << "status=" << status;
+            if (status == GX_STATUS_SUCCESS)
+            {
+                if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
+                {
+                    int img_rows = pFrameBuffer->nHeight;
+                    int img_cols = pFrameBuffer->nWidth;
+                    int img_size = img_rows * img_cols; 
+         
+                    if(i< 19)
+                    { 
+                        parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,i); 
+                        parallel_cuda_merge_repetition_02_patterns(i);
+                    }
+ 
+                } 
+                
+                status = GXQBuf(hDevice_, pFrameBuffer);
+
+ 
+            }
+            else
+            {
+                status = GXStreamOff(hDevice_); 
+                return false;
+            }
+        }
+
+        /*********************************************************************************************/
+        std::thread stop_thread(GXStreamOff, hDevice_);
+        stop_thread.detach();
+        lc3010.stop_pattern_sequence();
+        // status = GXStreamOff(hDevice_); 
+        LOG(INFO) << "GXStreamOff";
+        /***********************************************************************************************/
+   
+   
+    }
+    else
+    {
+        return false;
+    }
+    }
+
+        //关闭相机流
+        // std::thread stop_thread(GXStreamOff, hDevice_);
+        // stop_thread.detach();
+        // LOG(INFO) << "GXStreamOff";
+        parallel_cuda_compute_merge_repetition_02_phase(repetition_count);
+        LOG(INFO) << "parallel_cuda_compute_mergerepetition_02_phase";
+        parallel_cuda_unwrap_phase(1);
+        parallel_cuda_unwrap_phase(2);
+        parallel_cuda_unwrap_phase(3);
+        LOG(INFO) << "parallel_cuda_unwrap_phase";
+        generate_pointcloud_base_table();
+        LOG(INFO) << "generate_pointcloud_base_table";
+
+        return true;
+}
+
+bool CameraDh::captureFrame04RepetitionToGpu(int repetition_count)
+{
+// switchToScanMode();
+    // LOG(INFO) << "switchToScanMode";
+
+    PGX_FRAME_BUFFER pFrameBuffer; 
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON); 
+    status = GXStreamOn(hDevice_); 
+ 
+    int n = 0;
+    int capture_count = 19 +6*(repetition_count-1);
+    if (status == GX_STATUS_SUCCESS)
+    {
+        lc3010.start_pattern_sequence(); 
+        for (int i = 0; i < capture_count; i++)
+        {
+            LOG(INFO) << "receiving " << i << "th image";
+            status = GXDQBuf(hDevice_, &pFrameBuffer, 1000);
+            LOG(INFO) << "status=" << status;
+
+            int sync_serial_num = i;
+
+            if (status == GX_STATUS_SUCCESS)
+            {
+                if (pFrameBuffer->nStatus == GX_FRAME_STATUS_SUCCESS)
+                {
+                    int img_rows = pFrameBuffer->nHeight;
+                    int img_cols = pFrameBuffer->nWidth;
+                    int img_size = img_rows * img_cols; 
+                    if(i< 12)
+                    {
+                        sync_serial_num = i;
+                        parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,i);
+                    }
+                    else if(i> 11 && i< 12+ 6*repetition_count)
+                    {
+
+                        if(12 == i)
+                        {
+                            sync_serial_num = 12;
+                        }
+                        else
+                        {
+                            sync_serial_num = 13;
+                        }
+
+                        parallel_cuda_copy_repetition_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,i-12);
+                        parallel_cuda_merge_repetition_patterns(i-12);
+            
+                        LOG(INFO) << "repetition " << i-12 << "th image";
+                    }
+                    else   
+                    { 
+                        // if(i == 12 +6*repetition_count)
+                        // {
+                        //     sync_serial_num = 18;
+                        // }
+                        // else
+                        // {
+                            sync_serial_num = i - 6*(repetition_count-1); 
+                        // }
+
+                        parallel_cuda_copy_signal_patterns((unsigned char *)pFrameBuffer->pImgBuf,sync_serial_num);
+                        
+                        memcpy(brightness_buff_, pFrameBuffer->pImgBuf, img_size); 
+
+                        std::thread stop_thread(GXStreamOff,hDevice_);
+                        stop_thread.detach();  
+                    }
+ 
+                }
+
+                
+                status = GXQBuf(hDevice_, pFrameBuffer);
+
+                //copy to gpu
+                switch (sync_serial_num)
+                {
+                case 4:
+                {    
+                    parallel_cuda_compute_phase(0);   
+                }
+                break;
+                case 8:
+                {    
+                    parallel_cuda_compute_phase(1); 
+                }
+                break;
+                case 10:
+                {     
+                    parallel_cuda_unwrap_phase(1);  
+                }
+                break;
+                case 12:
+                {    
+                    parallel_cuda_compute_phase(2); 
+                    parallel_cuda_unwrap_phase(2);    
+                }
+                break;
+                // case 15:
+                // {                   
+                // }
+                // break;
+                case 18:
+                {    
+
+                    parallel_cuda_compute_merge_phase(repetition_count);
+                    cudaDeviceSynchronize();
+                    // parallel_cuda_compute_phase(3);  
+                    parallel_cuda_unwrap_phase(3);   
+
+  
+                    
+                    generate_pointcloud_base_table();
+                    //  cudaDeviceSynchronize();
+                     LOG(INFO) << "generate_pointcloud_base_table";
+
+
+
+                    switch (generate_brigntness_model_)
+                    { 
+                        case 2:
+                        {
+                            
+                            status = GXStreamOff(hDevice_); 
+                            lc3010.stop_pattern_sequence();
+                            lc3010.init();
+                            switchToSingleShotMode();
+                            //发光，自定义曝光时间 
+                            lc3010.enable_solid_field();
+                            bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_,brightness_buff_);
+                            lc3010.disable_solid_field();   
+                            switchToScanMode(); 
+                             
+                        }
+                        break;
+                        case 3:
+                        {
+                            
+                            status = GXStreamOff(hDevice_); 
+                            lc3010.stop_pattern_sequence();
+                            lc3010.init();
+                            switchToSingleShotMode();
+                            //不发光，自定义曝光时间  
+                            bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_,brightness_buff_); 
+                            switchToScanMode(); 
+                        }
+                        break;
+                    
+                    default:
+                        break;
+                    }
+                }
+                break;
+  
+                break;
+
+                default:
+                    break;
+                }
+ 
+            }
+            else
+            {
+                status = GXStreamOff(hDevice_); 
+                return false;
+            }
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+ 
+    return true;
+}
+
 bool CameraDh::captureFrame04ToGpu()
 {
     // switchToScanMode();

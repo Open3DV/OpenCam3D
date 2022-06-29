@@ -5,7 +5,6 @@
 #elif __linux
 #include "../sdk/open_cam3d.h" 
 #include <cstring>
-#include <iomanip>
 #include <stdio.h> 
 #define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
 #endif 
@@ -18,6 +17,7 @@
 #include <fstream>
 #include <string.h>
 #include "getopt.h" 
+#include <iomanip>
 #include "../test/LookupTableFunction.h"
 
 using namespace std;
@@ -119,6 +119,9 @@ open_cam3d.exe --self-test --ip 192.168.x.x\n\
 \n\
 open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
 \n\
+30.Get Repetition Phase 02: \n\
+open_cam3d.exe --get-repetition-phase-02 --count 3 --ip 192.168.x.x --path  ./phase02_image_dir\n\
+\n\
 ";
 
 void help_with_version(const char* help);
@@ -127,6 +130,7 @@ int get_frame_01(const char* ip, const char* frame_path);
 int get_frame_03(const char* ip, const char* frame_path);
 int get_frame_05(const char* ip, const char* frame_path);
 int get_repetition_frame_03(const char* ip, int count, const char* frame_path);
+int get_repetition_frame_04(const char* ip, int count, const char* frame_path);
 int get_frame_hdr(const char* ip, const char* frame_path);
 void save_frame(float* depth_buffer, unsigned char* bright_buffer, const char* frame_path);
 void save_images(const char* raw_image_dir, unsigned char* buffer, int image_size, int image_num);
@@ -160,6 +164,7 @@ int set_auto_exposure_base_roi(const char* ip);
 int set_auto_exposure_base_board(const char* ip);
 int self_test(const char* ip);
 int get_projector_temperature(const char* ip);
+int get_repetition_phase_02(const char* ip, int count, const char* phase_image_dir);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -184,6 +189,7 @@ enum opt_set
 	GET_FRAME_03,
 	GET_FRAME_05,
 	GET_REPETITION_FRAME_03,
+	GET_REPETITION_FRAME_04,
 	GET_FRAME_HDR,
 	GET_BRIGHTNESS,
 	HELP,
@@ -201,11 +207,12 @@ enum opt_set
 	GET_CAMERA_EXPOSURE,
 	SET_OFFSET,
 	OFFSET,
-	GET_CAMERA_VERSION, 
+	GET_CAMERA_VERSION,
 	SET_AUTO_EXPOSURE_BASE_ROI,
-	SET_AUTO_EXPOSURE_BASE_BOARD, 
+	SET_AUTO_EXPOSURE_BASE_BOARD,
 	SELF_TEST,
-	GET_PROJECTOR_TEMPERATURE 
+	GET_PROJECTOR_TEMPERATURE,
+	GET_REPETITION_PHASE_02
 };
 
 static struct option long_options[] =
@@ -226,11 +233,13 @@ static struct option long_options[] =
 	{"get-raw-01",no_argument,NULL,GET_RAW_01},
 	{"get-raw-02",no_argument,NULL,GET_RAW_02},
 	{"get-raw-03",no_argument,NULL,GET_RAW_03},
+	{"get-repetition-phase-02",no_argument,NULL,GET_REPETITION_PHASE_02},
 	{"get-pointcloud",no_argument,NULL,GET_POINTCLOUD},
 	{"get-frame-01",no_argument,NULL,GET_FRAME_01},
 	{"get-frame-03",no_argument,NULL,GET_FRAME_03},
 	{"get-frame-05",no_argument,NULL,GET_FRAME_05},
 	{"get-repetition-frame-03",no_argument,NULL,GET_REPETITION_FRAME_03},
+	{"get-repetition-frame-04",no_argument,NULL,GET_REPETITION_FRAME_04},
 	{"get-frame-hdr",no_argument,NULL,GET_FRAME_HDR},
 	{"get-brightness",no_argument,NULL,GET_BRIGHTNESS},
 	{"help",no_argument,NULL,HELP},
@@ -245,11 +254,11 @@ static struct option long_options[] =
 	{"set-camera-exposure-param",no_argument,NULL,SET_CAMERA_EXPOSURE},
 	{"get-camera-exposure-param",no_argument,NULL,GET_CAMERA_EXPOSURE},
 	{"set-offset-param",no_argument,NULL,SET_OFFSET},
-	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION}, 
+	{"get-camera-version",no_argument,NULL,GET_CAMERA_VERSION},
 	{"set-auto-exposure-roi",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_ROI},
-	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD}, 
+	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD},
 	{"self-test",no_argument,NULL,SELF_TEST},
-	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE}, 
+	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE},
 };
 
 
@@ -335,6 +344,12 @@ int main(int argc, char* argv[])
 	case GET_RAW_03:
 		get_raw_03(camera_id, path);
 		break;
+	case GET_REPETITION_PHASE_02:
+	{
+		int num = std::atoi(repetition_count);
+		get_repetition_phase_02(camera_id, num, path);
+	}
+	break;
 	case GET_FRAME_01:
 		get_frame_01(camera_id, path);
 		break;
@@ -348,6 +363,12 @@ int main(int argc, char* argv[])
 	{
 		int num = std::atoi(repetition_count);
 		get_repetition_frame_03(camera_id, num, path);
+	}
+	break;
+	case GET_REPETITION_FRAME_04:
+	{
+		int num = std::atoi(repetition_count);
+		get_repetition_frame_04(camera_id, num, path);
 	}
 	break;
 	case GET_FRAME_HDR:
@@ -413,7 +434,7 @@ int main(int argc, char* argv[])
 	{
 		get_camera_version(camera_id);
 	}
-	break; 
+	break;
 	case SET_AUTO_EXPOSURE_BASE_ROI:
 	{
 		set_auto_exposure_base_roi(camera_id);
@@ -423,13 +444,13 @@ int main(int argc, char* argv[])
 	{
 		set_auto_exposure_base_board(camera_id);
 	}
-	break; 
+	break;
 	case SELF_TEST:
 		self_test(camera_id);
 		break;
 	case GET_PROJECTOR_TEMPERATURE:
 		get_projector_temperature(camera_id);
-		break; 
+		break;
 	default:
 		break;
 	}
@@ -669,6 +690,42 @@ int get_frame_hdr(const char* ip, const char* frame_path)
 }
 
 
+int get_repetition_frame_04(const char* ip, int count, const char* frame_path)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int width, height;
+	DfGetCameraResolution(&width, &height);
+
+
+	ret = DfGetCalibrationParam(calibration_param_);
+
+	int image_size = width * height;
+
+	int depth_buf_size = image_size * 1 * 4;
+	float* depth_buf = (float*)(new char[depth_buf_size]);
+
+	int brightness_bug_size = image_size;
+	unsigned char* brightness_buf = new unsigned char[brightness_bug_size];
+
+	ret = DfGetRepetitionFrame04(count, depth_buf, depth_buf_size, brightness_buf, brightness_bug_size);
+
+	DfDisconnectNet();
+
+	save_frame(depth_buf, brightness_buf, frame_path);
+
+
+
+	delete[] depth_buf;
+	delete[] brightness_buf;
+
+}
 int get_repetition_frame_03(const char* ip, int count, const char* frame_path)
 {
 	DfRegisterOnDropped(on_dropped);
@@ -943,6 +1000,47 @@ int get_raw_02(const char* ip, const char* raw_image_dir)
 	return 1;
 }
 
+
+int get_repetition_phase_02(const char* ip, int count, const char* phase_image_dir)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int width, height;
+	DfGetCameraResolution(&width, &height);
+
+
+	int image_size = width * height;
+
+	cv::Mat phase_x(height, width, CV_32F, cv::Scalar(0));
+	cv::Mat phase_y(height, width, CV_32F, cv::Scalar(0));
+	cv::Mat brightness(height, width, CV_8U, cv::Scalar(0));
+
+	ret = DfGetRepetitionPhase02(count, (float*)phase_x.data, (float*)phase_y.data, image_size * sizeof(float), brightness.data, image_size * sizeof(char));
+
+	DfDisconnectNet();
+
+	DfSolution solution_machine_;
+	std::string folderPath = std::string(phase_image_dir);
+	folderPath = solution_machine_.replaceAll(folderPath, "/", "\\");
+	std::string mkdir_cmd = std::string("mkdir ") + folderPath;
+	system(mkdir_cmd.c_str());
+
+
+	std::string phase_x_str = folderPath + "\\01.tiff";
+	cv::imwrite(phase_x_str, phase_x);
+	std::string phase_y_str = folderPath + "\\02.tiff";
+	cv::imwrite(phase_y_str, phase_y);
+	std::string brightness_str = folderPath + "\\03.bmp";
+	cv::imwrite(brightness_str, brightness);
+
+	return 1;
+}
 
 int test_calib_param(const char* ip, const char* result_path)
 {

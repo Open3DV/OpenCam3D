@@ -307,6 +307,20 @@ DF_SDK_API int DfGetCameraRawDataTest(unsigned char* raw, int raw_buf_size);
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetCameraRawData03(unsigned char* raw, int raw_buf_size);
 
+//函数名： DfGetCameraRawData04
+//功能： 采集一组相移图，一共19幅，12个四步相移条纹图+6个垂直方向的六步相移条纹图+一个亮度图
+//输入参数：raw_buf_size（19张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraRawData04(unsigned char* raw, int raw_buf_size);
+
+//函数名： DfGetCameraRawData04Repetition
+//功能： 采集一组相移图，一共13+6*repetition_count幅，12个四步相移条纹图+6*repetition_count个垂直方向的六步相移条纹图+一个亮度图
+//输入参数：raw_buf_size（13+6*repetition_count张8位图的尺寸）
+//输出参数：raw
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetCameraRawData04Repetition(unsigned char* raw, int raw_buf_size, int repetition_count);
+
 //函数名： depthTransformPointcloud
 //功能： 深度图转点云接口
 //输入参数：depth_map（深度图）
@@ -372,12 +386,28 @@ DF_SDK_API int DfGetFrame04(float* depth, int depth_buf_size,
 DF_SDK_API int DfGetFrame05(float* depth, int depth_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
+//函数名： DfGetRepetitionFrame04
+//功能： 获取一帧数据（亮度图+深度图），基于Raw04相位图，6步相移的图重复count次
+//输入参数：count（重复次数）、depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetRepetitionFrame04(int count, float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size);
+
 //函数名： DfGetRepetitionFrame03
 //功能： 获取一帧数据（亮度图+深度图），基于Raw03相位图，6步相移的图重复count次
 //输入参数：count（重复次数）、depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
 //输出参数：depth（深度图）、brightness（亮度图）
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int DfGetRepetitionFrame03(int count, float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size);
+
+//函数名： DfGetRepetitionPhase02
+//功能： 获取一帧数据（亮度图+相位图），基于Raw02相位图，所有条纹图重复count次
+//输入参数：count（重复次数）、phase_buf_size（相位图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：phase_x（相位图x）、phase_y（相位图y）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetRepetitionPhase02(int count, float* phase_x, float* phase_y, int phase_buf_size,
 	unsigned char* brightness, int brightness_buf_size);
 
 //函数名： DfGetCalibrationParam
@@ -536,3 +566,9 @@ DF_SDK_API int DfSetAutoExposure(int flag, int& exposure, int& led);
 //返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 DF_SDK_API int DfGetProjectorTemperature(float& temperature);
 
+//函数名： DfCaptureRepetitionData
+//功能： 采集一帧数据并阻塞至返回状态
+//输入参数：repetition_count（重复次数）、 exposure_num（曝光次数）：设置值为1为单曝光，大于1为多曝光模式（具体参数在相机gui中设置）.
+//输出参数： timestamp(时间戳)
+//返回值： 类型（int）:返回0表示获取采集数据成功;返回-1表示采集数据失败.
+DF_SDK_API int DfCaptureRepetitionData(int repetition_count, int exposure_num, char* timestamp);
