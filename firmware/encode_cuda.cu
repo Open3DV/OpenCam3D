@@ -2876,8 +2876,8 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
     	float Xcr = bilinear_interpolation(idx, idy,1920, xL_rotate_x);
         float Ycr = bilinear_interpolation(idx, idy, 1920,xL_rotate_y);
         float Xpr = bilinear_interpolation(Xp, (Ycr + 1) * 2000, 2000, single_pattern_mapping);
-        // float delta_X = std::abs(Xcr - Xpr);
-		float delta_X = Xpr -Xcr;
+        float delta_X = std::abs(Xcr - Xpr);
+		// float delta_X = Xpr -Xcr;
         float Z = b / delta_X;
 	
 		float X_L = Z * Xcr * R_1[0] + Z * Ycr * R_1[1] + Z * R_1[2];
@@ -2903,7 +2903,7 @@ __global__ void reconstruct_pointcloud_base_table(float * const xL_rotate_x,floa
 		}
 
 		
-		if (-2 == Xcr || -2 == Ycr || -2 == Xpr || delta_X< 0.005)
+		if (-2 == Xcr || -2 == Ycr || -2 == Xpr)
 		{
 			pointcloud[3 * serial_id + 0] = 0;
 		    pointcloud[3 * serial_id + 1] = 0;
