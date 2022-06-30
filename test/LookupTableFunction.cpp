@@ -780,17 +780,14 @@ double LookupTableFunction::depth_per_point_6patterns_combine(double Xc, double 
 
 	//double delta_X = Xcr - Xpr;
 
-	double delta_X = Xpr - Xcr;
+	double delta_X = std::abs(Xpr - Xcr);
 	double Z = b / delta_X;
 
 
 
 	disparity = delta_X * 1000;
 
-	if (disparity < 5)
-	{
-		return 0;
-	}
+
 
 	//if (disparity < 50 || disparity> 85)
 	//{

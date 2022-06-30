@@ -1232,6 +1232,11 @@ bool CameraCaptureGui::captureOneFrameData()
 	/***************************************************************************/
 	if (0 == ret_code)
 	{
+
+
+		addLogMessage(u8"采集完成！");
+
+
 		brightness_map_ = brightness.clone();
 		depth_map_ = depth.clone();
 
@@ -1243,7 +1248,6 @@ bool CameraCaptureGui::captureOneFrameData()
 		height_map_ = channels[2].clone();
 
 
-		addLogMessage(u8"采集完成！");
 
 		float temperature = 0;
 		ret_code = DfGetDeviceTemperature(temperature);
@@ -1357,6 +1361,23 @@ void  CameraCaptureGui::do_pushButton_connect()
 			}
 
 			undateSystemConfigUiData();
+
+			int network_speed = 0;
+			ret_code = DfGetNetworkBandwidth(network_speed);
+			if (0 != ret_code)
+			{
+				qDebug() << "Get Network Speed Error;";
+				//return;
+			}
+			else
+			{
+				if (1000 != network_speed)
+				{
+					addLogMessage(u8"请注意网络带宽:" + QString::number(network_speed) + "M");
+
+				}
+			}
+
 		}
 		else
 		{
