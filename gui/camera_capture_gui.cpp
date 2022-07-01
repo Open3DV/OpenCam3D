@@ -1453,7 +1453,12 @@ void  CameraCaptureGui::do_pushButton_disconnect()
 			stopCapturingOneFrameBaseThread();
 		}
 
-		DfDisconnect(camera_ip_.toStdString().c_str());
+		int ret = DfDisconnect(camera_ip_.toStdString().c_str());
+		if (DF_SUCCESS != ret)
+		{
+			return;
+		}
+
 		addLogMessage(u8"断开相机！");
 		connected_flag_ = false;
 

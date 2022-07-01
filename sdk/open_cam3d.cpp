@@ -756,11 +756,16 @@ DF_SDK_API int DfDisconnect(const char* camera_id)
 {
 	if (!connected_flag_)
 	{
-		return -1;
+		return DF_FAILED;
 	}
 
 
-	DfDisconnectNet();
+	int ret = DfDisconnectNet();
+
+	if (DF_FAILED == ret)
+	{
+		return DF_FAILED;
+	}
 
 	delete[] depth_buf_;
 	delete[] brightness_buf_;
@@ -769,7 +774,7 @@ DF_SDK_API int DfDisconnect(const char* camera_id)
 
 	connected_flag_ = false;
 
-	return 0;
+	return DF_SUCCESS;
 }
 
 //函数名： DfGetCalibrationParam
