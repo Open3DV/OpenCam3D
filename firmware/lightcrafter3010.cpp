@@ -58,7 +58,7 @@ void LightCrafter3010::init()
 	write(0x05, buffer, 1);
 
 	//LED set to brightest
-	SetLedCurrent(1023, 1023, 1023);
+	// SetLedCurrent(1023, 1023, 1023);
 
 	//enable tigger out 1
 	buffer[4] = 0x00;
@@ -77,7 +77,7 @@ void LightCrafter3010::init()
 	buffer[0] = 0x03;
 	write(0x92, buffer, 5);
 
-	pattern_mode01();
+	// pattern_mode01();
 	//write_pattern_table();
 }
 
