@@ -48,6 +48,8 @@ float min_camera_exposure_ = 6000;
  
 
 SystemConfigDataStruct system_config_settings_machine_;
+bool config_checkerboard(bool enable);
+
 
 bool readSystemConfig()
 {
@@ -164,7 +166,8 @@ int heartbeat_check()
 	{
 	    LOG(INFO)<<"HeartBeat stopped!";
 	    connected = false;
-            current_token = 0;
+        current_token = 0;
+        lc3010.init();
 	}
     }
 
@@ -1088,6 +1091,35 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
     return DF_SUCCESS;
 }
 
+
+int handle_cmd_get_focusing_image(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;
+    }
+    LOG(INFO) << "capture focusing image";
+
+    int buffer_size = 1920 * 1200;
+    char *buffer = new char[buffer_size];
+
+    //不发光，自定义曝光时间
+    bool capture_one_ret = camera.captureSingleExposureImage(system_config_settings_machine_.Instance().config_param_.camera_exposure_time, buffer);
+
+    LOG(TRACE) << "start send image, image_size=" << buffer_size;
+    int ret = send_buffer(client_sock, buffer, buffer_size);
+    delete[] buffer;
+    if (ret == DF_FAILED)
+    {
+        LOG(ERROR) << "send error, close this connection!";
+        return DF_FAILED;
+    }
+    LOG(TRACE) << "image sent!";
+    return DF_SUCCESS;
+}
+
+
+
 int handle_cmd_get_brightness(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -1112,9 +1144,9 @@ int handle_cmd_get_brightness(int client_sock)
         case 2:
             {
                 //发光，自定义曝光时间 
-                lc3010.enable_solid_field();
+                lc3010.enable_solid_field(); 
                 bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,buffer);
-                lc3010.disable_solid_field();
+                lc3010.disable_solid_field(); 
             }
         break;
         case 3:
@@ -1128,8 +1160,7 @@ int handle_cmd_get_brightness(int client_sock)
             break;
     }
 
- 
-
+  
     //int buffer_size = 1920*1200;
     //char* buffer = new char[buffer_size];
    //camera.captureSingleImage(buffer);
@@ -1570,6 +1601,7 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
     for(int i= 0;i< led_current_list.size();i++)
     {
         int led_current = led_current_list[i];
+        lc3010.init();
         lc3010.SetLedCurrent(led_current,led_current,led_current); 
         
         std::cout << "set led: " << led_current << std::endl;
@@ -3818,6 +3850,8 @@ bool config_checkerboard(bool enable)
 
     return true;
 }
+
+
 //*****************************************************************************************/
 int handle_enable_checkerboard(int client_sock)
 {
@@ -4365,6 +4399,7 @@ int handle_get_projector_temperature(int client_sock)
     return DF_SUCCESS;
 }
 
+  
 /*****************************************************************************************/
 int handle_commands(int client_sock)
 {
@@ -4648,6 +4683,10 @@ int handle_commands(int client_sock)
     	LOG(INFO)<<"DF_CMD_GET_PHASE_02_REPETITION";
 	    handle_cmd_get_phase_02_repetition_02_parallel(client_sock);
 	    break;
+    case DF_CMD_GET_FOCUSING_IMAGE:
+        LOG(INFO)<<"DF_CMD_CONFIGURE_FOCUSING"; 
+        handle_cmd_get_focusing_image(client_sock);
+        break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
         handle_cmd_unknown(client_sock);
