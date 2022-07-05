@@ -90,9 +90,9 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 
 		struct timeval timeout = { 20,0 };
 		//设置发送超时
-		setsockopt(g_sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(struct timeval));
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(struct timeval));
 		//设置接收超时
-		setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(struct timeval));
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(struct timeval));
 
 #endif
 
