@@ -440,12 +440,20 @@ DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 	{
 		LOG(TRACE) << " Get Frame HDR:";
 		ret = DfGetFrameHdr(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+		if (DF_FAILED == ret)
+		{
+			return DF_FAILED;
+		}
 	}
 	else
 	{
 
 		LOG(TRACE) << " Get Frame04:";
 		ret = DfGetFrame04(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+		if (DF_FAILED == ret)
+		{
+			return DF_FAILED;
+		}
 	}
 
 
@@ -875,6 +883,7 @@ int HeartBeat_loop()
 		if (ret == DF_FAILED)
 		{
 			connected = false;
+			//close_socket(g_sock); 
 			p_OnDropped(0);
 		}
 		for (int i = 0; i < 100; i++)
@@ -901,35 +910,6 @@ DF_SDK_API int DfConnectNet(const char* ip)
 		return DF_FAILED;
 	}
 
-#ifdef _WIN32 
-
-	int nNetTimeout = 10 * 1000;//10秒，
-	//setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&nNetTimeout, sizeof(int));
-  //设置发送超时
-	setsockopt(g_sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&nNetTimeout, sizeof(int));
-	//设置接收超时
-	setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&nNetTimeout, sizeof(int));
-
-	//struct timeval send_timeval;
-	//struct timeval recv_timeval;
-	//send_timeval.tv_sec = 10;
-	//send_timeval.tv_usec = 0;
-
-	//recv_timeval.tv_sec = 10;
-	//recv_timeval.tv_usec = 0;
-	////发送时限
-	//setsockopt(g_sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&send_timeval, sizeof(send_timeval));
-	////接收时限  
-	//setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&recv_timeval, sizeof(recv_timeval));
-#elif __linux
-	struct timeval timeout;
-	timeout.tv_sec = 15;
-	timeout.tv_usec = 0;
-	//设置发送超时
-	setsockopt(g_sock, SO_SNDTIMEO，(char*) & timeout, sizeof(struct timeval));
-	//设置接收超时
-	setsockopt(g_sock, SO_RCVTIMEO，(char*) & timeout, sizeof(struct timeval));
-#endif 
 
 	LOG(INFO) << "sending connection cmd";
 	ret = send_command(DF_CMD_CONNECT, g_sock);
@@ -982,6 +962,7 @@ DF_SDK_API int DfDisconnectNet()
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
+		LOG(INFO) << "Failed to setup_socket";
 		close_socket(g_sock);
 		return DF_FAILED;
 	}

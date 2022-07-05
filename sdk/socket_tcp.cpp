@@ -79,6 +79,25 @@ int setup_socket(const char* camera_ip, int port, SOCKET& sock)
 			return DF_FAILED;
 		}
 		LOG(TRACE) << "socket setup ok";
+
+#ifdef _WIN32 
+		int time_out = 20 * 1000;
+		//发送时限
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&time_out, sizeof(time_out));
+		//接收时限  
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&time_out, sizeof(time_out));
+#elif __linux
+
+		struct timeval timeout = { 20,0 };
+		//设置发送超时
+		setsockopt(g_sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(struct timeval));
+		//设置接收超时
+		setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(struct timeval));
+
+#endif
+
+
+
 		return DF_SUCCESS;
 	}
 	else
@@ -150,7 +169,7 @@ int recv_buffer(char* buffer, int buffer_size, SOCKET& sock)
 	while (ret != -1)
 	{
 		ret = recv(sock, buffer, buffer_size, 0);
-		//LOG(INFO) << "recv�� " << "ret=" << ret << std::endl;
+		LOG(INFO) << "recv: " << "ret=" << ret << std::endl;
 		if (ret > 0)
 		{
 			buffer_size -= ret;
