@@ -27,6 +27,13 @@ extern "C"
 	};
 
 
+	//函数名： DfRegisterOnDropped
+	//功能：注册断连回调函数
+	//输入参数：无
+	//输出参数：p_function（回调函数）
+	//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+	DF_SDK_API int DfRegisterOnDropped(int (*p_function)(void*));
+
 	//函数名： DfConnect
 	//功能： 连接相机
 	//输入参数： camera_id（相机ip地址）

@@ -901,6 +901,35 @@ DF_SDK_API int DfConnectNet(const char* ip)
 		return DF_FAILED;
 	}
 
+#ifdef _WIN32 
+
+	int nNetTimeout = 10 * 1000;//10秒，
+	//setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&nNetTimeout, sizeof(int));
+  //设置发送超时
+	setsockopt(g_sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&nNetTimeout, sizeof(int));
+	//设置接收超时
+	setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&nNetTimeout, sizeof(int));
+
+	//struct timeval send_timeval;
+	//struct timeval recv_timeval;
+	//send_timeval.tv_sec = 10;
+	//send_timeval.tv_usec = 0;
+
+	//recv_timeval.tv_sec = 10;
+	//recv_timeval.tv_usec = 0;
+	////发送时限
+	//setsockopt(g_sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&send_timeval, sizeof(send_timeval));
+	////接收时限  
+	//setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&recv_timeval, sizeof(recv_timeval));
+#elif __linux
+	struct timeval timeout;
+	timeout.tv_sec = 15;
+	timeout.tv_usec = 0;
+	//设置发送超时
+	setsockopt(g_sock, SO_SNDTIMEO，(char*) & timeout, sizeof(struct timeval));
+	//设置接收超时
+	setsockopt(g_sock, SO_RCVTIMEO，(char*) & timeout, sizeof(struct timeval));
+#endif 
 
 	LOG(INFO) << "sending connection cmd";
 	ret = send_command(DF_CMD_CONNECT, g_sock);
