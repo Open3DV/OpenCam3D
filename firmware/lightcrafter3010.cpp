@@ -28,7 +28,7 @@ LightCrafter3010::LightCrafter3010()
 	memset(&_MCP3221, 0, sizeof(_MCP3221));
 	i2c_init_device(&_MCP3221);
     _MCP3221.bus = fd;
-    _MCP3221.addr = 0x4d;
+    _MCP3221.addr = 0x4f;               //MCP3221A7T-E/OT 
     _MCP3221.page_bytes = 256;
     _MCP3221.iaddr_bytes = 1;  
 }
