@@ -1446,7 +1446,13 @@ int configure_focusing(const char* ip)
 	int width, height;
 	DfGetCameraResolution(&width, &height);
 
-
+	ret = DfSetParamLedCurrent(255);
+	//cv::waitKey(10);
+	if (DF_SUCCESS != ret)
+	{
+		std::cout << "Set Led Failed! " << std::endl;
+		return 0;
+	}
 
 	int image_size = width * height;
 	cv::Mat img(height, width, CV_8UC1, cv::Scalar(0));
