@@ -2768,8 +2768,8 @@ bool generate_pointcloud_base_table()
 
 	// LOG(INFO)<<"remove start:";
 	// //相机像素为5.4um、焦距12mm。dot_spacing = 5.4*distance/12000 mm，典型值0.54mm（1200） 
-	// cuda_filter_radius_outlier_removal << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_mask_,0.5,2,4); 
-	// cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_); 
+	cuda_filter_radius_outlier_removal << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_mask_,0.5,2.5,6); 
+	cuda_removal_points_base_mask << <blocksPerGrid, threadsPerBlock >> > (image_height_,image_width_,d_point_cloud_map_,d_depth_map_,d_mask_); 
 
     // cudaDeviceSynchronize();
 	// cv::Mat point_cloud_map(1200, 1920, CV_32FC3, cv::Scalar(0.0));  

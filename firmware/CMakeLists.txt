@@ -47,6 +47,19 @@ link_libraries(${OPENCV_DIR}/JetsonGPIO/lib/libJetsonGPIO.so.1)
 
 include_directories(/usr/local/cuda-10.2/targets/aarch64-linux/include/)
 link_libraries(/usr/lib/libgxiapi.so)
-add_executable(camera_server camera_server.cpp system_config_settings.cpp camera_dh.cpp i2c.cpp lightcrafter3010.cpp easylogging++.cc encode_cuda.cu configure_standard_plane.cpp configure_auto_exposure.cpp)
+add_executable(camera_server
+                    camera_server_new.cpp 
+                    system_config_settings.cpp 
+                    camera_dh.cpp 
+                    i2c.cpp 
+                    lightcrafter3010.cpp 
+                    easylogging++.cc 
+                    encode_cuda.cu 
+                    configure_standard_plane.cpp 
+                    configure_auto_exposure.cpp
+                    scan3d.cpp
+                    camera_galaxy.cpp
+                    camera.cpp
+                    )
 target_sources(camera_server PUBLIC "../test/LookupTableFunction.cpp") 
 target_link_libraries(camera_server PRIVATE Threads::Threads)

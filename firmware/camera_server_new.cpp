@@ -15,7 +15,7 @@
 #include <time.h>
 #include <mutex>
 #include <thread>
-#include "lightcrafter3010.h"
+// #include "lightcrafter3010.h"
 #include "easylogging++.h"
 #include "encode_cuda.cuh"
 #include "system_config_settings.h"
@@ -23,12 +23,14 @@
 #include "configure_standard_plane.h"
 #include "../test/LookupTableFunction.h" 
 #include "configure_auto_exposure.h"
-#include <JetsonGPIO.h> 
+#include <JetsonGPIO.h>
+#include "scan3d.h"
 
 INITIALIZE_EASYLOGGINGPP
 #define OUTPUT_PIN     12       // BOARD pin 32, BCM pin 12
 
- 
+
+Scan3D scan3d_machine_;
 
 std::random_device rd;
 std::mt19937 rand_num(rd());
@@ -2433,22 +2435,32 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
     {
         return DF_FAILED;	
     }
+    int depth_buf_size = 1920 * 1200 * 4;
+    int brightness_buf_size = 1920 * 1200 * 1;
+    unsigned char *brightness = NULL;
+    float *depth_map = NULL;
 
-    int depth_buf_size = 1920*1200*4;
-    float* depth_map = new float[depth_buf_size];
+    LOG(INFO)<<"captureFrame04";
+    scan3d_machine_.captureFrame04();
+     
+    scan3d_machine_.getPtrBrightness(brightness);
+    scan3d_machine_.getPtrDepth(depth_map);
 
-    int brightness_buf_size = 1920*1200*1;
-    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+    // int depth_buf_size = 1920*1200*4;
+    // float* depth_map = new float[depth_buf_size];
 
-    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+    // int brightness_buf_size = 1920*1200*1;
+    // unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
-    lc3010.pattern_mode04(); 
-    camera.captureFrame04ToGpu();
+    // camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+
+    // lc3010.pattern_mode04(); 
+    // camera.captureFrame04ToGpu();
   
-    camera.copyBrightness((char*)brightness);
+    // camera.copyBrightness((char*)brightness);
     // reconstruct_copy_brightness_from_cuda_memory(brightness); 
     LOG(INFO)<<"copy depth";
-    reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
+    // reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
  
     LOG(INFO)<<"Reconstruct Frame04 Finished!";
 
@@ -2462,38 +2474,7 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
 
 
     }
-
-    //基于置信图最大轮廓滤波
-    if(false)
-    {
-        int nr = 1200;
-        int nc = 1920;
-        cv::Mat confidence_mat(nr,nc,CV_32FC1,cv::Scalar(0.));
-        reconstruct_copy_confidence_from_cuda_memory((float*)confidence_mat.data);
-        cv::Mat confidence_mask;
-        findMaskBaseConfidence(confidence_mat,15,confidence_mask);
-
-        for(int r= 0;r< nr;r++)
-        {
-            uchar* ptr_m = confidence_mask.ptr<uchar>(r);
-            for(int c = 0;c< nc;c++)
-            {
-                if(0 == ptr_m[c])
-                {
-                    depth_map[r*nc+c] = 0.0;
-                }
-            }
-
-        }
-        
-        LOG(INFO) << "filter base confidence";
-    }
-
-    // cv::Mat brightness_mat(1200, 1920, CV_8UC1, brightness);
-    // float average_pixel = 0;
-    // float over_exposure_rate = 0;
-    // ConfigureAutoExposure auto_exposure_machine;
-    // auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
+  
 
     printf("start send depth, buffer_size=%d\n", depth_buf_size);
     int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
@@ -4673,80 +4654,82 @@ int init()
 
     brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
 
-    if(!camera.openCamera())
-    { 
-        LOG(INFO)<<"Open Camera Error!";
-    }
+    // if(!camera.openCamera())
+    // { 
+    //     LOG(INFO)<<"Open Camera Error!";
+    // }
     
 
-    camera.switchToScanMode();
-    lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
-    cuda_malloc_memory();
-    int ret = read_calib_param();
+    // camera.switchToScanMode();
+    // lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
+    // cuda_malloc_memory();
+    // int ret = read_calib_param();
 
-    if(DF_FAILED == ret)
-    { 
-        LOG(INFO)<<"Read Calib Param Error!";
-    }
+    // if(DF_FAILED == ret)
+    // { 
+    //     LOG(INFO)<<"Read Calib Param Error!";
+    // }
 
-    cuda_copy_calib_data(param.camera_intrinsic, 
-		         param.projector_intrinsic, 
-			 param.camera_distortion,
-	                 param.projector_distortion, 
-			 param.rotation_matrix, 
-			 param.translation_matrix); 
+    // cuda_copy_calib_data(param.camera_intrinsic, 
+	// 	         param.projector_intrinsic, 
+	// 		 param.camera_distortion,
+	//                  param.projector_distortion, 
+	// 		 param.rotation_matrix, 
+	// 		 param.translation_matrix); 
 
-	LookupTableFunction lookup_table_machine_; 
-    MiniLookupTableFunction minilookup_table_machine_;
+	// LookupTableFunction lookup_table_machine_; 
+    // MiniLookupTableFunction minilookup_table_machine_;
 
-	lookup_table_machine_.setCalibData(param);
-    minilookup_table_machine_.setCalibData(param);
+	// lookup_table_machine_.setCalibData(param);
+    // minilookup_table_machine_.setCalibData(param);
 
-    LOG(INFO)<<"start read table:";
+    // LOG(INFO)<<"start read table:";
     
-    cv::Mat xL_rotate_x;
-    cv::Mat xL_rotate_y;
-    cv::Mat rectify_R1;
-    cv::Mat pattern_mapping;
-    cv::Mat pattern_minimapping;
+    // cv::Mat xL_rotate_x;
+    // cv::Mat xL_rotate_y;
+    // cv::Mat rectify_R1;
+    // cv::Mat pattern_mapping;
+    // cv::Mat pattern_minimapping;
 
-    bool read_map_ok = lookup_table_machine_.readTableFloat("./", xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
-    bool read_minimap_ok = minilookup_table_machine_.readTableFloat("./", xL_rotate_x, xL_rotate_y, rectify_R1, pattern_minimapping);
+    // bool read_map_ok = lookup_table_machine_.readTableFloat("./", xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
+    // bool read_minimap_ok = minilookup_table_machine_.readTableFloat("./", xL_rotate_x, xL_rotate_y, rectify_R1, pattern_minimapping);
   
-    if(read_map_ok)
-    {  
-        LOG(INFO)<<"read table finished!";
-	    cv::Mat R1_t = rectify_R1.t();
-        xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
-        xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
-        R1_t.convertTo(R1_t, CV_32F);
-        pattern_mapping.convertTo(pattern_mapping, CV_32F);
+    // if(read_map_ok)
+    // {  
+    //     LOG(INFO)<<"read table finished!";
+	//     cv::Mat R1_t = rectify_R1.t();
+    //     xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
+    //     xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
+    //     R1_t.convertTo(R1_t, CV_32F);
+    //     pattern_mapping.convertTo(pattern_mapping, CV_32F);
 
-        LOG(INFO)<<"start copy table:";
-        reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
-        LOG(INFO)<<"copy finished!";
+    //     LOG(INFO)<<"start copy table:";
+    //     reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
+    //     LOG(INFO)<<"copy finished!";
 
-        float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
-        reconstruct_set_baseline(b);
-    }
-    if (read_minimap_ok)
-    {
-        cv::Mat R1_t = rectify_R1.t();
-        xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
-        xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
-        R1_t.convertTo(R1_t, CV_32F);
-        pattern_minimapping.convertTo(pattern_minimapping, CV_32F);
+    //     float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
+    //     reconstruct_set_baseline(b);
+    // }
+    // if (read_minimap_ok)
+    // {
+    //     cv::Mat R1_t = rectify_R1.t();
+    //     xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
+    //     xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
+    //     R1_t.convertTo(R1_t, CV_32F);
+    //     pattern_minimapping.convertTo(pattern_minimapping, CV_32F);
 
-        LOG(INFO) << "start copy minitable:";
-        reconstruct_copy_minitalbe_to_cuda_memory((float*)pattern_minimapping.data, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)R1_t.data);
-        LOG(INFO) << "copy minitable finished!";
+    //     LOG(INFO) << "start copy minitable:";
+    //     reconstruct_copy_minitalbe_to_cuda_memory((float*)pattern_minimapping.data, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)R1_t.data);
+    //     LOG(INFO) << "copy minitable finished!";
 
-        float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
-        reconstruct_set_baseline(b);
-    }
+    //     float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
+    //     reconstruct_set_baseline(b);
+    // }
 
-    float temperature_val = read_temperature(0); 
-    LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
+    // float temperature_val = read_temperature(0); 
+    // LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
+
+    scan3d_machine_.init();
 
     int version= 0;
     lc3010.read_dmd_device_id(version);
