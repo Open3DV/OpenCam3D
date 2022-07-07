@@ -11,7 +11,7 @@ CameraGalaxy::~CameraGalaxy()
 }
 
 
-bool CameraGalaxy::getCameraBuff(unsigned char* buf)
+bool CameraGalaxy::grap(unsigned char* buf)
 {
 
     LOG(INFO) << "capture:";
@@ -41,12 +41,10 @@ bool CameraGalaxy::getCameraBuff(unsigned char* buf)
     return true;
 }
 
-bool CameraGalaxy::setCameraStream(bool on)
+bool CameraGalaxy::streamOn()
 {
     GX_STATUS status = GX_STATUS_SUCCESS;
-    
-    if(on)
-    {
+ 
         status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON); 
         if(status != GX_STATUS_SUCCESS)
         {
@@ -62,17 +60,16 @@ bool CameraGalaxy::setCameraStream(bool on)
             LOG(INFO) << "Stream On Error: "<<status;
             return false;
         }
-    }
-    else
-    {
-        // off
-        std::thread stop_thread(GXStreamOff, hDevice_);
-        stop_thread.detach();
-    }
-    
 
-    return true;
+        return true;
 }
+
+bool CameraGalaxy::streamOff()
+{
+    std::thread stop_thread(GXStreamOff, hDevice_);
+    stop_thread.detach();
+}
+ 
 
 bool CameraGalaxy::openCamera()
 {
@@ -131,14 +128,14 @@ bool CameraGalaxy::openCamera()
 
         /***********************************************************************************************/
         //�� �� �� �� ֵ
-        status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, scan_camera_exposure_);
+        status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, 12000.0);
         //�� �� �� �� �� �� �� ��
         status = GXSetEnum(hDevice_, GX_ENUM_EXPOSURE_AUTO, GX_EXPOSURE_AUTO_OFF);
 
         //ѡ �� �� �� ͨ �� �� ��
         status = GXSetEnum(hDevice_, GX_ENUM_GAIN_SELECTOR, GX_GAIN_SELECTOR_ALL); 
         //�� �� �� �� ֵ
-        status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, scan_camera_gain_); 
+        status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, 0.0); 
         //�� �� �� �� ѡ �� Ϊ Line2
         status = GXSetEnum(hDevice_, GX_ENUM_LINE_SELECTOR, GX_ENUM_LINE_SELECTOR_LINE2);
         //�� �� �� �� �� �� Ϊ �� ��
@@ -151,13 +148,11 @@ bool CameraGalaxy::openCamera()
 
         status = GXSetAcqusitionBufferNumber(hDevice_, 72);
         camera_opened_state_ = true;
+ 
+        status = GXGetInt(hDevice_, GX_INT_WIDTH, &image_width_); 
+        status = GXGetInt(hDevice_, GX_INT_HEIGHT, &image_height_); 
 
-        long int width = 0,height = 0;
-        status = GXGetInt(hDevice_, GX_INT_WIDTH, &width); 
-        status = GXGetInt(hDevice_, GX_INT_HEIGHT, &height); 
-
-        image_width_ = width;
-        image_height_ = height;
+ 
     }
  
  
@@ -211,11 +206,11 @@ bool CameraGalaxy::switchToExternalTriggerMode()
     return true;
     
 }
-bool CameraGalaxy::getExposure(float &val)
+
+bool CameraGalaxy::getExposure(double &val)
 {
-    GX_STATUS status = GX_STATUS_SUCCESS; 
-    double exposure = 0;
-    status = GXGetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, &exposure);
+    GX_STATUS status = GX_STATUS_SUCCESS;  
+    status = GXGetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, &val);
 
     if (status != GX_STATUS_SUCCESS)
     {
@@ -223,12 +218,11 @@ bool CameraGalaxy::getExposure(float &val)
         LOG(INFO) << "Error Status: " << status;
         return false;
     }
-
-    val = exposure;
+ 
 
     return true;
 }
-bool CameraGalaxy::setExposure(float val)
+bool CameraGalaxy::setExposure(double val)
 {
     GX_STATUS status = GX_STATUS_SUCCESS; 
     status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, val);
@@ -243,11 +237,10 @@ bool CameraGalaxy::setExposure(float val)
 	return true;
 }
 
-bool CameraGalaxy::getGain(float &val)
+bool CameraGalaxy::getGain(double &val)
 {
-    GX_STATUS status = GX_STATUS_SUCCESS; 
-    double gain = 0;
-    status = GXGetFloat(hDevice_, GX_FLOAT_GAIN, &gain); 
+    GX_STATUS status = GX_STATUS_SUCCESS;  
+    status = GXGetFloat(hDevice_, GX_FLOAT_GAIN, &val); 
 
     if(status != GX_STATUS_SUCCESS)
     { 
@@ -255,11 +248,10 @@ bool CameraGalaxy::getGain(float &val)
         LOG(INFO)<<"Error Status: "<<status;
         return false;
     } 
-
-    val = gain;
+ 
 	return true; 
 }
-bool CameraGalaxy::setGain(float val)
+bool CameraGalaxy::setGain(double val)
 {
     GX_STATUS status = GX_STATUS_SUCCESS; 
     status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, val); 

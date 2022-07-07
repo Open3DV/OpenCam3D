@@ -14,14 +14,16 @@ public:
 	bool switchToInternalTriggerMode(); 
 	bool switchToExternalTriggerMode();
 
-	bool getExposure(float &val); 
-	bool setExposure(float val); 
+	bool getExposure(double &val); 
+	bool setExposure(double val); 
 
-	bool getGain(float &value);
-	bool setGain(float value);  
+	bool getGain(double &value);
+	bool setGain(double value);  
 
-    bool setCameraStream(bool on);
-    bool getCameraBuff(unsigned char* buf);
+	bool streamOn(); 
+	bool streamOff();
+ 
+    bool grap(unsigned char* buf);
 
 private:
    

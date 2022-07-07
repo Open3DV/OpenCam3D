@@ -20,12 +20,25 @@ bool Scan3D::init()
     if(!camera_->openCamera())
     { 
         LOG(INFO)<<"Open Galaxy Camera Error!";
+
+        delete camera_;
+        camera_ = new CameraBasler();
+        if (!camera_->openCamera())
+        {
+            LOG(INFO) << "Open Basler Camera Error!"; 
+            return false;
+        }
+        else
+        { 
+            LOG(INFO)<<"Open Basler Camera:";
+        }
     }
     else
     {
         LOG(INFO)<<"Open Galaxy Camera:";
     }
-    camera_->switchToExternalTriggerMode();     
+    camera_->switchToExternalTriggerMode();    
+    LOG(INFO)<<"switchToExternalTriggerMode!"; 
 
     camera_->getImageSize(image_width_,image_height_);
 
@@ -39,6 +52,7 @@ bool Scan3D::init()
     lc3010_.init();  
     lc3010_.SetLedCurrent(1023,1023,1023);
 
+    LOG(INFO)<<"lc3010 init"; 
 
 /**********************************************************************************************/
 
@@ -115,7 +129,7 @@ bool Scan3D::captureFrame04()
 {
 
     lc3010_.pattern_mode04();
-    if (!camera_->setCameraStream(true))
+    if (!camera_->streamOn())
     {
         LOG(INFO) << "Stream On Error";
         return false;
@@ -127,11 +141,13 @@ bool Scan3D::captureFrame04()
 
     for (int i = 0; i < 19; i++)
     {
-        if (!camera_->getCameraBuff(buf))
+        LOG(INFO)<<"grap "<<i<<" image:";
+        if (!camera_->grap(buf))
         {
-            camera_->setCameraStream(false);
+            camera_->streamOff();
             return false;
         }
+        LOG(INFO)<<"finished!";
 
         parallel_cuda_copy_signal_patterns(buf, i);
 
@@ -179,6 +195,11 @@ bool Scan3D::captureFrame04()
         }
     }
 
+    if (!camera_->streamOff())
+    {
+        LOG(INFO) << "Stream Off Error";
+        return false;
+    }
     
     reconstruct_copy_depth_from_cuda_memory(buff_depth_);
     reconstruct_copy_brightness_from_cuda_memory(buff_brightness_);
@@ -207,12 +228,12 @@ bool Scan3D::readCalibParam()
     return true;
 }
 
-void Scan3D::getPtrBrightness(unsigned char* &ptr)
-{
-    ptr = buff_brightness_;
+void Scan3D::copyBrightnessData(unsigned char* &ptr)
+{ 
+	memcpy(ptr, buff_brightness_, sizeof(unsigned char)*image_height_*image_width_); 
 }
 
-void Scan3D::getPtrDepth(float* &ptr)
-{
-    ptr = buff_depth_;
+void Scan3D::copyDepthData(float* &ptr)
+{ 
+	memcpy(ptr, buff_depth_, sizeof(float)*image_height_*image_width_);
 }

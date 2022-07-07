@@ -15,28 +15,26 @@ public:
 
 	virtual bool switchToExternalTriggerMode();
 
-	virtual bool getExposure(float &val); 
-	virtual bool setExposure(float val); 
+	virtual bool getExposure(double &val){}; 
+	virtual bool setExposure(double val){}; 
     
-	virtual bool getGain(float &val);
-	virtual bool setGain(float val);
-	
-    virtual bool setCameraStream(bool on){};
-    virtual bool getCameraBuff(unsigned char* buf){};
+	virtual bool getGain(double &val){};
+	virtual bool setGain(double val){};
+	  
+	virtual bool streamOn(){}; 
+	virtual bool streamOff(){};
+
+    virtual bool grap(unsigned char* buf){};
 
 	bool getImageSize(int &width,int &height);
 
 protected:
  
 	bool camera_opened_state_; 
+ 
 
-	//条纹扫描时，相机曝光值
-	float scan_camera_exposure_;
-	//条纹扫描时，相机增益值
-	float scan_camera_gain_;
-
-	int image_width_;
-	int image_height_;
+	long int image_width_;
+	long int image_height_;
  
 };
 

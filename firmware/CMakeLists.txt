@@ -47,6 +47,10 @@ link_libraries(${OPENCV_DIR}/JetsonGPIO/lib/libJetsonGPIO.so.1)
 
 include_directories(/usr/local/cuda-10.2/targets/aarch64-linux/include/)
 link_libraries(/usr/lib/libgxiapi.so)
+
+include_directories(/opt/pylon/include)
+link_libraries(/opt/pylon/lib/libpylonc.so)
+
 add_executable(camera_server
                     camera_server_new.cpp 
                     system_config_settings.cpp 
@@ -59,6 +63,7 @@ add_executable(camera_server
                     configure_auto_exposure.cpp
                     scan3d.cpp
                     camera_galaxy.cpp
+                    camera_basler.cpp
                     camera.cpp
                     )
 target_sources(camera_server PUBLIC "../test/LookupTableFunction.cpp") 

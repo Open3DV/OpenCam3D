@@ -2435,22 +2435,21 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
     {
         return DF_FAILED;	
     }
-    int depth_buf_size = 1920 * 1200 * 4;
-    int brightness_buf_size = 1920 * 1200 * 1;
-    unsigned char *brightness = NULL;
-    float *depth_map = NULL;
+
+    int depth_buf_size = 1920*1200*4;
+    float* depth_map = new float[depth_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+ 
 
     LOG(INFO)<<"captureFrame04";
     scan3d_machine_.captureFrame04();
      
-    scan3d_machine_.getPtrBrightness(brightness);
-    scan3d_machine_.getPtrDepth(depth_map);
+    scan3d_machine_.copyBrightnessData(brightness);
+    scan3d_machine_.copyDepthData(depth_map);
 
-    // int depth_buf_size = 1920*1200*4;
-    // float* depth_map = new float[depth_buf_size];
 
-    // int brightness_buf_size = 1920*1200*1;
-    // unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
     // camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
 

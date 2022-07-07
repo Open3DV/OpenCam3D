@@ -1,5 +1,6 @@
 #pragma once
 #include "camera_galaxy.h"
+#include "camera_basler.h"
 #include "lightcrafter3010.h"
 #include "camera_param.h"
 
@@ -16,9 +17,9 @@ public:
  
     bool readCalibParam();
  
-    void getPtrBrightness(unsigned char* &ptr);
+    void copyBrightnessData(unsigned char* &ptr);
     
-    void getPtrDepth(float* &ptr);
+    void copyDepthData(float* &ptr);
 
 private:
  
