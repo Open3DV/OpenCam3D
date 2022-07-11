@@ -1,6 +1,9 @@
 #pragma once
 #include "GxIAPI.h" 
 #include "camera.h"
+#include <chrono>         // std::chrono::milliseconds
+#include <thread>         // std::thread
+#include <mutex>          // std::timed_mutex
 
 class CameraGalaxy: public Camera
 {
@@ -26,9 +29,15 @@ public:
     bool grap(unsigned char* buf);
 
 private:
+	void streamOffThread();
+
+private:
    
  
     GX_DEV_HANDLE hDevice_;
     
     PGX_FRAME_BUFFER pFrameBuffer_; 
+
+	std::timed_mutex stream_mutex_;
+ 
 };

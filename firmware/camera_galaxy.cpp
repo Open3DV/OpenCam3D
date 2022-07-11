@@ -44,30 +44,55 @@ bool CameraGalaxy::grap(unsigned char* buf)
 bool CameraGalaxy::streamOn()
 {
     GX_STATUS status = GX_STATUS_SUCCESS;
- 
-        status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON); 
-        if(status != GX_STATUS_SUCCESS)
-        {
-            
-            LOG(INFO) << "GXSetEnum Error: "<<status;
-            return false;
-        }
 
-        status = GXStreamOn(hDevice_); 
-        if(status != GX_STATUS_SUCCESS)
-        {
-            
-            LOG(INFO) << "Stream On Error: "<<status;
-            return false;
-        }
+    while (!stream_mutex_.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "GXStreamOn --";
+    }
 
-        return true;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
+    if (status != GX_STATUS_SUCCESS)
+    {
+
+        LOG(INFO) << "GXSetEnum Error: " << status;
+        return false;
+    }
+
+    LOG(INFO) << "GXStreamOn";
+    status = GXStreamOn(hDevice_);
+    if (status != GX_STATUS_SUCCESS)
+    {
+
+        LOG(INFO) << "Stream On Error: " << status;
+        return false;
+    }
+
+    stream_mutex_.unlock();
+
+    return true;
+}
+
+
+void CameraGalaxy::streamOffThread()
+{
+    while (!stream_mutex_.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "GXStreamOff --";
+    }
+
+    GXStreamOff(hDevice_);
+    LOG(INFO) << "Thread GXStreamOff";
+    stream_mutex_.unlock();
 }
 
 bool CameraGalaxy::streamOff()
 {
-    std::thread stop_thread(GXStreamOff, hDevice_);
+    // std::thread stop_thread(GXStreamOff, hDevice_);
+    // stop_thread.detach();
+    
+    std::thread stop_thread(&CameraGalaxy::streamOffThread,this);
     stop_thread.detach();
+    return true;
 }
  
 
@@ -228,7 +253,7 @@ bool CameraGalaxy::setExposure(double val)
     status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, val);
 
 
-    if(status == GX_STATUS_SUCCESS)
+    if(status != GX_STATUS_SUCCESS)
     {
         LOG(INFO)<<"Error Status: "<<status;
         return false;

@@ -15,7 +15,6 @@
 #include <time.h>
 #include <mutex>
 #include <thread>
-// #include "lightcrafter3010.h"
 #include "easylogging++.h"
 #include "encode_cuda.cuh"
 #include "system_config_settings.h"
@@ -30,7 +29,7 @@ INITIALIZE_EASYLOGGINGPP
 #define OUTPUT_PIN     12       // BOARD pin 32, BCM pin 12
 
 
-Scan3D scan3d_machine_;
+Scan3D scan3d_;
 
 std::random_device rd;
 std::mt19937 rand_num(rd());
@@ -1196,98 +1195,117 @@ int handle_cmd_get_raw_04_repetition(int client_sock)
 
 int handle_cmd_get_raw_04(int client_sock)
 {
-    lc3010.pattern_mode04();
-
+  
     if(check_token(client_sock) == DF_FAILED)
     {
         return DF_FAILED;	
-    }
-
+    } 
 
     int image_num= 19;
 
-    //cv::Mat image = get_mat();
-    //lc3010.start_pattern_sequence();
-    int buffer_size = 1920*1200*image_num;
-    char* buffer = new char[buffer_size];
-    camera.captureRawTest(image_num,buffer);
+    int width = 0;
+    int height = 0;
 
-    printf("start send image, buffer_size=%d\n", buffer_size);
-    int ret = send_buffer(client_sock, buffer, buffer_size);
-    printf("ret=%d\n", ret);
+    scan3d_.getCameraResolution(width,height);
+ 
+    int buffer_size = height*width*image_num;
+    unsigned char* buffer = new unsigned char[buffer_size];
+    
+    scan3d_.captureRaw04(buffer); 
+
+    LOG(INFO)<<"start send image, buffer_size= "<< buffer_size;
+    int ret = send_buffer(client_sock, (char*)buffer, buffer_size);
+
+    LOG(INFO)<<"ret= "<<ret;
+
     if(ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	return DF_FAILED;
+        LOG(INFO)<<"send error, close this connection!"; 
+        delete [] buffer;
+        return DF_FAILED;
     }
-    printf("image sent!\n");
+
+    LOG(INFO)<<"image sent!";
+
     delete [] buffer;
     return DF_SUCCESS;
+  
 }
 
 
 int handle_cmd_get_raw_03(int client_sock)
 {
-    lc3010.pattern_mode03();
-
+   
     if(check_token(client_sock) == DF_FAILED)
     {
         return DF_FAILED;	
-    }
-
+    } 
 
     int image_num= 31;
 
-    //cv::Mat image = get_mat();
-    //lc3010.start_pattern_sequence();
-    int buffer_size = 1920*1200*image_num;
-    char* buffer = new char[buffer_size];
-    camera.captureRawTest(image_num,buffer);
+    int width = 0;
+    int height = 0;
 
-    printf("start send image, buffer_size=%d\n", buffer_size);
-    int ret = send_buffer(client_sock, buffer, buffer_size);
-    printf("ret=%d\n", ret);
+    scan3d_.getCameraResolution(width,height);
+ 
+    int buffer_size = height*width*image_num;
+    unsigned char* buffer = new unsigned char[buffer_size];
+    
+    scan3d_.captureRaw03(buffer); 
+
+    LOG(INFO)<<"start send image, buffer_size= "<< buffer_size;
+    int ret = send_buffer(client_sock, (char*)buffer, buffer_size);
+
+    LOG(INFO)<<"ret= "<<ret;
+
     if(ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	return DF_FAILED;
+        LOG(INFO)<<"send error, close this connection!"; 
+        delete [] buffer;
+        return DF_FAILED;
     }
-    printf("image sent!\n");
+
+    LOG(INFO)<<"image sent!";
+
     delete [] buffer;
     return DF_SUCCESS;
 }
 
 
 int handle_cmd_get_raw_02(int client_sock)
-{
-    lc3010.pattern_mode02();
+{ 
 
     if(check_token(client_sock) == DF_FAILED)
     {
         return DF_FAILED;	
-    }
-
+    } 
 
     int image_num= 37;
 
-    //cv::Mat image = get_mat();
-    //lc3010.start_pattern_sequence();
-    int buffer_size = 1920*1200*image_num;
-    char* buffer = new char[buffer_size];
-    camera.captureRawTest(image_num,buffer);
+    int width = 0;
+    int height = 0;
 
-    printf("start send image, buffer_size=%d\n", buffer_size);
-    int ret = send_buffer(client_sock, buffer, buffer_size);
-    printf("ret=%d\n", ret);
+    scan3d_.getCameraResolution(width,height);
+ 
+    int buffer_size = height*width*image_num;
+    unsigned char* buffer = new unsigned char[buffer_size];
+    
+    scan3d_.captureRaw02(buffer); 
+
+    LOG(INFO)<<"start send image, buffer_size= "<< buffer_size;
+    int ret = send_buffer(client_sock, (char*)buffer, buffer_size);
+
+    LOG(INFO)<<"ret= "<<ret;
+
     if(ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	return DF_FAILED;
+        LOG(INFO)<<"send error, close this connection!"; 
+        delete [] buffer;
+        return DF_FAILED;
     }
-    printf("image sent!\n");
+
+    LOG(INFO)<<"image sent!";
+
     delete [] buffer;
     return DF_SUCCESS;
 }
@@ -1295,36 +1313,41 @@ int handle_cmd_get_raw_02(int client_sock)
 
 int handle_cmd_get_raw_01(int client_sock)
 {
-    //camera.warmupCamera();
-	
-    lc3010.pattern_mode01();
-
+   
     if(check_token(client_sock) == DF_FAILED)
     {
         return DF_FAILED;	
-    }
+    } 
 
-    int capture_num = 24;
+    int image_num= 24;
 
-    //cv::Mat image = get_mat();
-    //lc3010.start_pattern_sequence();
-    int buffer_size = 1920*1200*capture_num;
-    char* buffer = new char[buffer_size];
-    //camera.captureRawPhaseImages(buffer);
-    camera.captureRawTest(capture_num,buffer);
+    int width = 0;
+    int height = 0;
+
+    scan3d_.getCameraResolution(width,height);
+ 
+    int buffer_size = height*width*image_num;
+    unsigned char* buffer = new unsigned char[buffer_size];
     
-    printf("start send image, buffer_size=%d\n", buffer_size);
-    int ret = send_buffer(client_sock, buffer, buffer_size);
-    printf("ret=%d\n", ret);
+    scan3d_.captureRaw01(buffer); 
+
+    LOG(INFO)<<"start send image, buffer_size= "<< buffer_size;
+    int ret = send_buffer(client_sock, (char*)buffer, buffer_size);
+
+    LOG(INFO)<<"ret= "<<ret;
+
     if(ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	return DF_FAILED;
+        LOG(INFO)<<"send error, close this connection!"; 
+        delete [] buffer;
+        return DF_FAILED;
     }
-    printf("image sent!\n");
+
+    LOG(INFO)<<"image sent!";
+
     delete [] buffer;
     return DF_SUCCESS;
+   
 }
    
 
@@ -1548,103 +1571,120 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
     }
 
     LOG(INFO)<<"Mixed HDR Exposure:"; 
-  
-    std::vector<int> led_current_list; 
-    std::vector<int> camera_exposure_list; 
-    
-    for(int i= 0;i< system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num;i++)
-    {
-        led_current_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list[i]);
-        camera_exposure_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
- 
-    }
 
-    int depth_buf_size = 1920*1200*4;  
+
+    int depth_buf_size = 1920*1200*4;
+    float* depth_map = new float[depth_buf_size];
+
     int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
-    float* depth_map = new float[depth_buf_size]; 
-    unsigned char* brightness = new unsigned char[brightness_buf_size];
+    scan3d_.captureFrame04Hdr();
 
+         
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map);
 
-//    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
-
-    //关闭额外拍摄亮度图
-    camera.setGenerateBrightnessParam(1,generate_brightness_exposure_time);
-
-    for(int i= 0;i< led_current_list.size();i++)
-    {
-        int led_current = led_current_list[i];
-        lc3010.SetLedCurrent(led_current,led_current,led_current); 
-        
-        std::cout << "set led: " << led_current << std::endl;
  
-        float exposure = camera_exposure_list[i];
-
-        if (exposure > max_camera_exposure_)
-        {
-            exposure = max_camera_exposure_;
-            LOG(INFO) << "Set Camera Exposure Time Error!"
-                      << "\n";
-        }
-        else if (exposure < min_camera_exposure_)
-        {
-            exposure = min_camera_exposure_;
-            LOG(INFO) << "Set Camera Exposure Time Error!"
-                      << "\n";
-        }
-
-        LOG(INFO) << "Set Camera Exposure Time: " << exposure << "\n";
-
-        if(camera.setScanExposure(exposure))
-        {
-            lc3010.set_camera_exposure(exposure);
-        } 
-
-        lc3010.pattern_mode04();
+    LOG(INFO)<<"copy depth";  
+    LOG(INFO)<<"Reconstruct Frame04 Finished!";
+  
+//     std::vector<int> led_current_list; 
+//     std::vector<int> camera_exposure_list; 
     
-        camera.captureFrame04ToGpu();   
-        parallel_cuda_copy_result_to_hdr(i,18); 
-    }
+//     for(int i= 0;i< system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num;i++)
+//     {
+//         led_current_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list[i]);
+//         camera_exposure_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
+ 
+//     }
 
-    
-    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+//     int depth_buf_size = 1920*1200*4;  
+//     int brightness_buf_size = 1920*1200*1;
 
-
-    lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
-    LOG(INFO) << "Set Camera Exposure Time: " << system_config_settings_machine_.Instance().config_param_.camera_exposure_time << "\n"; 
-    if (camera.setScanExposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time))
-    {
-        lc3010.set_camera_exposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time);
-    }
-
-    cudaDeviceSynchronize();
+//     float* depth_map = new float[depth_buf_size]; 
+//     unsigned char* brightness = new unsigned char[brightness_buf_size];
 
 
-    parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
+// //    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
 
-    /******************************************************************************************************/
+//     //关闭额外拍摄亮度图
+//     camera.setGenerateBrightnessParam(1,generate_brightness_exposure_time);
 
-
-    switch (generate_brightness_model)
-    { 
-        case 2:
-            {
-                //发光，自定义曝光时间 
-                lc3010.enable_solid_field();
-                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
-                lc3010.disable_solid_field();
-            }
-        break;
-        case 3:
-            {
-                //不发光，自定义曝光时间 
-                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
-            }
-        break;
+//     for(int i= 0;i< led_current_list.size();i++)
+//     {
+//         int led_current = led_current_list[i];
+//         lc3010.SetLedCurrent(led_current,led_current,led_current); 
         
-        default:
-            break;
-    }
+//         std::cout << "set led: " << led_current << std::endl;
+ 
+//         float exposure = camera_exposure_list[i];
+
+//         if (exposure > max_camera_exposure_)
+//         {
+//             exposure = max_camera_exposure_;
+//             LOG(INFO) << "Set Camera Exposure Time Error!"
+//                       << "\n";
+//         }
+//         else if (exposure < min_camera_exposure_)
+//         {
+//             exposure = min_camera_exposure_;
+//             LOG(INFO) << "Set Camera Exposure Time Error!"
+//                       << "\n";
+//         }
+
+//         LOG(INFO) << "Set Camera Exposure Time: " << exposure << "\n";
+
+//         if(camera.setScanExposure(exposure))
+//         {
+//             lc3010.set_camera_exposure(exposure);
+//         } 
+
+//         lc3010.pattern_mode04();
+    
+//         camera.captureFrame04ToGpu();   
+//         parallel_cuda_copy_result_to_hdr(i,18); 
+//     }
+
+    
+//     camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+
+
+//     lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
+//     LOG(INFO) << "Set Camera Exposure Time: " << system_config_settings_machine_.Instance().config_param_.camera_exposure_time << "\n"; 
+//     if (camera.setScanExposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time))
+//     {
+//         lc3010.set_camera_exposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time);
+//     }
+
+//     cudaDeviceSynchronize();
+
+
+//     parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
+
+//     /******************************************************************************************************/
+
+
+//     switch (generate_brightness_model)
+//     { 
+//         case 2:
+//             {
+//                 //发光，自定义曝光时间 
+//                 lc3010.enable_solid_field();
+//                 bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
+//                 lc3010.disable_solid_field();
+//             }
+//         break;
+//         case 3:
+//             {
+//                 //不发光，自定义曝光时间 
+//                 bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
+//             }
+//         break;
+        
+//         default:
+//             break;
+//     }
   
 
     if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
@@ -2444,24 +2484,14 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
  
 
     LOG(INFO)<<"captureFrame04";
-    scan3d_machine_.captureFrame04();
+    scan3d_.captureFrame04();
      
-    scan3d_machine_.copyBrightnessData(brightness);
-    scan3d_machine_.copyDepthData(depth_map);
-
-
-
-    // camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
-
-    // lc3010.pattern_mode04(); 
-    // camera.captureFrame04ToGpu();
-  
-    // camera.copyBrightness((char*)brightness);
-    // reconstruct_copy_brightness_from_cuda_memory(brightness); 
-    LOG(INFO)<<"copy depth";
-    // reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
- 
     LOG(INFO)<<"Reconstruct Frame04 Finished!";
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map);
+
+ 
+    LOG(INFO)<<"copy depth";  
 
     if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
     { 
@@ -2469,19 +2499,17 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
         cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
         cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
         memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
-        LOG(INFO) << "Bilateral";
-
-
+        LOG(INFO) << "Bilateral"; 
     }
   
 
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
     int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+    LOG(INFO) << "depth ret= "<<ret;
 
     if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO) << "send error, close this connection!";
         // delete [] buffer;
         delete[] depth_map;
         delete[] brightness;
@@ -2489,9 +2517,9 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
         return DF_FAILED;
     }
 
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
     ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+    LOG(INFO) << "brightness ret= "<<ret;
 
     LOG(INFO) << "Send Frame04";
 
@@ -2508,7 +2536,7 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
 
         return DF_FAILED;
     }
-    printf("frame sent!\n");
+    LOG(INFO) << "frame sent!";
     // delete [] buffer;
     delete[] depth_map;
     delete[] brightness;
@@ -3133,12 +3161,15 @@ int handle_cmd_set_param_camera_gain(int client_sock)
         gain = 10;
     }
 
- 
     system_config_settings_machine_.Instance().config_param_.camera_gain = gain;
 
-    if (camera.setScanGain(system_config_settings_machine_.Instance().config_param_.camera_gain))
+    if(scan3d_.setParamGain(gain))
+    { 
+        LOG(INFO) << "Set Camera Gain: " << gain;
+    }
+    else
     {
-     LOG(INFO) << "Set Camera Gain: " << gain << "\n";  
+         LOG(INFO) << "Set Camera Gain Error!"; 
     }
 
  
@@ -3164,35 +3195,20 @@ int handle_cmd_set_param_camera_exposure(int client_sock)
     	return DF_FAILED;
     }
 
-    if(exposure> max_camera_exposure_)
-    {
-        exposure = max_camera_exposure_;
-        LOG(INFO) << "Set Camera Exposure Time Error!"
-                  << "\n";
+
+
+    if(scan3d_.setParamExposure(exposure))
+    { 
+        LOG(INFO) << "Set Camera Exposure Time: " << exposure;
+
+        system_config_settings_machine_.Instance().config_param_.camera_exposure_time = exposure;
+
     }
-    else if (exposure < min_camera_exposure_)
+    else
     {
-        exposure = min_camera_exposure_;
-        LOG(INFO) << "Set Camera Exposure Time Error!"
-                  << "\n";
-    }
-
-    // if(exposure>= 6000 && exposure<= 60000)
-    // {
-    system_config_settings_machine_.Instance().config_param_.camera_exposure_time = exposure;
-
-    LOG(INFO) << "Set Camera Exposure Time: " << exposure << "\n";
-
-    if (camera.setScanExposure(exposure))
-    {
-        lc3010.set_camera_exposure(exposure);
+         LOG(INFO) << "Set Camera Exposure Time Error!"; 
     }
 
-    // }
-    // else
-    // {
-    //     LOG(INFO)<<"Set Camera Exposure Time Error!"<<"\n";
-    // }
  
   
     return DF_SUCCESS;
@@ -3375,9 +3391,21 @@ int handle_cmd_set_param_mixed_hdr(int client_sock)
         {
  
             system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num = num;
-            memcpy(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list, param+1, sizeof(int) * 6);
-            memcpy(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list, param+7, sizeof(int) * 6);
+            memcpy(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list, param + 1, sizeof(int) * 6);
+            memcpy(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list, param + 7, sizeof(int) * 6);
             system_config_settings_machine_.Instance().firwmare_param_.hdr_model = 2;
+
+            std::vector<int> led_current_list;
+            std::vector<int> camera_exposure_list;
+
+            for (int i = 0; i < 6; i++)
+            {
+                led_current_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list[i]);
+                camera_exposure_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
+            }
+
+            scan3d_.setParamHdr(num, led_current_list, camera_exposure_list);
+
             return DF_SUCCESS;
         }
   
@@ -3394,7 +3422,9 @@ int handle_cmd_get_param_camera_version(int client_sock)
 
     int version = 0;
 
-    lc3010.read_dmd_device_id(version); 
+    scan3d_.getCameraVersion(version);
+
+    // lc3010.read_dmd_device_id(version); 
 
     int ret = send_buffer(client_sock, (char *)(&version), sizeof(int) * 1);
     if (ret == DF_FAILED)
@@ -3414,12 +3444,11 @@ int handle_cmd_get_param_camera_version(int client_sock)
 int handle_cmd_set_param_confidence(int client_sock)
 {
 
- if(check_token(client_sock) == DF_FAILED)
+    if(check_token(client_sock) == DF_FAILED)
     {
 	    return DF_FAILED;
     }
 	  
-
     float val = 0; 
     int ret = recv_buffer(client_sock, (char*)(&val), sizeof(float));
     if(ret == DF_FAILED)
@@ -3429,7 +3458,12 @@ int handle_cmd_set_param_confidence(int client_sock)
     }
     LOG(INFO) << "Set Confidence: "<<val;
     system_config_settings_machine_.Instance().firwmare_param_.confidence = val;
-    cuda_set_config(system_config_settings_machine_);
+    // cuda_set_config(system_config_settings_machine_);
+
+    if(!scan3d_.setParamConfidence(val))
+    { 
+        LOG(INFO)<<"Set Param Confidence Failed!";
+    }
 
     return DF_SUCCESS;
 }
@@ -3559,7 +3593,9 @@ int handle_cmd_set_param_led_current(int client_sock)
             brightness_current = led;
             lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current); 
             system_config_settings_machine_.Instance().config_param_.led_current = brightness_current;
-             return DF_SUCCESS;
+
+            scan3d_.setParamLedCurrent(led);
+            return DF_SUCCESS;
         }
  
      
@@ -3604,81 +3640,86 @@ int write_calib_param()
     
 int handle_set_camera_looktable(int client_sock)
 {
-    if(check_token(client_sock) == DF_FAILED)
+    if (check_token(client_sock) == DF_FAILED)
     {
-	return DF_FAILED;
+        return DF_FAILED;
     }
-	
+
     int ret = -1;
 
-    ret = recv_buffer(client_sock, (char*)(&param), sizeof(param));
-    if(ret == DF_FAILED)
+    ret = recv_buffer(client_sock, (char *)(&param), sizeof(param));
+    if (ret == DF_FAILED)
     {
-        LOG(INFO)<<"send error, close this connection!\n";
-	    return DF_FAILED;
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
     }
 
-     LOG(INFO)<<"recv param\n";
+    LOG(INFO) << "recv param\n";
     /**************************************************************************************/
-    cv::Mat xL_rotate_x(1200,1920,CV_32FC1,cv::Scalar(-2));
-    cv::Mat xL_rotate_y(1200,1920,CV_32FC1,cv::Scalar(-2));
-    cv::Mat rectify_R1(3,3,CV_32FC1,cv::Scalar(-2));
-    cv::Mat pattern_mapping(4000,2000,CV_32FC1,cv::Scalar(-2));
+    cv::Mat xL_rotate_x(1200, 1920, CV_32FC1, cv::Scalar(-2));
+    cv::Mat xL_rotate_y(1200, 1920, CV_32FC1, cv::Scalar(-2));
+    cv::Mat rectify_R1(3, 3, CV_32FC1, cv::Scalar(-2));
+    cv::Mat pattern_mapping(4000, 2000, CV_32FC1, cv::Scalar(-2));
 
-     ret = recv_buffer(client_sock, (char*)(xL_rotate_x.data), 1200*1920 *sizeof(float));
-    if(ret == DF_FAILED)
+    ret = recv_buffer(client_sock, (char *)(xL_rotate_x.data), 1200 * 1920 * sizeof(float));
+    if (ret == DF_FAILED)
     {
-        LOG(INFO)<<"send error, close this connection!\n";
-	    return DF_FAILED;
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
     }
-    LOG(INFO)<<"recv xL_rotate_x\n";
+    LOG(INFO) << "recv xL_rotate_x\n";
 
-     ret = recv_buffer(client_sock, (char*)(xL_rotate_y.data), 1200*1920 *sizeof(float));
-    if(ret == DF_FAILED)
+    ret = recv_buffer(client_sock, (char *)(xL_rotate_y.data), 1200 * 1920 * sizeof(float));
+    if (ret == DF_FAILED)
     {
-        LOG(INFO)<<"send error, close this connection!\n";
-	    return DF_FAILED;
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
     }
-    LOG(INFO)<<"recv xL_rotate_y\n";
+    LOG(INFO) << "recv xL_rotate_y\n";
 
-     ret = recv_buffer(client_sock, (char*)(rectify_R1.data), 3*3 *sizeof(float));
-    if(ret == DF_FAILED)
+    ret = recv_buffer(client_sock, (char *)(rectify_R1.data), 3 * 3 * sizeof(float));
+    if (ret == DF_FAILED)
     {
-        LOG(INFO)<<"send error, close this connection!\n";
-	    return DF_FAILED;
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
     }
-    LOG(INFO)<<"recv rectify_R1\n";
+    LOG(INFO) << "recv rectify_R1\n";
 
-     ret = recv_buffer(client_sock, (char*)(pattern_mapping.data), 4000*2000 *sizeof(float));
-    if(ret == DF_FAILED)
+    ret = recv_buffer(client_sock, (char *)(pattern_mapping.data), 4000 * 2000 * sizeof(float));
+    if (ret == DF_FAILED)
     {
-        LOG(INFO)<<"send error, close this connection!\n";
-	    return DF_FAILED;
+        LOG(INFO) << "send error, close this connection!\n";
+        return DF_FAILED;
     }
-    LOG(INFO)<<"recv pattern_mapping\n";
+    LOG(INFO) << "recv pattern_mapping\n";
 
-  
-	    cv::Mat R1_t = rectify_R1.t(); 
+    // cv::Mat R1_t = rectify_R1.t();
 
-        LOG(INFO)<<"start copy table:";
-        reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
-        LOG(INFO)<<"copy finished!";
+    // LOG(INFO) << "start copy table:";
+    // reconstruct_copy_talbe_to_cuda_memory((float *)pattern_mapping.data, (float *)xL_rotate_x.data, (float *)xL_rotate_y.data, (float *)R1_t.data);
+    // LOG(INFO) << "copy finished!";
 
-        float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
-        reconstruct_set_baseline(b);
- 
-    LOG(INFO)<<"copy looktable\n"; 
-    
+    // float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
+    // reconstruct_set_baseline(b);
+
+    // LOG(INFO) << "copy looktable\n";
+
     write_calib_param();
- 
-	LookupTableFunction lookup_table_machine_; 
-    lookup_table_machine_.saveBinMappingFloat("./combine_xL_rotate_x_cam1_iter.bin",xL_rotate_x);
-    lookup_table_machine_.saveBinMappingFloat("./combine_xL_rotate_y_cam1_iter.bin",xL_rotate_y);
-    lookup_table_machine_.saveBinMappingFloat("./R1.bin",rectify_R1);
-    lookup_table_machine_.saveBinMappingFloat("./single_pattern_mapping.bin",pattern_mapping);
 
-    LOG(INFO)<<"save looktable\n";
+    LookupTableFunction lookup_table_machine_;
+    lookup_table_machine_.saveBinMappingFloat("./combine_xL_rotate_x_cam1_iter.bin", xL_rotate_x);
+    lookup_table_machine_.saveBinMappingFloat("./combine_xL_rotate_y_cam1_iter.bin", xL_rotate_y);
+    lookup_table_machine_.saveBinMappingFloat("./R1.bin", rectify_R1);
+    lookup_table_machine_.saveBinMappingFloat("./single_pattern_mapping.bin", pattern_mapping);
 
+    LOG(INFO) << "save looktable ";
+
+    if(!scan3d_.loadCalibData())
+    {
+        LOG(INFO) << "load looktable error!";
+    }
+
+    LOG(INFO) << "load looktable";
     /***************************************************************************************/
 
     return DF_SUCCESS;
@@ -3744,14 +3785,14 @@ int handle_set_camera_minilooktable(int client_sock)
   
 	    cv::Mat R1_t = rectify_R1.t(); 
 
-        LOG(INFO)<<"start copy table:";
-        reconstruct_copy_minitalbe_to_cuda_memory((float*)pattern_minimapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
-        LOG(INFO)<<"copy finished!";
+    //     LOG(INFO)<<"start copy table:";
+    //     reconstruct_copy_minitalbe_to_cuda_memory((float*)pattern_minimapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
+    //     LOG(INFO)<<"copy finished!";
 
-        float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
-        reconstruct_set_baseline(b);
+    //     float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
+    //     reconstruct_set_baseline(b);
  
-    LOG(INFO)<<"copy looktable\n"; 
+    // LOG(INFO)<<"copy looktable\n"; 
     
     write_calib_param();
  
@@ -3763,6 +3804,12 @@ int handle_set_camera_minilooktable(int client_sock)
 
     LOG(INFO)<<"save minilooktable\n";
 
+    if(!scan3d_.loadCalibData())
+    {
+        LOG(INFO) << "load looktable error!";
+    }
+
+    LOG(INFO) << "load looktable";
     /***************************************************************************************/
 
     return DF_SUCCESS;
@@ -4644,91 +4691,31 @@ int handle_commands(int client_sock)
 }
 
 int init()
-{
-    // readSystemConfig();
-
+{  
     // init led indicator
 	GPIO::setmode(GPIO::BCM);                       // BCM mode
 	GPIO::setup(OUTPUT_PIN, GPIO::OUT, GPIO::LOW); // output pin, set to HIGH level
+ 
 
-    brightness_current = system_config_settings_machine_.Instance().config_param_.led_current;
+    scan3d_.init();
 
-    // if(!camera.openCamera())
-    // { 
-    //     LOG(INFO)<<"Open Camera Error!";
-    // }
-    
+    //set default param 
+    if(!scan3d_.setParamConfidence(system_config_settings_machine_.Instance().firwmare_param_.confidence))
+    { 
+        LOG(INFO)<<"Set Param Confidence Failed!";
+    }
 
-    // camera.switchToScanMode();
-    // lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
-    // cuda_malloc_memory();
-    // int ret = read_calib_param();
+    if(!scan3d_.setParamExposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time))
+    { 
+        LOG(INFO)<<"Set Param Exposure Failed!";
+    }
 
-    // if(DF_FAILED == ret)
-    // { 
-    //     LOG(INFO)<<"Read Calib Param Error!";
-    // }
+    if(!scan3d_.setParamGain(system_config_settings_machine_.Instance().config_param_.camera_gain))
+    { 
+        LOG(INFO)<<"Set Param Gain Failed!";
+    }
 
-    // cuda_copy_calib_data(param.camera_intrinsic, 
-	// 	         param.projector_intrinsic, 
-	// 		 param.camera_distortion,
-	//                  param.projector_distortion, 
-	// 		 param.rotation_matrix, 
-	// 		 param.translation_matrix); 
 
-	// LookupTableFunction lookup_table_machine_; 
-    // MiniLookupTableFunction minilookup_table_machine_;
-
-	// lookup_table_machine_.setCalibData(param);
-    // minilookup_table_machine_.setCalibData(param);
-
-    // LOG(INFO)<<"start read table:";
-    
-    // cv::Mat xL_rotate_x;
-    // cv::Mat xL_rotate_y;
-    // cv::Mat rectify_R1;
-    // cv::Mat pattern_mapping;
-    // cv::Mat pattern_minimapping;
-
-    // bool read_map_ok = lookup_table_machine_.readTableFloat("./", xL_rotate_x, xL_rotate_y, rectify_R1, pattern_mapping);
-    // bool read_minimap_ok = minilookup_table_machine_.readTableFloat("./", xL_rotate_x, xL_rotate_y, rectify_R1, pattern_minimapping);
-  
-    // if(read_map_ok)
-    // {  
-    //     LOG(INFO)<<"read table finished!";
-	//     cv::Mat R1_t = rectify_R1.t();
-    //     xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
-    //     xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
-    //     R1_t.convertTo(R1_t, CV_32F);
-    //     pattern_mapping.convertTo(pattern_mapping, CV_32F);
-
-    //     LOG(INFO)<<"start copy table:";
-    //     reconstruct_copy_talbe_to_cuda_memory((float*)pattern_mapping.data,(float*)xL_rotate_x.data,(float*)xL_rotate_y.data,(float*)R1_t.data);
-    //     LOG(INFO)<<"copy finished!";
-
-    //     float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
-    //     reconstruct_set_baseline(b);
-    // }
-    // if (read_minimap_ok)
-    // {
-    //     cv::Mat R1_t = rectify_R1.t();
-    //     xL_rotate_x.convertTo(xL_rotate_x, CV_32F);
-    //     xL_rotate_y.convertTo(xL_rotate_y, CV_32F);
-    //     R1_t.convertTo(R1_t, CV_32F);
-    //     pattern_minimapping.convertTo(pattern_minimapping, CV_32F);
-
-    //     LOG(INFO) << "start copy minitable:";
-    //     reconstruct_copy_minitalbe_to_cuda_memory((float*)pattern_minimapping.data, (float*)xL_rotate_x.data, (float*)xL_rotate_y.data, (float*)R1_t.data);
-    //     LOG(INFO) << "copy minitable finished!";
-
-    //     float b = sqrt(pow(param.translation_matrix[0], 2) + pow(param.translation_matrix[1], 2) + pow(param.translation_matrix[2], 2));
-    //     reconstruct_set_baseline(b);
-    // }
-
-    // float temperature_val = read_temperature(0); 
-    // LOG(INFO)<<"temperature: "<<temperature_val<<" deg";
-
-    scan3d_machine_.init();
 
     int version= 0;
     lc3010.read_dmd_device_id(version);

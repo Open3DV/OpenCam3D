@@ -15,6 +15,8 @@
 
 __device__ float computePointsDistance(float* p0,float* p1);
 
+bool cuda_set_confidence(float val);
+
 void cuda_set_config(struct SystemConfigDataStruct param);
 
 bool cuda_set_camera_version(int version);

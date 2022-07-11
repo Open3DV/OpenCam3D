@@ -7,6 +7,8 @@ Camera::Camera()
   
     image_width_= 0;
     image_height_= 0;
+
+    
 }
 
 Camera::~Camera()

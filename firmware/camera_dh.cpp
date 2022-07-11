@@ -569,11 +569,21 @@ bool CameraDh::captureFrame04RepetitionToGpu(int repetition_count)
     return true;
 }
 
+void thread_stream_off(GX_DEV_HANDLE hDevice)
+{   
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXStreamOff(hDevice);
+
+
+            LOG(INFO) << "GXStreamOff status=" << status;
+}
+
 bool CameraDh::captureFrame04ToGpu()
 {
     // switchToScanMode();
     // LOG(INFO) << "switchToScanMode";
 
+    LOG(INFO) << "GXStreamOn";
     PGX_FRAME_BUFFER pFrameBuffer; 
     GX_STATUS status = GX_STATUS_SUCCESS;
     status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON); 
@@ -604,6 +614,10 @@ bool CameraDh::captureFrame04ToGpu()
 
                         std::thread stop_thread(GXStreamOff,hDevice_);
                         stop_thread.detach();  
+            // LOG(INFO) << "GXStreamOff";
+            //             status = GXStreamOff(hDevice_); 
+            // LOG(INFO) << "GXStreamOff status=" << status;
+
                     }
                 }
 

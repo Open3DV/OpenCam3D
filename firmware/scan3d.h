@@ -3,7 +3,7 @@
 #include "camera_basler.h"
 #include "lightcrafter3010.h"
 #include "camera_param.h"
-
+#include "vector"
 
 class Scan3D
 {
@@ -13,22 +13,69 @@ public:
 
 	bool init();
 
+    bool setParamHdr(int num,std::vector<int> led_list,std::vector<int> exposure_list);
+
+    bool setParamExposure(int val);
+
+    bool setParamGain(float val);
+
+    bool setParamLedCurrent(int val);
+
+    bool setParamConfidence(float val);
+
+    bool setCameraVersion(int version);
+
+    void getCameraVersion(int &version);
+    
+    /************************************************************************/
+
+    bool captureRaw01(unsigned char* buff);
+
+    bool captureRaw02(unsigned char* buff);
+    
+    bool captureRaw03(unsigned char* buff);
+    
+    bool captureRaw04(unsigned char* buff);
+
     bool captureFrame04();
+
+    bool captureFrame04Hdr();
+    
+    /************************************************************************/
  
     bool readCalibParam();
+
+    bool loadCalibData();
+
+    /************************************************************************/
  
     void copyBrightnessData(unsigned char* &ptr);
     
     void copyDepthData(float* &ptr);
+
+    void getCameraResolution(int &width, int &height);
 
 private:
  
     Camera* camera_;
     LightCrafter3010 lc3010_;
 
+    int camera_version_;
+    
 
     struct CameraCalibParam calib_param_;
  
+ 
+    int hdr_num_; 
+    std::vector<int> led_current_list_; 
+    std::vector<int> camera_exposure_list_; 
+
+    int max_camera_exposure_;
+    int min_camera_exposure_;
+
+    int led_current_;
+    int camera_exposure_;
+    float camera_gain_;
 
     int image_width_;
     int image_height_;
