@@ -561,6 +561,32 @@ size_t LightCrafter3010::read_mcp3221(void* buffer, size_t buffer_size)
 	return	i2c_read(&_MCP3221, 0, buffer, buffer_size);
 }
 
+float LightCrafter3010::lookup_table(float fRntc)
+{
+    float temperature = 30.0;
+    float last = 0, current = 0;
+    int i = 0, number = 0;
+
+    last = abs(fRntc - R_table[0]);
+
+    for (i = 0; i < R_TABLE_NUM; i++)
+    {
+        current = abs(fRntc - R_table[i]);
+
+        if (current < last) 
+        {
+            last = current;
+            number = i;
+        }
+    }
+
+    temperature = number - 40.0;
+
+    printf("temperature = %f, R_table[%d] = %f\n", temperature, number, R_table[number]);
+
+    return temperature;
+}
+
 float LightCrafter3010::get_projector_temperature()
 {
     unsigned char buffer[2];
@@ -573,6 +599,9 @@ float LightCrafter3010::get_projector_temperature()
     // Rntc = 10 * (4096 - AD) / AD, unit=KO
     float fAD = OutputCode;
     float fRntc = 10.0 * (4096.0 - fAD) / fAD;
+    printf("R = %f\n", fRntc);
 
-    return fRntc;
+    float temperature = lookup_table(fRntc);
+
+    return temperature;
 }
