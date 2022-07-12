@@ -3266,15 +3266,17 @@ int handle_cmd_set_param_generate_brightness(int client_sock)
     	return DF_FAILED;
     }
 
-    generate_brightness_model = flag;
-    generate_brightness_exposure_time = exposure;
+  
+    if (scan3d_.setParamGenerateBrightness(flag, exposure))
+    {
+        generate_brightness_model = flag;
+        generate_brightness_exposure_time = exposure;
 
+        LOG(INFO) << "generate_brightness_model: " << generate_brightness_model << "\n";
+        LOG(INFO) << "generate_brightness_exposure_time: " << generate_brightness_exposure_time << "\n";
+    }
 
-    LOG(INFO)<<"generate_brightness_model: "<<generate_brightness_model<<"\n";
-    LOG(INFO)<<"generate_brightness_exposure_time: "<<generate_brightness_exposure_time<<"\n";
-
-    
-    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+    // camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
 
   
     return DF_SUCCESS;

@@ -15,13 +15,15 @@ public:
 
     bool setParamHdr(int num,std::vector<int> led_list,std::vector<int> exposure_list);
 
-    bool setParamExposure(int val);
+    bool setParamExposure(float exposure);
 
-    bool setParamGain(float val);
+    bool setParamGain(float gain);
 
-    bool setParamLedCurrent(int val);
+    bool setParamLedCurrent(int current);
 
-    bool setParamConfidence(float val);
+    bool setParamConfidence(float confidence);
+    
+    bool setParamGenerateBrightness(int model,int exposure);
 
     bool setCameraVersion(int version);
 
@@ -76,6 +78,9 @@ private:
     int led_current_;
     int camera_exposure_;
     float camera_gain_;
+
+    int generate_brightness_model_;
+    int generate_brightness_exposure_;
 
     int image_width_;
     int image_height_;

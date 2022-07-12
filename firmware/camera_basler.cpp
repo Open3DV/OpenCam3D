@@ -91,6 +91,11 @@ bool CameraBasler::grap(unsigned char* buf)
 bool CameraBasler::streamOn()
 {
 
+    while (!stream_mutex_.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "GXStreamOn --";
+    }
+
         GENAPIC_RESULT              res;    
         size_t                      nStreams;                 /* The number of streams the device provides. */
         /* Image grabbing is done using a stream grabber.
@@ -193,13 +198,20 @@ bool CameraBasler::streamOn()
         res = PylonDeviceExecuteCommandFeature( hDev_, "AcquisitionStart" );
         // CHECK( res );
 
+
+
+        stream_mutex_.unlock();
         return true;
 }
 
-
-bool CameraBasler::streamOff()
+void CameraBasler::streamOffThread()
 {
-    GENAPIC_RESULT              res;                      /* Return value of pylon methods. */ 
+    while (!stream_mutex_.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "GXStreamOff --";
+    }
+
+ GENAPIC_RESULT              res;                      /* Return value of pylon methods. */ 
     _Bool                       isReady;                  /* Used as an output parameter. */ 
     PylonGrabResult_t           grabResult;               /* Stores the result of a grab operation. */ 
     /* Clean up. */
@@ -246,6 +258,16 @@ bool CameraBasler::streamOff()
     /* ... Close the stream grabber. */
     res = PylonStreamGrabberClose( hGrabber_ );
     // CHECK( res );
+ 
+    LOG(INFO) << "Thread GXStreamOff";
+    stream_mutex_.unlock();
+}
+
+
+bool CameraBasler::streamOff()
+{
+    std::thread stop_thread(&CameraBasler::streamOffThread,this);
+    stop_thread.detach(); 
 
     return true;
 }
@@ -396,8 +418,15 @@ bool CameraBasler::closeCamera()
 }
 bool CameraBasler::switchToInternalTriggerMode()
 {
-    GENAPIC_RESULT res;   
-    res = PylonDeviceFeatureFromString( hDev_, "TriggerMode", "Off" );
+    GENAPIC_RESULT res;
+
+    res = PylonDeviceFeatureFromString(hDev_, "TriggerSelector", "FrameStart");
+    // CHECK( res );
+    res = PylonDeviceFeatureFromString(hDev_, "TriggerMode", "Off"); 
+    // CHECK( res );
+    res = PylonDeviceFeatureFromString(hDev_, "ExposureMode", "Timed");
+    // CHECK( res );
+
     if(GENAPI_E_OK != res)
     {
         LOG(INFO)<<"Set TriggerMode On Failed!";
@@ -450,6 +479,8 @@ bool CameraBasler::setExposure(double val)
         LOG(INFO)<<"Set ExposureTime Failed!";
         return false;
     } 
+    
+    LOG(INFO)<<"Set Camera ExposureTime: "<<val;
   
 	return true;
 }

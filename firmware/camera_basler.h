@@ -5,6 +5,9 @@
 
 #include <pylonc/PylonC.h>
 #include "camera.h"
+#include <chrono>         // std::chrono::milliseconds
+#include <thread>         // std::thread
+#include <mutex>          // std::timed_mutex
 
 
 #define NUM_BUFFERS 5         /* Number of buffers used for grabbing. */
@@ -31,7 +34,8 @@ public:
 	bool streamOff();
  
     bool grap(unsigned char* buf);
-
+private:
+	void streamOffThread();
 private:
 
     unsigned char*              buffers_[NUM_BUFFERS];     /* Buffers used for grabbing. */
@@ -40,4 +44,7 @@ private:
     PYLON_DEVICE_HANDLE         hDev_;                     /* Handle for the pylon device. */
     PYLON_STREAMGRABBER_HANDLE  hGrabber_;                 /* Handle for the pylon stream grabber. */
     PYLON_WAITOBJECT_HANDLE     hWait_;                    /* Handle used for waiting for a grab to be finished. */
+
+	
+	std::timed_mutex stream_mutex_;
 };

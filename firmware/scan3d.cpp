@@ -10,6 +10,9 @@ Scan3D::Scan3D()
     led_current_ = 1023;
     camera_exposure_ = 12000;
     camera_gain_ = 0;
+
+    generate_brightness_model_ = 1;
+    generate_brightness_exposure_ = 12000;
 }
 
 Scan3D::~Scan3D()
@@ -94,47 +97,47 @@ bool Scan3D::setParamHdr(int num,std::vector<int> led_list,std::vector<int> expo
     return true;
 }
 
-bool Scan3D::setParamExposure(int val)
+bool Scan3D::setParamExposure(float exposure)
 {
-    if (!camera_->setExposure(val))
+    if (!camera_->setExposure(exposure))
     {
         return false;
     }
 
-    lc3010_.set_camera_exposure(val);
+    lc3010_.set_camera_exposure(exposure);
   
-    camera_exposure_ = val;
+    camera_exposure_ = exposure;
 
     return true;
 }
 
-bool Scan3D::setParamGain(float val)
+bool Scan3D::setParamGain(float gain)
 {
-    if (!camera_->setGain(val))
+    if (!camera_->setGain(gain))
     {
          return false;
     }
 
-    camera_gain_ = val;
+    camera_gain_ = gain;
     
     return true;
 }
 
 
-bool Scan3D::setParamLedCurrent(int val)
+bool Scan3D::setParamLedCurrent(int current)
 {
 
-    lc3010_.SetLedCurrent(val,val,val);
+    lc3010_.SetLedCurrent(current,current,current);
 
-    led_current_ = val;
+    led_current_ = current;
 
     return true;
 }
 
 
-bool Scan3D::setParamConfidence(float val)
+bool Scan3D::setParamConfidence(float confidence)
 {
-    return cuda_set_confidence(val); 
+    return cuda_set_confidence(confidence); 
 }
 
 bool Scan3D::setCameraVersion(int version)
@@ -172,6 +175,20 @@ void Scan3D::getCameraVersion(int &version)
 {
     version = camera_version_;
 }
+
+bool Scan3D::setParamGenerateBrightness(int model, int exposure)
+{
+    if (model == 1 || model == 2 || model == 3)
+    {
+        generate_brightness_model_ = model;
+        generate_brightness_exposure_ = exposure;
+
+        return true;
+    }
+
+    return false;
+}
+/*******************************************************************************************************************************************/
 
 bool Scan3D::captureRaw01(unsigned char* buff)
 {
@@ -316,8 +333,9 @@ bool Scan3D::captureRaw04(unsigned char* buff)
 
 bool Scan3D::captureFrame04()
 {
-
+ 
     lc3010_.pattern_mode04();
+    LOG(INFO) << "Stream On:";
     if (!camera_->streamOn())
     {
         LOG(INFO) << "Stream On Error";
@@ -387,12 +405,73 @@ bool Scan3D::captureFrame04()
 
     delete[] img_ptr;
 
+
+
+    
+    reconstruct_copy_depth_from_cuda_memory(buff_depth_);
+    // reconstruct_copy_pointcloud_from_cuda_memory(buff_pointcloud_);
+
+    switch (generate_brightness_model_)
+    {
+        case 1:
+        { 
+            reconstruct_copy_brightness_from_cuda_memory(buff_brightness_);
+        }
+        break;
+        case 2:
+        {
+             
+            lc3010_.stop_pattern_sequence();
+            lc3010_.init();
+            //发光，自定义曝光时间
+            lc3010_.enable_solid_field();
+
+            camera_->streamOff();
+            LOG(INFO) << "Stream Off";
+            camera_->streamOn();
+            LOG(INFO) << "Stream On";
+            LOG(INFO) << "enable_solid_field generate brightness:";
+
+            camera_->switchToInternalTriggerMode();
+
+            camera_->setExposure(generate_brightness_exposure_);
+            
+            // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+            if(!camera_->grap(buff_brightness_))
+            { 
+                 LOG(INFO) << "grap generate brightness failed!";
+            }
+            else
+            {
+                LOG(INFO) << "grap generate brightness!";
+            }
+            
+            lc3010_.disable_solid_field();
+            camera_->switchToExternalTriggerMode();
+            camera_->setExposure(camera_exposure_);
+
+        }
+        break;
+    case 3:
+    {
+
+        // status = GXStreamOff(hDevice_);
+        // lc3010.stop_pattern_sequence();
+        // lc3010.init();
+        // switchToSingleShotMode();
+        // //不发光，自定义曝光时间
+        // bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_, brightness_buff_);
+        // switchToScanMode();
+    }
+    break; 
+    default:
+        break;
+    }
+
     camera_->streamOff();
     LOG(INFO) << "Stream Off";
 
-    reconstruct_copy_depth_from_cuda_memory(buff_depth_);
-    reconstruct_copy_brightness_from_cuda_memory(buff_brightness_);
-    // reconstruct_copy_pointcloud_from_cuda_memory(buff_pointcloud_);
 
     return true;
 }
