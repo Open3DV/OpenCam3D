@@ -188,6 +188,109 @@ bool Scan3D::setParamGenerateBrightness(int model, int exposure)
 
     return false;
 }
+
+/******************************************************************************************************************************************/
+
+
+bool Scan3D::captureTextureImage(int model,float exposure,unsigned char* buff)
+{ 
+
+
+    switch (model)
+    {
+        case 1:
+        { 
+            
+            camera_->switchToExternalTriggerMode();
+	        lc3010_.pattern_mode_brightness(); 
+            camera_->streamOn();
+            LOG(INFO) << "Stream On"; 
+            lc3010_.start_pattern_sequence();
+
+            if(!camera_->grap(buff))
+            { 
+                 LOG(INFO) << "grap generate brightness failed!";
+            }
+            else
+            {
+                LOG(INFO) << "grap generate brightness!";
+            }
+            camera_->streamOff();
+            LOG(INFO) << "Stream Off";
+        }
+        break;
+        case 2:
+        {
+             
+            lc3010_.stop_pattern_sequence();
+            lc3010_.init();
+            //发光，自定义曝光时间
+            lc3010_.enable_solid_field();
+
+            LOG(INFO) << "sleep:";
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            LOG(INFO) << "end";
+
+            camera_->switchToInternalTriggerMode(); 
+            camera_->setExposure(exposure); 
+            camera_->streamOn();
+            LOG(INFO) << "Stream On"; 
+
+            if(!camera_->grap(buff))
+            { 
+                 LOG(INFO) << "grap generate brightness failed!";
+            }
+            else
+            {
+                LOG(INFO) << "grap generate brightness!";
+            }
+
+            
+            camera_->streamOff();
+            LOG(INFO) << "Stream Off";
+            
+            lc3010_.disable_solid_field();
+            camera_->switchToExternalTriggerMode();
+            camera_->setExposure(camera_exposure_);
+        }
+        break;
+    case 3:
+    {
+
+            lc3010_.stop_pattern_sequence(); 
+            lc3010_.init(); 
+
+            camera_->switchToInternalTriggerMode(); 
+            camera_->setExposure(exposure); 
+            camera_->streamOn();
+            LOG(INFO) << "Stream On"; 
+  
+            if(!camera_->grap(buff))
+            { 
+                 LOG(INFO) << "grap generate brightness failed!";
+            }
+            else
+            {
+                LOG(INFO) << "grap generate brightness!";
+            }
+
+            
+            camera_->streamOff();
+            LOG(INFO) << "Stream Off";
+            camera_->switchToExternalTriggerMode();
+            camera_->setExposure(camera_exposure_);
+
+    }
+    break; 
+    default:
+        break;
+    }
+
+ 
+
+    return true;
+}
+
 /*******************************************************************************************************************************************/
 
 bool Scan3D::captureRaw01(unsigned char* buff)
@@ -405,74 +508,25 @@ bool Scan3D::captureFrame04()
 
     delete[] img_ptr;
 
-
+    camera_->streamOff();
+    LOG(INFO) << "Stream Off";
 
     
     reconstruct_copy_depth_from_cuda_memory(buff_depth_);
     // reconstruct_copy_pointcloud_from_cuda_memory(buff_pointcloud_);
 
-    switch (generate_brightness_model_)
-    {
-        case 1:
-        { 
-            reconstruct_copy_brightness_from_cuda_memory(buff_brightness_);
-        }
-        break;
-        case 2:
-        {
-             
-            lc3010_.stop_pattern_sequence();
-            lc3010_.init();
-            //发光，自定义曝光时间
-            lc3010_.enable_solid_field();
-
-            camera_->streamOff();
-            LOG(INFO) << "Stream Off";
-            camera_->streamOn();
-            LOG(INFO) << "Stream On";
-            LOG(INFO) << "enable_solid_field generate brightness:";
-
-            camera_->switchToInternalTriggerMode();
-
-            camera_->setExposure(generate_brightness_exposure_);
-            
-            // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-            if(!camera_->grap(buff_brightness_))
-            { 
-                 LOG(INFO) << "grap generate brightness failed!";
-            }
-            else
-            {
-                LOG(INFO) << "grap generate brightness!";
-            }
-            
-            lc3010_.disable_solid_field();
-            camera_->switchToExternalTriggerMode();
-            camera_->setExposure(camera_exposure_);
-
-        }
-        break;
-    case 3:
+    if (1 == generate_brightness_model_)
     {
 
-        // status = GXStreamOff(hDevice_);
-        // lc3010.stop_pattern_sequence();
-        // lc3010.init();
-        // switchToSingleShotMode();
-        // //不发光，自定义曝光时间
-        // bool capture_one_ret = captureSingleExposureImage(generate_brightness_exposure_time_, brightness_buff_);
-        // switchToScanMode();
+        reconstruct_copy_brightness_from_cuda_memory(buff_brightness_);
     }
-    break; 
-    default:
-        break;
+    else
+    {
+
+        captureTextureImage(generate_brightness_model_, generate_brightness_exposure_,buff_brightness_);
     }
 
-    camera_->streamOff();
-    LOG(INFO) << "Stream Off";
-
-
+ 
     return true;
 }
 
@@ -526,6 +580,12 @@ bool Scan3D::captureFrame04Hdr()
     }
 
     parallel_cuda_merge_hdr_data(hdr_num_, buff_depth_, buff_brightness_);  
+
+    
+    if (1 != generate_brightness_model_)
+    { 
+        captureTextureImage(generate_brightness_model_, generate_brightness_exposure_, buff_brightness_);
+    }
     /******************************************************************************************************/
  
   

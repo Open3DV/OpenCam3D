@@ -30,6 +30,8 @@ public:
     void getCameraVersion(int &version);
     
     /************************************************************************/
+    
+    bool captureTextureImage(int model,float exposure,unsigned char* buff);
 
     bool captureRaw01(unsigned char* buff);
 
@@ -42,6 +44,7 @@ public:
     bool captureFrame04();
 
     bool captureFrame04Hdr();
+
     
     /************************************************************************/
  

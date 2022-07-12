@@ -1100,51 +1100,19 @@ int handle_cmd_get_brightness(int client_sock)
     LOG(INFO)<<"capture single image";
 
     int buffer_size = 1920*1200;
-    char* buffer = new char[buffer_size];
+    unsigned char* buffer = new unsigned char[buffer_size];
 
-    switch (generate_brightness_model)
-    {
-        case 1:
-            {
-                //同步扫描曝光
-                lc3010.pattern_mode_brightness();
-                int image_num= 1;  
-                camera.captureRawTest(image_num,buffer);
-            }
-        break;
-        case 2:
-            {
-                //发光，自定义曝光时间 
-                lc3010.enable_solid_field();
-                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,buffer);
-                lc3010.disable_solid_field();
-            }
-        break;
-        case 3:
-            {
-                //不发光，自定义曝光时间 
-                bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,buffer);
-            }
-        break;
-        
-        default:
-            break;
-    }
-
- 
-
-    //int buffer_size = 1920*1200;
-    //char* buffer = new char[buffer_size];
-   //camera.captureSingleImage(buffer);
-    LOG(TRACE)<<"start send image, image_size="<<buffer_size;
-    int ret = send_buffer(client_sock, buffer, buffer_size);
+    scan3d_.captureTextureImage(generate_brightness_model,generate_brightness_exposure_time,buffer);
+  
+    LOG(INFO)<<"start send image, image_size="<<buffer_size;
+    int ret = send_buffer(client_sock, (char*)buffer, buffer_size);
     delete [] buffer;
     if(ret == DF_FAILED)
     {
         LOG(ERROR)<<"send error, close this connection!";
 	return DF_FAILED;
     }
-    LOG(TRACE)<<"image sent!";
+    LOG(INFO)<<"image sent!";
     return DF_SUCCESS;
 }
 
