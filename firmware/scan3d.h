@@ -13,6 +13,10 @@ public:
 
 	bool init();
 
+    bool cameraIsValid();
+
+    bool triggerLineIsValid();
+
     bool setParamHdr(int num,std::vector<int> led_list,std::vector<int> exposure_list);
 
     bool setParamExposure(float exposure);
@@ -39,13 +43,25 @@ public:
     
     bool captureRaw03(unsigned char* buff);
     
-    bool captureRaw04(unsigned char* buff);
+    bool captureRaw04(unsigned char* buff); 
+    
+    bool captureRaw04Repetition01(int repetition_count,unsigned char* buff);
+
+    bool capturePhase02Repetition02(int repetition_count,float* phase_x,float* phase_y,unsigned char* brightness);
 
     bool captureFrame04();
 
     bool captureFrame04Hdr();
 
+    bool captureFrame04Repetition01(int repetition_count);
+
+    bool captureFrame04Repetition02(int repetition_count);
+
+    bool captureFrame05();
     
+    bool captureFrame03();
+    
+    bool captureFrame01();
     /************************************************************************/
  
     bool readCalibParam();
@@ -57,6 +73,8 @@ public:
     void copyBrightnessData(unsigned char* &ptr);
     
     void copyDepthData(float* &ptr);
+    
+    void copyPointcloudData(float* &ptr);
 
     void getCameraResolution(int &width, int &height);
 
@@ -66,6 +84,7 @@ private:
     LightCrafter3010 lc3010_;
 
     int camera_version_;
+    bool camera_opened_flag_;
     
 
     struct CameraCalibParam calib_param_;

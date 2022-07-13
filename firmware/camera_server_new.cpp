@@ -8,7 +8,7 @@
 #include <netinet/tcp.h>
 #include <iostream>
 #include <errno.h> 
-#include "camera_dh.h"
+// #include "camera_dh.h"
 #include <cassert>
 #include "protocol.h"
 #include <random>
@@ -38,7 +38,7 @@ long long current_token = 0;
 time_t last_time;
 std::mutex mtx_last_time;
 std::thread heartbeat_thread;
-CameraDh camera;
+// CameraDh camera;
 LightCrafter3010 lc3010;
 struct CameraCalibParam param;
 
@@ -519,7 +519,7 @@ int handle_cmd_set_auto_exposure_base_board(int client_sock)
     int buffer_size = 1920 * 1200;
     char *buffer = new char[buffer_size];
 
-    ConfigureAutoExposure auto_exposure_machine;
+    ConfigureAutoExposure auto_exposure;
     float average_pixel = 0;
     float over_exposure_rate = 0;
 
@@ -528,13 +528,9 @@ int handle_cmd_set_auto_exposure_base_board(int client_sock)
 
     float current_exposure = system_config_settings_machine_.Instance().config_param_.camera_exposure_time;
 
-    //发光，自定义曝光时间
-    lc3010.enable_solid_field();
-    bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data);
+    bool capture_one_ret = scan3d_.captureTextureImage(2, current_exposure, (unsigned char *)brightness_mat.data);
 
-    auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
-
-    lc3010.disable_solid_field();
+    auto_exposure.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
     return DF_SUCCESS;
 }
@@ -578,8 +574,10 @@ int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
     }
 
     //发光，自定义曝光时间
-    lc3010.enable_solid_field();
-    bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+    // lc3010.enable_solid_field();
+    // bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+    
+    bool capture_one_ret = scan3d_.captureTextureImage(1, current_exposure, (unsigned char *)brightness_mat.data);
     auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
 
 
@@ -607,7 +605,8 @@ int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
 
         }
 
-        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+        // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+        capture_one_ret = scan3d_.captureTextureImage(1, current_exposure, (unsigned char *)brightness_mat.data);
         auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
 
         iterations_num++;
@@ -645,7 +644,8 @@ int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
             adjust_exposure_val = current_exposure;
         }
 
-        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        capture_one_ret = scan3d_.captureTextureImage(1, current_exposure, (unsigned char *)brightness_mat.data);
         auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
         
@@ -672,7 +672,8 @@ int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
                 current_exposure = current_exposure - adjust_exposure_val;
             }
 
-            capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            capture_one_ret = scan3d_.captureTextureImage(1, current_exposure, (unsigned char *)brightness_mat.data);
             auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
             iterations_num++;
@@ -701,7 +702,8 @@ int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
         brightness_current = current_led;
         lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
 
-        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        capture_one_ret = scan3d_.captureTextureImage(1, current_exposure, (unsigned char *)brightness_mat.data);
         auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
         iterations_num = 0;
@@ -730,7 +732,8 @@ int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
 
         brightness_current = current_led;
         lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
-        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+        // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+        capture_one_ret = scan3d_.captureTextureImage(1, current_exposure, (unsigned char *)brightness_mat.data);
         auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
 
         iterations_num++;
@@ -750,13 +753,14 @@ int handle_cmd_set_auto_exposure_base_roi_half(int client_sock)
     {
         //太暗，曝光设置成最大值
         current_exposure = max_camera_exposure_;
-        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        capture_one_ret = scan3d_.captureTextureImage(1, current_exposure, (unsigned char *)brightness_mat.data);
     }
 
     /***************************************************************************************************/
 
     
-    lc3010.disable_solid_field();
+    // lc3010.disable_solid_field();
 
     system_config_settings_machine_.Instance().config_param_.led_current = brightness_current;
 
@@ -802,8 +806,9 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
     float current_exposure = system_config_settings_machine_.Instance().config_param_.camera_exposure_time;
 
     //发光，自定义曝光时间
-    lc3010.enable_solid_field();
-    bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+    // lc3010.enable_solid_field();
+    // bool capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char*)brightness_mat.data); 
+    bool capture_one_ret = scan3d_.captureTextureImage(2, current_exposure, (unsigned char *)brightness_mat.data);
     auto_exposure_machine.evaluateBrightnessParam(brightness_mat,cv::Mat(),average_pixel,over_exposure_rate);
  
     int adjust_exposure_val = 1000;
@@ -859,7 +864,8 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
 
 
         iterations_num++;
-        capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+        capture_one_ret = scan3d_.captureTextureImage(2, current_exposure, (unsigned char *)brightness_mat.data);
         auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
         LOG(INFO) << "adjust_exposure_val: " << adjust_exposure_val;
@@ -927,7 +933,8 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
 
             led_iterations_num++;
             lc3010.SetLedCurrent(current_led, current_led, current_led);
-            capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            capture_one_ret = scan3d_.captureTextureImage(2, current_exposure, (unsigned char *)brightness_mat.data);
             auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
             LOG(INFO) <<""; 
@@ -995,7 +1002,8 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
                 current_exposure = min_camera_exposure_;
             }
             iterations_num++;
-            capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            capture_one_ret = scan3d_.captureTextureImage(2, current_exposure, (unsigned char *)brightness_mat.data);
             auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
             LOG(INFO) << "adjust_exposure_val: " << adjust_exposure_val;
@@ -1048,7 +1056,8 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
             }
 
             iterations_num++;
-            capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            // capture_one_ret = camera.captureSingleExposureImage(current_exposure, (char *)brightness_mat.data);
+            capture_one_ret = scan3d_.captureTextureImage(2, current_exposure, (unsigned char *)brightness_mat.data);
             auto_exposure_machine.evaluateBrightnessParam(brightness_mat, cv::Mat(), average_pixel, over_exposure_rate);
 
             LOG(INFO) << "adjust_exposure_val: " << adjust_exposure_val;
@@ -1068,7 +1077,7 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
 
     }
 
-    lc3010.disable_solid_field();
+    // lc3010.disable_solid_field();
 
     int auto_exposure = current_exposure;
     int auto_led = brightness_current;
@@ -1136,26 +1145,33 @@ int handle_cmd_get_raw_04_repetition(int client_sock)
     }
 
 
-    lc3010.pattern_mode04_repetition(repetition_count);
 
-    int image_num= 19 + 6*(repetition_count-1);
+    // lc3010.pattern_mode04_repetition(repetition_count); 
 
-    //cv::Mat image = get_mat();
-    //lc3010.start_pattern_sequence();
+
+    int image_num= 19 + 6*(repetition_count-1);  
     int buffer_size = 1920*1200*image_num;
-    char* buffer = new char[buffer_size];
-    camera.captureRawTest(image_num,buffer);
+    unsigned char* buffer = new unsigned char[buffer_size];
+    // camera.captureRawTest(image_num,buffer);
 
-    printf("start send image, buffer_size=%d\n", buffer_size);
-    ret = send_buffer(client_sock, buffer, buffer_size);
-    printf("ret=%d\n", ret);
+    
+    scan3d_.captureRaw04Repetition01(repetition_count,buffer);
+
+    LOG(INFO)<<"start send image, buffer_size= "<<buffer_size;
+
+    ret = send_buffer(client_sock, (char*)buffer, buffer_size);
+
+    LOG(INFO)<<"ret= "<<ret;
+
     if(ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	return DF_FAILED;
+        LOG(INFO)<<"send error, close this connection!"; 
+        delete [] buffer;
+        return DF_FAILED;
     }
-    printf("image sent!\n");
+
+    LOG(INFO)<<"image sent!";
+
     delete [] buffer;
     return DF_SUCCESS;
 }
@@ -1316,220 +1332,7 @@ int handle_cmd_get_raw_01(int client_sock)
     delete [] buffer;
     return DF_SUCCESS;
    
-}
-   
-
-int handle_cmd_get_raw(int client_sock)
-{
-    //camera.warmupCamera();
-	
-    lc3010.pattern_mode01();
-
-    if(check_token(client_sock) == DF_FAILED)
-    {
-        return DF_FAILED;	
-    }
-
-    int capture_num = 24;
-
-    //cv::Mat image = get_mat();
-    //lc3010.start_pattern_sequence();
-    int buffer_size = 1920*1200*capture_num;
-    char* buffer = new char[buffer_size];
-    //camera.captureRawPhaseImages(buffer);
-    camera.captureRawTest(capture_num,buffer);
-    
-    printf("start send image, buffer_size=%d\n", buffer_size);
-    int ret = send_buffer(client_sock, buffer, buffer_size);
-    printf("ret=%d\n", ret);
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	return DF_FAILED;
-    }
-    printf("image sent!\n");
-    delete [] buffer;
-    return DF_SUCCESS;
-}
-   
-int handle_cmd_get_frame_03_more_exposure(int client_sock)
-{
-    if(check_token(client_sock) == DF_FAILED)
-    {
-        return DF_FAILED;	
-    }
-
-    LOG(INFO)<<"HDR Exposure:";
-
-    int led_current_h = brightness_current * 1.5;
-    int led_current_m = brightness_current;
-    int led_current_l = brightness_current * 0.5;
-
-    if(led_current_h > 1023)
-    {
-        led_current_h = 1023;
-    }
-
-
-    std::vector<float*> depth_map_list;
-    std::vector<unsigned char*> brightness_list;
- 
-
-    lc3010.SetLedCurrent(led_current_h,led_current_h,led_current_h);	
-    lc3010.pattern_mode03();
-
-
-    int image_count = 31;
-
-    int buffer_size = 1920*1200*image_count;
-    char* buffer = new char[buffer_size];
-    camera.captureRawTest(image_count,buffer);
-    std::vector<unsigned char*> patterns_ptr_list;
-    for(int i=0; i<image_count; i++)
-    {
-	    patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
-    }
-
-    int depth_buf_size = 1920*1200*4;
-    float* depth_map_0 = new float[depth_buf_size];
-
-    int brightness_buf_size = 1920*1200*1;
-    unsigned char* brightness_0 = new unsigned char[brightness_buf_size]; 
-
-    // int ret= cuda_get_frame_03_hdr(patterns_ptr_list, 0,(float*)depth_map_0,brightness_0);
-    int ret= cuda_get_frame_03(patterns_ptr_list,(float*)depth_map_0,brightness_0);
-
-    depth_map_list.push_back(depth_map_0);
-    brightness_list.push_back(brightness_0);
-
-
-    /*************************************************************************************************************/
-    
-  
-
-    lc3010.SetLedCurrent(led_current_m,led_current_m,led_current_m);	
-    lc3010.pattern_mode03();
-
-
-    camera.captureRawTest(image_count,buffer);
-    patterns_ptr_list.clear();
-    for(int i=0; i<image_count; i++)
-    {
-    	patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
-    }
-
-    float* depth_map_1 = new float[depth_buf_size];
-
-    unsigned char* brightness_1 = new unsigned char[brightness_buf_size]; 
-
-    // ret= cuda_get_frame_03_hdr(patterns_ptr_list,1, (float*)depth_map_1,brightness_1);
-    ret= cuda_get_frame_03(patterns_ptr_list, (float*)depth_map_1,brightness_1);
-
-     depth_map_list.push_back(depth_map_1);
-    brightness_list.push_back(brightness_1);
-
-  
-   /**********************************************************************************************************/ 
-     
-
-    lc3010.SetLedCurrent(led_current_l,led_current_l,led_current_l);	
-    lc3010.pattern_mode03();
-
-
-    camera.captureRawTest(image_count,buffer);
-    patterns_ptr_list.clear();
-    for(int i=0; i<image_count; i++)
-    {
-    	patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
-    }
-
-    float* depth_map_2 = new float[depth_buf_size];
-
-    unsigned char* brightness_2 = new unsigned char[brightness_buf_size]; 
-
-    // ret= cuda_get_frame_03_hdr(patterns_ptr_list,2, (float*)depth_map_2,brightness_2);
-    ret= cuda_get_frame_03(patterns_ptr_list, (float*)depth_map_2,brightness_2);
-
-    depth_map_list.push_back(depth_map_2);
-    brightness_list.push_back(brightness_2);
-
- 
-
-    /**********************************************************************************************************/
-
-
-    float* depth_map = new float[depth_buf_size]; 
-    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
-
-    cuda_merge_hdr_data(depth_map_list,brightness_list,depth_map,brightness);
-
-    //merge
-
-    /********************************************************************************************************/
-    
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
-
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-    delete [] depth_map;
-	delete [] brightness;
-	delete [] depth_map_0;
-	delete [] brightness_0;
-	delete [] depth_map_1;
-	delete [] brightness_1;
-	delete [] depth_map_2;
-	delete [] brightness_2; 
-	
-
-
-	return DF_FAILED;
-    }
-    
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
-
-    LOG(INFO)<<"Send Frame03";
-
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-    delete [] depth_map;
-	delete [] brightness;
-	delete [] depth_map_0;
-	delete [] brightness_0;
-	delete [] depth_map_1;
-	delete [] brightness_1;
-	delete [] depth_map_2;
-	delete [] brightness_2; 
-	
-	return DF_FAILED;
-    }
-    printf("frame sent!\n");
-    delete [] buffer;
-    delete [] depth_map;
-	delete [] brightness;
-	delete [] depth_map_0;
-	delete [] brightness_0;
-    delete [] depth_map_1;
-	delete [] brightness_1;
-	delete [] depth_map_2;
-	delete [] brightness_2;
-	
-    
-
-    LOG(INFO)<<"More Exposure Finished!";
-
-    return DF_SUCCESS;
-}
-
-/*******************************************************************************************************************/
+}  
 
 int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
 {
@@ -1556,104 +1359,7 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
  
     LOG(INFO)<<"copy depth";  
     LOG(INFO)<<"Reconstruct Frame04 Finished!";
-  
-//     std::vector<int> led_current_list; 
-//     std::vector<int> camera_exposure_list; 
-    
-//     for(int i= 0;i< system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num;i++)
-//     {
-//         led_current_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list[i]);
-//         camera_exposure_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
- 
-//     }
-
-//     int depth_buf_size = 1920*1200*4;  
-//     int brightness_buf_size = 1920*1200*1;
-
-//     float* depth_map = new float[depth_buf_size]; 
-//     unsigned char* brightness = new unsigned char[brightness_buf_size];
-
-
-// //    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
-
-//     //关闭额外拍摄亮度图
-//     camera.setGenerateBrightnessParam(1,generate_brightness_exposure_time);
-
-//     for(int i= 0;i< led_current_list.size();i++)
-//     {
-//         int led_current = led_current_list[i];
-//         lc3010.SetLedCurrent(led_current,led_current,led_current); 
-        
-//         std::cout << "set led: " << led_current << std::endl;
- 
-//         float exposure = camera_exposure_list[i];
-
-//         if (exposure > max_camera_exposure_)
-//         {
-//             exposure = max_camera_exposure_;
-//             LOG(INFO) << "Set Camera Exposure Time Error!"
-//                       << "\n";
-//         }
-//         else if (exposure < min_camera_exposure_)
-//         {
-//             exposure = min_camera_exposure_;
-//             LOG(INFO) << "Set Camera Exposure Time Error!"
-//                       << "\n";
-//         }
-
-//         LOG(INFO) << "Set Camera Exposure Time: " << exposure << "\n";
-
-//         if(camera.setScanExposure(exposure))
-//         {
-//             lc3010.set_camera_exposure(exposure);
-//         } 
-
-//         lc3010.pattern_mode04();
-    
-//         camera.captureFrame04ToGpu();   
-//         parallel_cuda_copy_result_to_hdr(i,18); 
-//     }
-
-    
-//     camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
-
-
-//     lc3010.SetLedCurrent(brightness_current, brightness_current, brightness_current); 
-//     LOG(INFO) << "Set Camera Exposure Time: " << system_config_settings_machine_.Instance().config_param_.camera_exposure_time << "\n"; 
-//     if (camera.setScanExposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time))
-//     {
-//         lc3010.set_camera_exposure(system_config_settings_machine_.Instance().config_param_.camera_exposure_time);
-//     }
-
-//     cudaDeviceSynchronize();
-
-
-//     parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
-
-//     /******************************************************************************************************/
-
-
-//     switch (generate_brightness_model)
-//     { 
-//         case 2:
-//             {
-//                 //发光，自定义曝光时间 
-//                 lc3010.enable_solid_field();
-//                 bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
-//                 lc3010.disable_solid_field();
-//             }
-//         break;
-//         case 3:
-//             {
-//                 //不发光，自定义曝光时间 
-//                 bool capture_one_ret = camera.captureSingleExposureImage(generate_brightness_exposure_time,(char*)brightness);
-//             }
-//         break;
-        
-//         default:
-//             break;
-//     }
-  
+   
 
     if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
     { 
@@ -1664,46 +1370,44 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
         LOG(INFO) << "Bilateral";
     }
 
-    /***************************************************************************************************/
-    //send data
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+   /***************************************************************************************************/
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
+    int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
+    LOG(INFO) << "depth ret= "<<ret;
 
-    if(ret == DF_FAILED)
+    if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO) << "send error, close this connection!";
+        // delete [] buffer;
         delete[] depth_map;
         delete[] brightness;
 
         return DF_FAILED;
     }
-    
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
 
-    LOG(INFO)<<"Send Frame03";
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
+    LOG(INFO) << "brightness ret= "<<ret;
+
+    LOG(INFO) << "Send Frame04";
 
     float temperature = read_temperature(0);
-    
-    LOG(INFO)<<"temperature: "<<temperature<<" deg";
 
-    if(ret == DF_FAILED)
+    LOG(INFO) << "temperature: " << temperature << " deg";
+
+    if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-        
-	delete [] depth_map;
-	delete [] brightness;
-	
-	return DF_FAILED;
-    }
-    printf("frame sent!\n");
-    
-    delete [] depth_map;
-    delete [] brightness;
-    
+        LOG(INFO) <<"send error, close this connection!";
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
 
+        return DF_FAILED;
+    }
+    LOG(INFO) << "frame sent!";
+    // delete [] buffer;
+    delete[] depth_map;
+    delete[] brightness;  
 
     return DF_SUCCESS;
 
@@ -1714,198 +1418,198 @@ int handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(int client_sock)
 
 /*******************************************************************************************************************/
 
-int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
-{
-    if(check_token(client_sock) == DF_FAILED)
-    {
-        return DF_FAILED;	
-    }
+// int handle_cmd_get_frame_04_hdr_parallel(int client_sock)
+// {
+//     if(check_token(client_sock) == DF_FAILED)
+//     {
+//         return DF_FAILED;	
+//     }
 
-    LOG(INFO)<<"HDR Exposure:"; 
+//     LOG(INFO)<<"HDR Exposure:"; 
   
-    std::vector<int> led_current_list; 
-    for(int i= 0;i< system_config_settings_machine_.Instance().config_param_.exposure_num;i++)
-    {
-        led_current_list.push_back(system_config_settings_machine_.Instance().config_param_.exposure_param[i]);
-    }
+//     std::vector<int> led_current_list; 
+//     for(int i= 0;i< system_config_settings_machine_.Instance().config_param_.exposure_num;i++)
+//     {
+//         led_current_list.push_back(system_config_settings_machine_.Instance().config_param_.exposure_param[i]);
+//     }
 
-    int depth_buf_size = 1920*1200*4;  
-    int brightness_buf_size = 1920*1200*1;
+//     int depth_buf_size = 1920*1200*4;  
+//     int brightness_buf_size = 1920*1200*1;
 
-    float* depth_map = new float[depth_buf_size]; 
-    unsigned char* brightness = new unsigned char[brightness_buf_size];
+//     float* depth_map = new float[depth_buf_size]; 
+//     unsigned char* brightness = new unsigned char[brightness_buf_size];
 
  
 
-//    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
-    //关闭额外拍摄亮度图
-    camera.setGenerateBrightnessParam(1,generate_brightness_exposure_time);
-    for(int i= 0;i< led_current_list.size();i++)
-    {
-        int led_current = led_current_list[i];
-        lc3010.SetLedCurrent(led_current,led_current,led_current);	
+// //    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
+//     //关闭额外拍摄亮度图
+//     camera.setGenerateBrightnessParam(1,generate_brightness_exposure_time);
+//     for(int i= 0;i< led_current_list.size();i++)
+//     {
+//         int led_current = led_current_list[i];
+//         lc3010.SetLedCurrent(led_current,led_current,led_current);	
         
-        std::cout << "set led: " << led_current << std::endl;
+//         std::cout << "set led: " << led_current << std::endl;
 
-        lc3010.pattern_mode04();
+//         lc3010.pattern_mode04();
     
-        camera.captureFrame04ToGpu();   
-        parallel_cuda_copy_result_to_hdr(i,18); 
-    }
+//         camera.captureFrame04ToGpu();   
+//         parallel_cuda_copy_result_to_hdr(i,18); 
+//     }
 
     
-    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
-    lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
+//     camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+//     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
  
-	cudaDeviceSynchronize();
-    parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
+// 	cudaDeviceSynchronize();
+//     parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
 
-    /************************************************************************************/
+//     /************************************************************************************/
 
-    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
-    { 
-        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
-        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
-        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
-        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
-        LOG(INFO) << "Bilateral";
-    }
+//     if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+//     { 
+//         cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+//         cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+//         cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+//         memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+//         LOG(INFO) << "Bilateral";
+//     }
 
-    /******************************************************************************/
-    //send data
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+//     /******************************************************************************/
+//     //send data
+//     printf("start send depth, buffer_size=%d\n", depth_buf_size);
+//     int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+//     printf("depth ret=%d\n", ret);
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-        delete[] depth_map;
-        delete[] brightness;
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
+//         delete[] depth_map;
+//         delete[] brightness;
 
-        return DF_FAILED;
-    }
+//         return DF_FAILED;
+//     }
     
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+//     printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+//     ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+//     printf("brightness ret=%d\n", ret);
 
-    LOG(INFO)<<"Send Frame03";
+//     LOG(INFO)<<"Send Frame03";
 
-    float temperature = read_temperature(0);
+//     float temperature = read_temperature(0);
     
-    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+//     LOG(INFO)<<"temperature: "<<temperature<<" deg";
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
         
-	delete [] depth_map;
-	delete [] brightness;
+// 	delete [] depth_map;
+// 	delete [] brightness;
 	
-	return DF_FAILED;
-    }
-    printf("frame sent!\n");
+// 	return DF_FAILED;
+//     }
+//     printf("frame sent!\n");
     
-    delete [] depth_map;
-    delete [] brightness;
+//     delete [] depth_map;
+//     delete [] brightness;
     
 
 
-    return DF_SUCCESS;
+//     return DF_SUCCESS;
 
-}
+// }
 
 
 /********************************************************************************************************************/
-int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
-{
-    if(check_token(client_sock) == DF_FAILED)
-    {
-        return DF_FAILED;	
-    }
+// int handle_cmd_get_frame_03_hdr_parallel(int client_sock)
+// {
+//     if(check_token(client_sock) == DF_FAILED)
+//     {
+//         return DF_FAILED;	
+//     }
 
-    LOG(INFO)<<"HDR Exposure:"; 
+//     LOG(INFO)<<"HDR Exposure:"; 
   
-    std::vector<int> led_current_list; 
-    for(int i= 0;i< system_config_settings_machine_.Instance().config_param_.exposure_num;i++)
-    {
-        led_current_list.push_back(system_config_settings_machine_.Instance().config_param_.exposure_param[i]);
-    }
+//     std::vector<int> led_current_list; 
+//     for(int i= 0;i< system_config_settings_machine_.Instance().config_param_.exposure_num;i++)
+//     {
+//         led_current_list.push_back(system_config_settings_machine_.Instance().config_param_.exposure_param[i]);
+//     }
 
-    int depth_buf_size = 1920*1200*4;  
-    int brightness_buf_size = 1920*1200*1;
+//     int depth_buf_size = 1920*1200*4;  
+//     int brightness_buf_size = 1920*1200*1;
 
-    float* depth_map = new float[depth_buf_size]; 
-    unsigned char* brightness = new unsigned char[brightness_buf_size];
+//     float* depth_map = new float[depth_buf_size]; 
+//     unsigned char* brightness = new unsigned char[brightness_buf_size];
 
 
-   std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
+//    std::sort(led_current_list.begin(),led_current_list.end(),std::greater<int>());
 
-    for(int i= 0;i< led_current_list.size();i++)
-    {
-        int led_current = led_current_list[i];
-        lc3010.SetLedCurrent(led_current,led_current,led_current);	
+//     for(int i= 0;i< led_current_list.size();i++)
+//     {
+//         int led_current = led_current_list[i];
+//         lc3010.SetLedCurrent(led_current,led_current,led_current);	
         
-        std::cout << "set led: " << led_current << std::endl;
+//         std::cout << "set led: " << led_current << std::endl;
 
-        lc3010.pattern_mode03();
+//         lc3010.pattern_mode03();
     
-        camera.captureFrame03ToGpu();   
-        parallel_cuda_copy_result_to_hdr(i,30); 
-    }
+//         camera.captureFrame03ToGpu();   
+//         parallel_cuda_copy_result_to_hdr(i,30); 
+//     }
 
     
-    lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
+//     lc3010.SetLedCurrent(brightness_current,brightness_current,brightness_current);
  
-	cudaDeviceSynchronize();
-    parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
+// 	cudaDeviceSynchronize();
+//     parallel_cuda_merge_hdr_data(led_current_list.size(), depth_map, brightness); 
 
     
-    /******************************************************************************/
-    //send data
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+//     /******************************************************************************/
+//     //send data
+//     printf("start send depth, buffer_size=%d\n", depth_buf_size);
+//     int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+//     printf("depth ret=%d\n", ret);
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-        delete[] depth_map;
-        delete[] brightness;
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
+//         delete[] depth_map;
+//         delete[] brightness;
 
-        return DF_FAILED;
-    }
+//         return DF_FAILED;
+//     }
     
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+//     printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+//     ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+//     printf("brightness ret=%d\n", ret);
 
-    LOG(INFO)<<"Send Frame03";
+//     LOG(INFO)<<"Send Frame03";
 
-    float temperature = read_temperature(0);
+//     float temperature = read_temperature(0);
     
-    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+//     LOG(INFO)<<"temperature: "<<temperature<<" deg";
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
         
-	delete [] depth_map;
-	delete [] brightness;
+// 	delete [] depth_map;
+// 	delete [] brightness;
 	
-	return DF_FAILED;
-    }
-    printf("frame sent!\n");
+// 	return DF_FAILED;
+//     }
+//     printf("frame sent!\n");
     
-    delete [] depth_map;
-    delete [] brightness;
+//     delete [] depth_map;
+//     delete [] brightness;
     
 
 
-    return DF_SUCCESS;
+//     return DF_SUCCESS;
 
-}
+// }
 
 int handle_cmd_get_phase_02_repetition_02_parallel(int client_sock)
 {
@@ -1945,11 +1649,9 @@ int handle_cmd_get_phase_02_repetition_02_parallel(int client_sock)
         repetition_count = 10;
     }
 
-    // lc3010.pattern_mode04_repetition(repetition_count);
-    camera.capturePhase02Repetition02ToGpu(repetition_count);
+    scan3d_.capturePhase02Repetition02(repetition_count,phase_map_x, phase_map_y,brightness);
 
-    copy_phase_from_cuda_memory(phase_map_x, phase_map_y);
-    copy_merge_brightness_from_cuda_memory(brightness);
+ 
 
     LOG(INFO) << "start send depth, buffer_size= " << phase_buf_size;
     ret = send_buffer(client_sock, (const char *)phase_map_x, phase_buf_size);
@@ -1985,10 +1687,9 @@ int handle_cmd_get_phase_02_repetition_02_parallel(int client_sock)
     ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
     LOG(INFO) << "brightness ret= " << ret;
 
-    LOG(INFO) << "Send Frame04";
+    LOG(INFO) << "Send Phase 02";
 
-    float temperature = read_temperature(0);
-
+    float temperature = read_temperature(0); 
     LOG(INFO) << "temperature: " << temperature << " deg";
 
     if (ret == DF_FAILED)
@@ -2047,19 +1748,12 @@ int handle_cmd_get_frame_04_repetition_02_parallel(int client_sock)
       repetition_count = 10;
     }
 
-    
-    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
-
-    // lc3010.pattern_mode04_repetition(repetition_count); 
-    camera.captureFrame04Repetition02ToGpu(repetition_count);
-   
-  
-    // camera.copyBrightness((char*)brightness);
-    reconstruct_copy_brightness_from_cuda_memory(brightness); 
-    LOG(INFO)<<"copy depth";
-    reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
+    scan3d_.captureFrame04Repetition02(repetition_count);
+             
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map); 
  
-    LOG(INFO)<<"Reconstruct Frame04 Finished!";
+    LOG(INFO)<<"capture Frame04 Repetition02 Finished!";
 
     if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
     { 
@@ -2072,41 +1766,15 @@ int handle_cmd_get_frame_04_repetition_02_parallel(int client_sock)
 
     }
 
-    //基于置信图最大轮廓滤波
-    if(false)
-    {
-        int nr = 1200;
-        int nc = 1920;
-        cv::Mat confidence_mat(nr,nc,CV_32FC1,cv::Scalar(0.));
-        reconstruct_copy_confidence_from_cuda_memory((float*)confidence_mat.data);
-        cv::Mat confidence_mask;
-        findMaskBaseConfidence(confidence_mat,15,confidence_mask);
 
-        for(int r= 0;r< nr;r++)
-        {
-            uchar* ptr_m = confidence_mask.ptr<uchar>(r);
-            for(int c = 0;c< nc;c++)
-            {
-                if(0 == ptr_m[c])
-                {
-                    depth_map[r*nc+c] = 0.0;
-                }
-            }
-
-        }
-        
-        LOG(INFO) << "filter base confidence";
-    }
-
- 
-
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+   /***************************************************************************************************/
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
     ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+    LOG(INFO) << "depth ret= "<<ret;
 
     if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO) << "send error, close this connection!";
         // delete [] buffer;
         delete[] depth_map;
         delete[] brightness;
@@ -2114,9 +1782,9 @@ int handle_cmd_get_frame_04_repetition_02_parallel(int client_sock)
         return DF_FAILED;
     }
 
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
     ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+    LOG(INFO) << "brightness ret= "<<ret;
 
     LOG(INFO) << "Send Frame04";
 
@@ -2126,17 +1794,18 @@ int handle_cmd_get_frame_04_repetition_02_parallel(int client_sock)
 
     if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO) <<"send error, close this connection!";
         // delete [] buffer;
         delete[] depth_map;
         delete[] brightness;
 
         return DF_FAILED;
     }
-    printf("frame sent!\n");
+    LOG(INFO) << "frame sent!";
     // delete [] buffer;
     delete[] depth_map;
-    delete[] brightness;
+    delete[] brightness;  
+
     return DF_SUCCESS;
 
     
@@ -2183,19 +1852,12 @@ int handle_cmd_get_frame_04_repetition_01_parallel(int client_sock)
       repetition_count = 10;
     }
 
-    
-    camera.setGenerateBrightnessParam(generate_brightness_model,generate_brightness_exposure_time);
+    scan3d_.captureFrame04Repetition02(repetition_count);
 
-    lc3010.pattern_mode04_repetition(repetition_count); 
-    camera.captureFrame04RepetitionToGpu(repetition_count);
-   
-  
-    camera.copyBrightness((char*)brightness);
-    // reconstruct_copy_brightness_from_cuda_memory(brightness); 
-    LOG(INFO)<<"copy depth";
-    reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
- 
-    LOG(INFO)<<"Reconstruct Frame04 Finished!";
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map);
+
+    LOG(INFO) << "capture Frame04 Repetition01 Finished!";
 
     if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
     { 
@@ -2208,41 +1870,16 @@ int handle_cmd_get_frame_04_repetition_01_parallel(int client_sock)
 
     }
 
-    //基于置信图最大轮廓滤波
-    if(false)
-    {
-        int nr = 1200;
-        int nc = 1920;
-        cv::Mat confidence_mat(nr,nc,CV_32FC1,cv::Scalar(0.));
-        reconstruct_copy_confidence_from_cuda_memory((float*)confidence_mat.data);
-        cv::Mat confidence_mask;
-        findMaskBaseConfidence(confidence_mat,15,confidence_mask);
+   
 
-        for(int r= 0;r< nr;r++)
-        {
-            uchar* ptr_m = confidence_mask.ptr<uchar>(r);
-            for(int c = 0;c< nc;c++)
-            {
-                if(0 == ptr_m[c])
-                {
-                    depth_map[r*nc+c] = 0.0;
-                }
-            }
-
-        }
-        
-        LOG(INFO) << "filter base confidence";
-    }
-
- 
-
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
+   /***************************************************************************************************/
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
     ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+    LOG(INFO) << "depth ret= "<<ret;
 
     if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO) << "send error, close this connection!";
         // delete [] buffer;
         delete[] depth_map;
         delete[] brightness;
@@ -2250,9 +1887,9 @@ int handle_cmd_get_frame_04_repetition_01_parallel(int client_sock)
         return DF_FAILED;
     }
 
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
     ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+    LOG(INFO) << "brightness ret= "<<ret;
 
     LOG(INFO) << "Send Frame04";
 
@@ -2262,110 +1899,109 @@ int handle_cmd_get_frame_04_repetition_01_parallel(int client_sock)
 
     if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO) <<"send error, close this connection!";
         // delete [] buffer;
         delete[] depth_map;
         delete[] brightness;
 
         return DF_FAILED;
     }
-    printf("frame sent!\n");
+    LOG(INFO) << "frame sent!";
     // delete [] buffer;
     delete[] depth_map;
-    delete[] brightness;
+    delete[] brightness;  
+
     return DF_SUCCESS;
-
-    
-
+ 
 }
 
 
 
-int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
-{
-    /**************************************************************************************/
+// int handle_cmd_get_frame_03_repetition_parallel(int client_sock)
+// {
+//     /**************************************************************************************/
 
-    if(check_token(client_sock) == DF_FAILED)
-    {
-	return DF_FAILED;
-    }
+//     if(check_token(client_sock) == DF_FAILED)
+//     {
+// 	return DF_FAILED;
+//     }
 	
     
-    int repetition_count = 1;
+//     int repetition_count = 1;
 
-    int ret = recv_buffer(client_sock, (char*)(&repetition_count), sizeof(int));
-    if(ret == DF_FAILED)
-    {
-        LOG(INFO)<<"send error, close this connection!\n";
-    	return DF_FAILED;
-    }
-    LOG(INFO)<<"repetition_count: "<<repetition_count<<"\n";
-    /***************************************************************************************/
+//     int ret = recv_buffer(client_sock, (char*)(&repetition_count), sizeof(int));
+//     if(ret == DF_FAILED)
+//     {
+//         LOG(INFO)<<"send error, close this connection!\n";
+//     	return DF_FAILED;
+//     }
+//     LOG(INFO)<<"repetition_count: "<<repetition_count<<"\n";
+//     /***************************************************************************************/
 
 
-    int depth_buf_size = 1920*1200*4;
-    float* depth_map = new float[depth_buf_size];
+//     int depth_buf_size = 1920*1200*4;
+//     float* depth_map = new float[depth_buf_size];
 
-    int brightness_buf_size = 1920*1200*1;
-    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+//     int brightness_buf_size = 1920*1200*1;
+//     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
-    if(repetition_count< 1)
-    {
-      repetition_count = 1;
-    }
+//     if(repetition_count< 1)
+//     {
+//       repetition_count = 1;
+//     }
     
-    if(repetition_count> 10)
-    {
-      repetition_count = 10;
-    }
+//     if(repetition_count> 10)
+//     {
+//       repetition_count = 10;
+//     }
 
-    lc3010.pattern_mode03_repetition(repetition_count); 
-    camera.captureFrame03RepetitionToGpu(repetition_count);
+//     lc3010.pattern_mode03_repetition(repetition_count); 
+//     camera.captureFrame03RepetitionToGpu(repetition_count);
   
-    ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
+//     ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
 
     
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+//     printf("start send depth, buffer_size=%d\n", depth_buf_size);
+//     ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+//     printf("depth ret=%d\n", ret);
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-	// delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
+// 	// delete [] buffer;
+// 	delete [] depth_map;
+// 	delete [] brightness;
 	
-	return DF_FAILED;
-    }
+// 	return DF_FAILED;
+//     }
     
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+//     printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+//     ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+//     printf("brightness ret=%d\n", ret);
 
-    LOG(INFO)<<"Send Frame03 Repetition";
+//     LOG(INFO)<<"Send Frame03 Repetition";
 
-    float temperature = read_temperature(0);
+//     float temperature = read_temperature(0);
     
-    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+//     LOG(INFO)<<"temperature: "<<temperature<<" deg";
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-	// delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
+// 	// delete [] buffer;
+// 	delete [] depth_map;
+// 	delete [] brightness;
 	
-	return DF_FAILED;
-    }
-    printf("frame sent!\n");
-    // delete [] buffer;
-    delete [] depth_map;
-    delete [] brightness;
-    return DF_SUCCESS;
+// 	return DF_FAILED;
+//     }
+//     printf("frame sent!\n");
+//     // delete [] buffer;
+//     delete [] depth_map;
+//     delete [] brightness;
+//     return DF_SUCCESS;
     
 
-}
+// }
 
 
 int handle_cmd_get_standard_plane_param_parallel(int client_sock)
@@ -2382,11 +2018,12 @@ int handle_cmd_get_standard_plane_param_parallel(int client_sock)
     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
 
-    lc3010.pattern_mode03(); 
-    camera.captureFrame03ToGpu();
-  
-    int ret= parallel_cuda_copy_pointcloud_from_gpu((float*)pointcloud_map,brightness);
+    scan3d_.captureFrame04();
 
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyPointcloudData(pointcloud_map);
+ 
+    
 
     int plane_buf_size = 12*4;
     float* plane_param = new float[plane_buf_size];
@@ -2413,13 +2050,13 @@ int handle_cmd_get_standard_plane_param_parallel(int client_sock)
 
 
 
-    printf("start send plane param, buffer_size=%d\n", plane_buf_size);
-    ret = send_buffer(client_sock, (const char*)plane_param, plane_buf_size);
-    printf("depth ret=%d\n", ret);
+    LOG(INFO)<<("start send plane param, buffer_size=%d\n", plane_buf_size);
+    int ret = send_buffer(client_sock, (const char*)plane_param, plane_buf_size);
+    LOG(INFO)<<("depth ret=%d\n", ret);
 
     if(ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO)<<("send error, close this connection!\n");
 	// delete [] buffer;
 	delete [] pointcloud_map;
 	delete [] brightness;
@@ -2427,7 +2064,7 @@ int handle_cmd_get_standard_plane_param_parallel(int client_sock)
 	return DF_FAILED;
     }
      
-    printf("plane param sent!\n");
+    LOG(INFO)<<("plane param sent!\n");
     // delete [] buffer;
     delete [] pointcloud_map;
     delete [] brightness;
@@ -2514,41 +2151,46 @@ int handle_cmd_get_frame_04_parallel(int client_sock)
 
 int handle_cmd_get_frame_05_parallel(int client_sock)
 {
-    if (check_token(client_sock) == DF_FAILED)
+   
+     if(check_token(client_sock) == DF_FAILED)
     {
-        return DF_FAILED;
+        return DF_FAILED;	
     }
 
-    int depth_buf_size = 1920 * 1200 * 4;
+    int depth_buf_size = 1920*1200*4;
     float* depth_map = new float[depth_buf_size];
 
-    int brightness_buf_size = 1920 * 1200 * 1;
-    unsigned char* brightness = new unsigned char[brightness_buf_size];
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+ 
 
+    LOG(INFO)<<"captureFrame05";
+    scan3d_.captureFrame05();
+     
+    LOG(INFO)<<"Reconstruct Frame05 Finished!";
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map);
 
-    lc3010.pattern_mode04();
-    camera.captureFrame05ToGpu();
+ 
+    LOG(INFO)<<"copy depth";  
 
-    reconstruct_copy_brightness_from_cuda_memory(brightness);
-    reconstruct_copy_depth_from_cuda_memory((float*)depth_map);
+    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    { 
+        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+        LOG(INFO) << "Bilateral"; 
+    }
+  
 
-    LOG(INFO) << "Reconstruct Frame05 Finished!";
-
-
-    // cv::Mat pointcloud_map(1200,1920,CV_32FC3,cv::Scalar(-2));
-    // reconstruct_copy_pointcloud_from_cuda_memory((float*)pointcloud_map.data);  
-    // cv::Mat depth_mat(1200,1920,CV_32FC1,depth_map);
-
-    // cv::imwrite("./depth_map.tiff",depth_mat);
-    // cv::imwrite("./pointcloud_map.tiff",pointcloud_map);
-
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    int ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
+    int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
+    LOG(INFO) << "depth ret= "<<ret;
 
     if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
+        LOG(INFO) << "send error, close this connection!";
         // delete [] buffer;
         delete[] depth_map;
         delete[] brightness;
@@ -2556,11 +2198,11 @@ int handle_cmd_get_frame_05_parallel(int client_sock)
         return DF_FAILED;
     }
 
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
+    LOG(INFO) << "brightness ret= "<<ret;
 
-    LOG(INFO) << "Send Frame05";
+    LOG(INFO) << "Send Frame04";
 
     float temperature = read_temperature(0);
 
@@ -2575,7 +2217,7 @@ int handle_cmd_get_frame_05_parallel(int client_sock)
 
         return DF_FAILED;
     }
-    printf("frame sent!\n");
+    LOG(INFO) << "frame sent!";
     // delete [] buffer;
     delete[] depth_map;
     delete[] brightness;
@@ -2597,144 +2239,147 @@ int handle_cmd_get_frame_03_parallel(int client_sock)
 
     int brightness_buf_size = 1920*1200*1;
     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+ 
 
+    LOG(INFO)<<"captureFrame03";
+    scan3d_.captureFrame03();
+     
+    LOG(INFO)<<"Reconstruct Frame03 Finished!";
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map);
 
-    lc3010.pattern_mode03(); 
-    camera.captureFrame03ToGpu();
+ 
+    LOG(INFO)<<"copy depth";  
+
+    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    { 
+        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+        LOG(INFO) << "Bilateral"; 
+    }
   
-    int ret= parallel_cuda_copy_result_from_gpu((float*)depth_map,brightness);
 
-    
-    LOG(INFO) << "Reconstruct Frame03 Finished!";   
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
+    int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
+    LOG(INFO) << "depth ret= "<<ret;
 
-    if(ret == DF_FAILED)
+    if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-	// delete [] buffer;
-        delete [] depth_map;
-        delete [] brightness;
-        
+        LOG(INFO) << "send error, close this connection!";
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
         return DF_FAILED;
     }
-    
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
 
-    LOG(INFO)<<"Send Frame03";
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
+    LOG(INFO) << "brightness ret= "<<ret;
+
+    LOG(INFO) << "Send Frame03";
 
     float temperature = read_temperature(0);
-    
-    LOG(INFO)<<"temperature: "<<temperature<<" deg";
 
-    if(ret == DF_FAILED)
+    LOG(INFO) << "temperature: " << temperature << " deg";
+
+    if (ret == DF_FAILED)
     {
         printf("send error, close this connection!\n");
-	// delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
-	
-	return DF_FAILED;
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
     }
-    printf("frame sent!\n");
+    LOG(INFO) << "frame sent!";
     // delete [] buffer;
-    delete [] depth_map;
-    delete [] brightness;
+    delete[] depth_map;
+    delete[] brightness;
     return DF_SUCCESS;
     
 
 }
    
-int handle_cmd_get_frame_03(int client_sock)
-{
-    lc3010.pattern_mode03();
+// int handle_cmd_get_frame_03(int client_sock)
+// {
+//     lc3010.pattern_mode03();
 
-    if(check_token(client_sock) == DF_FAILED)
-    {
-        return DF_FAILED;	
-    }
+//     if(check_token(client_sock) == DF_FAILED)
+//     {
+//         return DF_FAILED;	
+//     }
 
 
-    int image_count = 31;
+//     int image_count = 31;
 
-    int buffer_size = 1920*1200*image_count;
-    char* buffer = new char[buffer_size];
-    camera.captureRawTest(image_count,buffer);
-    std::vector<unsigned char*> patterns_ptr_list;
-    for(int i=0; i<image_count; i++)
-    {
-	patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
-    }
+//     int buffer_size = 1920*1200*image_count;
+//     char* buffer = new char[buffer_size];
+//     camera.captureRawTest(image_count,buffer);
+//     std::vector<unsigned char*> patterns_ptr_list;
+//     for(int i=0; i<image_count; i++)
+//     {
+// 	patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
+//     }
 
-    int depth_buf_size = 1920*1200*4;
-    float* depth_map = new float[depth_buf_size];
+//     int depth_buf_size = 1920*1200*4;
+//     float* depth_map = new float[depth_buf_size];
 
-    int brightness_buf_size = 1920*1200*1;
-    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+//     int brightness_buf_size = 1920*1200*1;
+//     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
 
-    int ret= cuda_get_frame_03(patterns_ptr_list, (float*)depth_map,brightness);
+//     int ret= cuda_get_frame_03(patterns_ptr_list, (float*)depth_map,brightness);
 
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+//     printf("start send depth, buffer_size=%d\n", depth_buf_size);
+//     ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
+//     printf("depth ret=%d\n", ret);
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
+// 	delete [] buffer;
+// 	delete [] depth_map;
+// 	delete [] brightness;
 	
-	return DF_FAILED;
-    }
+// 	return DF_FAILED;
+//     }
     
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+//     printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
+//     ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
+//     printf("brightness ret=%d\n", ret);
 
-    LOG(INFO)<<"Send Frame03";
+//     LOG(INFO)<<"Send Frame03";
 
-    float temperature = read_temperature(0);
+//     float temperature = read_temperature(0);
     
-    LOG(INFO)<<"temperature: "<<temperature<<" deg";
+//     LOG(INFO)<<"temperature: "<<temperature<<" deg";
 
-    if(ret == DF_FAILED)
-    {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
+//     if(ret == DF_FAILED)
+//     {
+//         printf("send error, close this connection!\n");
+// 	delete [] buffer;
+// 	delete [] depth_map;
+// 	delete [] brightness;
 	
-	return DF_FAILED;
-    }
-    printf("frame sent!\n");
-    delete [] buffer;
-    delete [] depth_map;
-    delete [] brightness;
-    return DF_SUCCESS;
-}
+// 	return DF_FAILED;
+//     }
+//     printf("frame sent!\n");
+//     delete [] buffer;
+//     delete [] depth_map;
+//     delete [] brightness;
+//     return DF_SUCCESS;
+// }
 
 
 
 int handle_cmd_get_frame_01(int client_sock)
 {
-    lc3010.pattern_mode01();
-
-    if(check_token(client_sock) == DF_FAILED)
+    
+  if(check_token(client_sock) == DF_FAILED)
     {
         return DF_FAILED;	
-    }
-
-    int buffer_size = 1920*1200*24;
-    char* buffer = new char[buffer_size];
-    camera.captureRawPhaseImages(buffer);
-    std::vector<unsigned char*> patterns_ptr_list;
-    for(int i=0; i<24; i++)
-    {
-	patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
     }
 
     int depth_buf_size = 1920*1200*4;
@@ -2742,32 +2387,67 @@ int handle_cmd_get_frame_01(int client_sock)
 
     int brightness_buf_size = 1920*1200*1;
     unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+ 
 
-    int ret= cuda_get_frame_base_24(patterns_ptr_list, (float*)depth_map,brightness);
+    LOG(INFO)<<"captureFrame01";
+    scan3d_.captureFrame01();
+     
+    LOG(INFO)<<"Reconstruct Frame01 Finished!";
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map);
 
-    printf("start send depth, buffer_size=%d\n", depth_buf_size);
-    ret = send_buffer(client_sock, (const char*)depth_map, depth_buf_size);
-    printf("depth ret=%d\n", ret);
+ 
+    LOG(INFO)<<"copy depth";  
 
-    printf("start send brightness, buffer_size=%d\n", brightness_buf_size);
-    ret = send_buffer(client_sock, (const char*)brightness, brightness_buf_size);
-    printf("brightness ret=%d\n", ret);
+    if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    { 
+        cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+        cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+        cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+        memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+        LOG(INFO) << "Bilateral"; 
+    }
+  
 
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
+    int ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
+    LOG(INFO) << "depth ret= "<<ret;
 
-    if(ret == DF_FAILED)
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!";
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
+    LOG(INFO) << "brightness ret= "<<ret;
+
+    LOG(INFO) << "Send Frame01";
+
+    float temperature = read_temperature(0);
+
+    LOG(INFO) << "temperature: " << temperature << " deg";
+
+    if (ret == DF_FAILED)
     {
         printf("send error, close this connection!\n");
-	delete [] buffer;
-	delete [] depth_map;
-	delete [] brightness;
-	
-	return DF_FAILED;
+        // delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
     }
-    printf("frame sent!\n");
-    delete [] buffer;
-    delete [] depth_map;
-    delete [] brightness;
+    LOG(INFO) << "frame sent!";
+    // delete [] buffer;
+    delete[] depth_map;
+    delete[] brightness;
     return DF_SUCCESS;
+  
 }
 
  
@@ -2775,37 +2455,31 @@ int handle_cmd_get_point_cloud(int client_sock)
 {
     lc3010.pattern_mode01();
 
-    if(check_token(client_sock) == DF_FAILED)
+    if (check_token(client_sock) == DF_FAILED)
     {
-        return DF_FAILED;	
+        return DF_FAILED;
     }
 
-    int buffer_size = 1920*1200*24;
-    char* buffer = new char[buffer_size];
-    camera.captureRawPhaseImages(buffer);
-    std::vector<unsigned char*> patterns_ptr_list;
-    for(int i=0; i<24; i++)
-    {
-	patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
-    }
+    LOG(INFO) << "captureFrame01";
+    scan3d_.captureFrame01();
 
-    int point_cloud_buf_size = 1920*1200*3*4;
-    float* point_cloud_map = new float[point_cloud_buf_size];
-    int ret= cuda_reconstruct_base_24(patterns_ptr_list, (float*)point_cloud_map);
+    int point_cloud_buf_size = 1920 * 1200 * 3 * 4;
+    float *point_cloud_map = new float[point_cloud_buf_size];
 
-    printf("start send point cloud, buffer_size=%d\n", point_cloud_buf_size);
-    ret = send_buffer(client_sock, (const char*)point_cloud_map, point_cloud_buf_size);
-    printf("ret=%d\n", ret);
-    if(ret == DF_FAILED)
+    LOG(INFO) << "Reconstruct Frame01 Finished!";
+    scan3d_.copyPointcloudData(point_cloud_map);
+
+    LOG(INFO) << ("start send point cloud, buffer_size=%d\n", point_cloud_buf_size);
+    int ret = send_buffer(client_sock, (const char *)point_cloud_map, point_cloud_buf_size);
+    LOG(INFO) << ("ret=%d\n", ret);
+    if (ret == DF_FAILED)
     {
-        printf("send error, close this connection!\n");
-	delete [] buffer;
-	delete [] point_cloud_map;
-	return DF_FAILED;
+        LOG(INFO) << ("send error, close this connection!\n");
+        delete[] point_cloud_map;
+        return DF_FAILED;
     }
-    printf("image sent!\n");
-    delete [] buffer;
-    delete [] point_cloud_map;
+    LOG(INFO) << ("image sent!\n");
+    delete[] point_cloud_map;
     return DF_SUCCESS;
 }
 
@@ -3048,57 +2722,60 @@ int handle_cmd_get_param_camera_exposure(int client_sock)
 //设置补偿参数
 int handle_cmd_set_param_offset(int client_sock)
 {
-    if(check_token(client_sock) == DF_FAILED)
-    {
-	    return DF_FAILED;
-    }
+    // if(check_token(client_sock) == DF_FAILED)
+    // {
+	//     return DF_FAILED;
+    // }
 	  
 
-    float offset = 0;
+    // float offset = 0;
 
-    int ret = recv_buffer(client_sock, (char*)(&offset), sizeof(float));
-    if(ret == DF_FAILED)
-    {
-        LOG(INFO)<<"send error, close this connection!\n";
-    	return DF_FAILED;
-    }
+    // int ret = recv_buffer(client_sock, (char*)(&offset), sizeof(float));
+    // if(ret == DF_FAILED)
+    // {
+    //     LOG(INFO)<<"send error, close this connection!\n";
+    // 	return DF_FAILED;
+    // }
  
 
-    if(offset>= 0)
-    {    
-        camera.setOffsetParam(offset);
-        LOG(INFO)<<"Set Offset: "<<offset<<"\n";
-    }
-    else
-    {
-        LOG(INFO)<<"Set Camera Exposure Time Error!"<<"\n";
-    }
+    // if(offset>= 0)
+    // {    
+    //     camera.setOffsetParam(offset);
+    //     LOG(INFO)<<"Set Offset: "<<offset<<"\n";
+    // }
+    // else
+    // {
+    //     LOG(INFO)<<"Set Camera Exposure Time Error!"<<"\n";
+    // }
  
   
-    return DF_SUCCESS;
+    // return DF_SUCCESS;
+
+    return DF_FAILED;
 }
 
 
 //获取补偿参数
 int handle_cmd_get_param_offset(int client_sock)
 {
-    if(check_token(client_sock) == DF_FAILED)
-    {
-	    return DF_FAILED;
-    }
+    // if(check_token(client_sock) == DF_FAILED)
+    // {
+	//     return DF_FAILED;
+    // }
 	
-    float offset = 0;
+    // float offset = 0;
  
-    camera.getOffsetParam(offset);
+    // camera.getOffsetParam(offset);
 
-    int ret = send_buffer(client_sock, (char*)(&offset), sizeof(float));
-    if(ret == DF_FAILED)
-    {
-        LOG(INFO)<<"send error, close this connection!\n";
-	    return DF_FAILED;
-    } 
+    // int ret = send_buffer(client_sock, (char*)(&offset), sizeof(float));
+    // if(ret == DF_FAILED)
+    // {
+    //     LOG(INFO)<<"send error, close this connection!\n";
+	//     return DF_FAILED;
+    // } 
   
-    return DF_SUCCESS;
+    // return DF_SUCCESS;
+    return DF_FAILED;
 }
 
 
@@ -4271,12 +3948,12 @@ int handle_get_firmware_version(int client_sock)
 bool check_trigger_line()
 {
     bool ret = false;
-    char* buffer = new char[1920*1200];
+    // char* buffer = new char[1920*1200];
 
-    lc3010.pattern_mode_brightness();
-    ret = camera.CaptureSelfTest();
+    // lc3010.pattern_mode_brightness();
+    // ret = camera.CaptureSelfTest();
 
-    delete [] buffer;
+    // delete [] buffer;
 
     return ret;
 }
@@ -4290,7 +3967,7 @@ void self_test(char *test_out)
     }
 
     // check usb camera
-    if (GXInitLib() != GX_STATUS_SUCCESS)
+    if (!scan3d_.cameraIsValid())
     {
         sprintf(test_out, "The camera failure -- driver installed not porperly.");
         return;
@@ -4314,7 +3991,7 @@ void self_test(char *test_out)
     }
 
     // check trigger-line
-    if (check_trigger_line() == false) {
+    if (scan3d_.triggerLineIsValid() == false) {
         sprintf(test_out, "The camera failure -- trigger-line not connected.");
         return;
     }
@@ -4396,11 +4073,11 @@ int handle_commands(int client_sock)
 	    handle_cmd_get_brightness(client_sock);
 	    break;
 	case DF_CMD_GET_RAW:
-	    LOG(INFO)<<"DF_CMD_GET_RAW"; 
-	    handle_cmd_get_raw(client_sock);
+	    LOG(INFO)<<"DF_CMD_GET_RAW_01"; 
+	    handle_cmd_get_raw_01(client_sock);
 	    break;
 	case DF_CMD_GET_RAW_TEST:
-	    LOG(INFO)<<"DF_CMD_GET_RAW_TEST"; 
+	    LOG(INFO)<<"DF_CMD_GET_RAW_02"; 
 	    handle_cmd_get_raw_02(client_sock);
 	    break;
 	case DF_CMD_GET_RAW_03:
@@ -4424,10 +4101,33 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_HDR";  
         if(1 == system_config_settings_machine_.Instance().firwmare_param_.hdr_model)
         {
-            handle_cmd_get_frame_04_hdr_parallel(client_sock);
+
+            std::vector<int> led_list;
+            std::vector<int> exposure_list;
+
+            for(int i= 0;i< 6;i++)
+            {
+                led_list.push_back(system_config_settings_machine_.Instance().config_param_.exposure_param[i]);
+                exposure_list.push_back(system_config_settings_machine_.Instance().config_param_.camera_exposure_time);
+            }
+  
+            scan3d_.setParamHdr(system_config_settings_machine_.Instance().config_param_.exposure_num,led_list,exposure_list);
+
+            // handle_cmd_get_frame_04_hdr_parallel(client_sock);
+            handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(client_sock);
         }
         else if (2 == system_config_settings_machine_.Instance().firwmare_param_.hdr_model)
         {
+            std::vector<int> led_current_list;
+            std::vector<int> camera_exposure_list;
+            for (int i = 0; i < 6; i++)
+            {
+                led_current_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_led_param_list[i]);
+                camera_exposure_list.push_back(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_param_list[i]);
+            }
+
+            scan3d_.setParamHdr(system_config_settings_machine_.Instance().firwmare_param_.mixed_exposure_num, led_current_list, camera_exposure_list);
+
             handle_cmd_get_frame_04_hdr_parallel_mixed_led_and_exposure(client_sock);
         } 
         break;
@@ -4436,10 +4136,10 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_03";   
     	handle_cmd_get_frame_03_parallel(client_sock); 
 	    break;
-	case DF_CMD_GET_REPETITION_FRAME_03:
-	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_03";   
-        handle_cmd_get_frame_03_repetition_parallel(client_sock);
-	    break; 
+	// case DF_CMD_GET_REPETITION_FRAME_03:
+	//     LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_03";   
+    //     handle_cmd_get_frame_03_repetition_parallel(client_sock);
+	//     break; 
     case DF_CMD_GET_REPETITION_FRAME_04:
 	    LOG(INFO)<<"DF_CMD_GET_REPETITION_FRAME_04";   
         handle_cmd_get_frame_04_repetition_02_parallel(client_sock);
@@ -4592,14 +4292,14 @@ int handle_commands(int client_sock)
 	    LOG(INFO)<<"DF_CMD_GET_PARAM_CAMERA_GAIN";   
     	handle_cmd_get_param_camera_gain(client_sock);
 	    break;
-	case DF_CMD_SET_PARAM_OFFSET:
-	    LOG(INFO)<<"DF_CMD_SET_PARAM_OFFSET";   
-    	handle_cmd_set_param_offset(client_sock);
-	    break;
-	case DF_CMD_GET_PARAM_OFFSET:
-	    LOG(INFO)<<"DF_CMD_GET_PARAM_OFFSET";   
-    	handle_cmd_get_param_offset(client_sock);
-	    break;
+	// case DF_CMD_SET_PARAM_OFFSET:
+	//     LOG(INFO)<<"DF_CMD_SET_PARAM_OFFSET";   
+    // 	handle_cmd_set_param_offset(client_sock);
+	//     break;
+	// case DF_CMD_GET_PARAM_OFFSET:
+	//     LOG(INFO)<<"DF_CMD_GET_PARAM_OFFSET";   
+    // 	handle_cmd_get_param_offset(client_sock);
+	//     break;
 	case DF_CMD_SET_PARAM_MIXED_HDR:
 	    LOG(INFO)<<"DF_CMD_SET_PARAM_MIXED_HDR";   
     	handle_cmd_set_param_mixed_hdr(client_sock);

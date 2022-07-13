@@ -308,6 +308,7 @@ bool parallel_cuda_compute_merge_repetition_02_phase(int repetition_count)
 		d_repetition_02_merge_patterns_list_[14],d_repetition_02_merge_patterns_list_[15],d_repetition_02_merge_patterns_list_[16],d_repetition_02_merge_patterns_list_[17] ,
 		repetition_count,image_height_, image_width_, d_wrap_map_list[3], d_confidence_list[3]);
 
+	cuda_merge_brigntness_map<< <blocksPerGrid, threadsPerBlock >> >(d_repetition_02_merge_patterns_list_[18],repetition_count,d_brightness_);
 	return true;
 }
 
