@@ -1100,6 +1100,34 @@ int handle_cmd_set_auto_exposure_base_roi_pid(int client_sock)
     return DF_SUCCESS;
 }
 
+int handle_cmd_get_focusing_image(int client_sock)
+{
+    if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;
+    }
+    LOG(INFO) << "capture focusing image";
+
+    int buffer_size = 1920*1200;
+    unsigned char* buffer = new unsigned char[buffer_size];
+
+    //不发光，自定义曝光时间
+    
+    bool capture_one_ret = scan3d_.captureTextureImage(3,system_config_settings_machine_.Instance().config_param_.camera_exposure_time,buffer); 
+
+    LOG(TRACE) << "start send image, image_size=" << buffer_size;
+    int ret = send_buffer(client_sock, (char*)buffer, buffer_size);
+    delete[] buffer;
+    if (ret == DF_FAILED)
+    {
+        LOG(ERROR) << "send error, close this connection!";
+        return DF_FAILED;
+    }
+    LOG(TRACE) << "image sent!";
+    return DF_SUCCESS;
+}
+
+
 int handle_cmd_get_brightness(int client_sock)
 {
     if(check_token(client_sock) == DF_FAILED)
@@ -1119,7 +1147,7 @@ int handle_cmd_get_brightness(int client_sock)
     if(ret == DF_FAILED)
     {
         LOG(ERROR)<<"send error, close this connection!";
-	return DF_FAILED;
+	    return DF_FAILED;
     }
     LOG(INFO)<<"image sent!";
     return DF_SUCCESS;
@@ -4347,6 +4375,10 @@ int handle_commands(int client_sock)
     	LOG(INFO)<<"DF_CMD_GET_PHASE_02_REPETITION";
 	    handle_cmd_get_phase_02_repetition_02_parallel(client_sock);
 	    break;
+    case DF_CMD_GET_FOCUSING_IMAGE:
+        LOG(INFO)<<"DF_CMD_CONFIGURE_FOCUSING"; 
+        handle_cmd_get_focusing_image(client_sock);
+        break;
 	default:
 	    LOG(INFO)<<"DF_CMD_UNKNOWN";
         handle_cmd_unknown(client_sock);

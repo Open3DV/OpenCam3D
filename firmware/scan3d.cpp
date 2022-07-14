@@ -312,8 +312,8 @@ bool Scan3D::captureTextureImage(int model,float exposure,unsigned char* buff)
     case 3:
     {
 
-            lc3010_.stop_pattern_sequence(); 
-            lc3010_.init(); 
+            // lc3010_.stop_pattern_sequence(); 
+            // lc3010_.init(); 
 
             camera_->switchToInternalTriggerMode(); 
             camera_->setExposure(exposure); 
