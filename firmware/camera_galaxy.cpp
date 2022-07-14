@@ -2,25 +2,28 @@
 #include "easylogging++.h"
 
 CameraGalaxy::CameraGalaxy()
-{ 
-
+{
 }
 CameraGalaxy::~CameraGalaxy()
 {
-
 }
 
-
-bool CameraGalaxy::grap(unsigned char* buf)
+bool CameraGalaxy::grap(unsigned char *buf)
 {
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    { 
+        LOG(INFO) << "--";
+    }
+
     GX_STATUS status = GX_STATUS_SUCCESS;
- 
+
     LOG(INFO) << "capture:";
     status = GXDQBuf(hDevice_, &pFrameBuffer_, 1000);
     LOG(INFO) << "status=" << status;
     if (status != GX_STATUS_SUCCESS)
     {
-        status = GXQBuf(hDevice_, pFrameBuffer_);
+        status = GXQBuf(hDevice_, pFrameBuffer_); 
         return false;
     }
 
@@ -44,13 +47,20 @@ bool CameraGalaxy::grap(unsigned char* buf)
 
 bool CameraGalaxy::streamOn()
 {
+
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    { 
+        LOG(INFO) << "--";
+    }
+
+    // while (!stream_mutex_.try_lock_for(std::chrono::milliseconds(1)))
+    // {
+    //     LOG(INFO) << "GXStreamOn --";
+    // }
+
     GX_STATUS status = GX_STATUS_SUCCESS;
 
-    while (!stream_mutex_.try_lock_for(std::chrono::milliseconds(1)))
-    {
-        LOG(INFO) << "GXStreamOn --";
-    }
- 
     LOG(INFO) << "GXStreamOn";
     status = GXStreamOn(hDevice_);
     if (status != GX_STATUS_SUCCESS)
@@ -60,36 +70,37 @@ bool CameraGalaxy::streamOn()
         return false;
     }
 
-    stream_mutex_.unlock();
-
     return true;
 }
 
-
 void CameraGalaxy::streamOffThread()
 {
-    while (!stream_mutex_.try_lock_for(std::chrono::milliseconds(1)))
-    {
-        LOG(INFO) << "GXStreamOff --";
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    { 
+        LOG(INFO) << "--";
     }
-
+  
     GXStreamOff(hDevice_);
-    LOG(INFO) << "Thread GXStreamOff";
-    stream_mutex_.unlock();
+    LOG(INFO) << "Thread GXStreamOff"; 
 }
 
 bool CameraGalaxy::streamOff()
 {
-  
-    std::thread stop_thread(&CameraGalaxy::streamOffThread,this);
+
+    std::thread stop_thread(&CameraGalaxy::streamOffThread, this);
     stop_thread.detach();
-    
+
     return true;
 }
- 
 
 bool CameraGalaxy::openCamera()
 {
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    { 
+        LOG(INFO) << "--";
+    }
 
     GX_STATUS status = GX_STATUS_SUCCESS;
     uint32_t nDeviceNum = 0;
@@ -113,33 +124,31 @@ bool CameraGalaxy::openCamera()
         size_t nSize = nDeviceNum * sizeof(GX_DEVICE_BASE_INFO);
         // Gets the basic information of all devices.
         status = GXGetAllDeviceBaseInfo(pBaseinfo, &nSize);
-	for(int i=0; i<nDeviceNum; i++)
-	{
-	    if(GX_DEVICE_CLASS_U3V == pBaseinfo[i].deviceClass)
-	    {
-		//camera index starts from 1
-		snprintf(cam_idx, 8, "%d", i+1);
-	    }
-	}
+        for (int i = 0; i < nDeviceNum; i++)
+        {
+            if (GX_DEVICE_CLASS_U3V == pBaseinfo[i].deviceClass)
+            {
+                // camera index starts from 1
+                snprintf(cam_idx, 8, "%d", i + 1);
+            }
+        }
 
-        delete []pBaseinfo;
+        delete[] pBaseinfo;
     }
 
-    
     GX_OPEN_PARAM stOpenParam;
     stOpenParam.accessMode = GX_ACCESS_EXCLUSIVE;
     stOpenParam.openMode = GX_OPEN_INDEX;
     stOpenParam.pszContent = cam_idx;
     status = GXOpenDevice(&stOpenParam, &hDevice_);
-   
+
     if (status != GX_STATUS_SUCCESS)
     {
-   
-	    LOG(INFO)<<"Open Camera Error!";
-	    return false;
+
+        LOG(INFO) << "Open Camera Error!";
+        return false;
     }
 
- 
     if (status == GX_STATUS_SUCCESS)
     {
 
@@ -150,33 +159,36 @@ bool CameraGalaxy::openCamera()
         status = GXSetEnum(hDevice_, GX_ENUM_EXPOSURE_AUTO, GX_EXPOSURE_AUTO_OFF);
 
         //ѡ �� �� �� ͨ �� �� ��
-        status = GXSetEnum(hDevice_, GX_ENUM_GAIN_SELECTOR, GX_GAIN_SELECTOR_ALL); 
+        status = GXSetEnum(hDevice_, GX_ENUM_GAIN_SELECTOR, GX_GAIN_SELECTOR_ALL);
         //�� �� �� �� ֵ
-        status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, 0.0); 
+        status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, 0.0);
         //�� �� �� �� ѡ �� Ϊ Line2
         status = GXSetEnum(hDevice_, GX_ENUM_LINE_SELECTOR, GX_ENUM_LINE_SELECTOR_LINE2);
         //�� �� �� �� �� �� Ϊ �� ��
         status = GXSetEnum(hDevice_, GX_ENUM_LINE_MODE, GX_ENUM_LINE_MODE_INPUT);
 
         //�� �� �� �� �� �� Դ Ϊ �� �� ��,�� �� �� �� ��
-        //emStatus = GXSetEnum(hDevice_, GX_ENUM_LINE_SOURCE, GX_ENUM_LINE_SOURCE_STROBE);
-        status = GXSetEnum(hDevice_ ,GX_ENUM_TRIGGER_ACTIVATION, GX_TRIGGER_ACTIVATION_RISINGEDGE);
-        status = GXSetEnum(hDevice_ ,GX_ENUM_TRIGGER_SOURCE, GX_TRIGGER_SOURCE_LINE2);
+        // emStatus = GXSetEnum(hDevice_, GX_ENUM_LINE_SOURCE, GX_ENUM_LINE_SOURCE_STROBE);
+        status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_ACTIVATION, GX_TRIGGER_ACTIVATION_RISINGEDGE);
+        status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_SOURCE, GX_TRIGGER_SOURCE_LINE2);
 
         status = GXSetAcqusitionBufferNumber(hDevice_, 72);
         camera_opened_state_ = true;
- 
-        status = GXGetInt(hDevice_, GX_INT_WIDTH, &image_width_); 
-        status = GXGetInt(hDevice_, GX_INT_HEIGHT, &image_height_); 
 
- 
+        status = GXGetInt(hDevice_, GX_INT_WIDTH, &image_width_);
+        status = GXGetInt(hDevice_, GX_INT_HEIGHT, &image_height_);
     }
- 
- 
+
     return true;
 }
 bool CameraGalaxy::closeCamera()
 {
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "closeCamera --";
+    }
+
     if (!camera_opened_state_)
     {
         return false;
@@ -192,11 +204,16 @@ bool CameraGalaxy::closeCamera()
 }
 bool CameraGalaxy::switchToInternalTriggerMode()
 {
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "switchToInternalTriggerMode --";
+    }
+
     GX_STATUS status;
     status = GXSetEnum(hDevice_, GX_ENUM_LINE_SOURCE, GX_ENUM_LINE_SOURCE_STROBE);
-    
 
-    if(GX_STATUS_SUCCESS != status)
+    if (GX_STATUS_SUCCESS != status)
     {
         LOG(INFO) << "GX_ENUM_LINE_SOURCE Error: " << status;
         return false;
@@ -210,30 +227,34 @@ bool CameraGalaxy::switchToInternalTriggerMode()
         return false;
     }
 
-    
-    if(GX_STATUS_SUCCESS != status)
+    if (GX_STATUS_SUCCESS != status)
     {
         LOG(INFO) << "GX_ENUM_TRIGGER_MODE Error: " << status;
         return false;
     }
-    
+
     status = GXSendCommand(hDevice_, GX_COMMAND_TRIGGER_SOFTWARE);
-    if(GX_STATUS_SUCCESS != status)
+    if (GX_STATUS_SUCCESS != status)
     {
-        
+
         LOG(INFO) << "GX_COMMAND_TRIGGER_SOFTWARE Error: " << status;
         return false;
     }
-
 
     return true;
 }
 bool CameraGalaxy::switchToExternalTriggerMode()
 {
-    GX_STATUS status;
-    status = GXSetEnum(hDevice_ ,GX_ENUM_TRIGGER_SOURCE, GX_TRIGGER_SOURCE_LINE2);
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "switchToExternalTriggerMode --";
+    }
 
-    if(GX_STATUS_SUCCESS != status)
+    GX_STATUS status;
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_SOURCE, GX_TRIGGER_SOURCE_LINE2);
+
+    if (GX_STATUS_SUCCESS != status)
     {
         LOG(INFO) << "GX_TRIGGER_SOURCE_LINE2 Error: " << status;
         return false;
@@ -246,14 +267,19 @@ bool CameraGalaxy::switchToExternalTriggerMode()
         LOG(INFO) << "GX_TRIGGER_MODE_ON Error: " << status;
         return false;
     }
-       
+
     return true;
-    
 }
 
 bool CameraGalaxy::getExposure(double &val)
 {
-    GX_STATUS status = GX_STATUS_SUCCESS;  
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "getExposure --";
+    }
+
+    GX_STATUS status = GX_STATUS_SUCCESS;
     status = GXGetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, &val);
 
     if (status != GX_STATUS_SUCCESS)
@@ -262,50 +288,66 @@ bool CameraGalaxy::getExposure(double &val)
         LOG(INFO) << "Error Status: " << status;
         return false;
     }
- 
 
     return true;
 }
 bool CameraGalaxy::setExposure(double val)
 {
-    GX_STATUS status = GX_STATUS_SUCCESS; 
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "setExposure --";
+    }
+
+    GX_STATUS status = GX_STATUS_SUCCESS;
     status = GXSetFloat(hDevice_, GX_FLOAT_EXPOSURE_TIME, val);
 
-
-    if(status != GX_STATUS_SUCCESS)
+    if (status != GX_STATUS_SUCCESS)
     {
-        LOG(INFO)<<"Error Status: "<<status;
+        LOG(INFO) << "Error Status: " << status;
         return false;
     }
- 
-	return true;
+
+    return true;
 }
 
 bool CameraGalaxy::getGain(double &val)
 {
-    GX_STATUS status = GX_STATUS_SUCCESS;  
-    status = GXGetFloat(hDevice_, GX_FLOAT_GAIN, &val); 
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
+    {
+        LOG(INFO) << "getGain --";
+    }
 
-    if(status != GX_STATUS_SUCCESS)
-    { 
-        
-        LOG(INFO)<<"Error Status: "<<status;
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXGetFloat(hDevice_, GX_FLOAT_GAIN, &val);
+
+    if (status != GX_STATUS_SUCCESS)
+    {
+
+        LOG(INFO) << "Error Status: " << status;
         return false;
-    } 
- 
-	return true; 
+    }
+
+    return true;
 }
 bool CameraGalaxy::setGain(double val)
 {
-    GX_STATUS status = GX_STATUS_SUCCESS; 
-    status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, val); 
-
-    if(status != GX_STATUS_SUCCESS)
+    std::unique_lock<std::timed_mutex> lck(stream_mutex_,std::defer_lock); 
+    while (!lck.try_lock_for(std::chrono::milliseconds(1)))
     {
-        
-        LOG(INFO)<<"Error Status: "<<status;
+        LOG(INFO) << "setGain --";
+    }
+
+    GX_STATUS status = GX_STATUS_SUCCESS;
+    status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, val);
+
+    if (status != GX_STATUS_SUCCESS)
+    {
+
+        LOG(INFO) << "Error Status: " << status;
         return false;
     }
- 
-	return true;
-} 
+
+    return true;
+}
