@@ -264,11 +264,11 @@ bool Scan3D::captureTextureImage(int model,float exposure,unsigned char* buff)
 
             if(!camera_->grap(buff))
             { 
-                 LOG(INFO) << "grap generate brightness failed!";
+                 LOG(INFO) << "grap brightness failed!";
             }
             else
             {
-                LOG(INFO) << "grap generate brightness!";
+                LOG(INFO) << "grap brightness!";
             }
             camera_->streamOff();
             LOG(INFO) << "Stream Off";
@@ -293,11 +293,11 @@ bool Scan3D::captureTextureImage(int model,float exposure,unsigned char* buff)
 
             if(!camera_->grap(buff))
             { 
-                 LOG(INFO) << "grap generate brightness failed!";
+                 LOG(INFO) << "grap brightness failed!";
             }
             else
             {
-                LOG(INFO) << "grap generate brightness!";
+                LOG(INFO) << "grap brightness!";
             }
 
             
@@ -316,7 +316,14 @@ bool Scan3D::captureTextureImage(int model,float exposure,unsigned char* buff)
             // lc3010_.init(); 
 
             camera_->switchToInternalTriggerMode(); 
-            camera_->setExposure(exposure); 
+            if(!camera_->setExposure(exposure))
+            {
+                LOG(INFO) << "setExposure Failed!";
+            } 
+            else
+            {  
+                LOG(INFO) << "set Exposure: "<<exposure;
+            }
             camera_->streamOn();
             LOG(INFO) << "Stream On"; 
   

@@ -2,7 +2,7 @@
 #include "easylogging++.h"
 
 CameraGalaxy::CameraGalaxy()
-{
+{ 
 
 }
 CameraGalaxy::~CameraGalaxy()
@@ -13,9 +13,10 @@ CameraGalaxy::~CameraGalaxy()
 
 bool CameraGalaxy::grap(unsigned char* buf)
 {
-
+    GX_STATUS status = GX_STATUS_SUCCESS;
+ 
     LOG(INFO) << "capture:";
-    GX_STATUS status = GXDQBuf(hDevice_, &pFrameBuffer_, 1000);
+    status = GXDQBuf(hDevice_, &pFrameBuffer_, 1000);
     LOG(INFO) << "status=" << status;
     if (status != GX_STATUS_SUCCESS)
     {
@@ -49,15 +50,7 @@ bool CameraGalaxy::streamOn()
     {
         LOG(INFO) << "GXStreamOn --";
     }
-
-    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
-    if (status != GX_STATUS_SUCCESS)
-    {
-
-        LOG(INFO) << "GXSetEnum Error: " << status;
-        return false;
-    }
-
+ 
     LOG(INFO) << "GXStreamOn";
     status = GXStreamOn(hDevice_);
     if (status != GX_STATUS_SUCCESS)
@@ -87,11 +80,10 @@ void CameraGalaxy::streamOffThread()
 
 bool CameraGalaxy::streamOff()
 {
-    // std::thread stop_thread(GXStreamOff, hDevice_);
-    // stop_thread.detach();
-    
+  
     std::thread stop_thread(&CameraGalaxy::streamOffThread,this);
     stop_thread.detach();
+    
     return true;
 }
  
@@ -206,16 +198,34 @@ bool CameraGalaxy::switchToInternalTriggerMode()
 
     if(GX_STATUS_SUCCESS != status)
     {
+        LOG(INFO) << "GX_ENUM_LINE_SOURCE Error: " << status;
         return false;
     }
 
     status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_OFF);
+    if (status != GX_STATUS_SUCCESS)
+    {
+
+        LOG(INFO) << "GXSetEnum Error: " << status;
+        return false;
+    }
+
     
     if(GX_STATUS_SUCCESS != status)
     {
+        LOG(INFO) << "GX_ENUM_TRIGGER_MODE Error: " << status;
         return false;
     }
-      
+    
+    status = GXSendCommand(hDevice_, GX_COMMAND_TRIGGER_SOFTWARE);
+    if(GX_STATUS_SUCCESS != status)
+    {
+        
+        LOG(INFO) << "GX_COMMAND_TRIGGER_SOFTWARE Error: " << status;
+        return false;
+    }
+
+
     return true;
 }
 bool CameraGalaxy::switchToExternalTriggerMode()
@@ -225,9 +235,18 @@ bool CameraGalaxy::switchToExternalTriggerMode()
 
     if(GX_STATUS_SUCCESS != status)
     {
+        LOG(INFO) << "GX_TRIGGER_SOURCE_LINE2 Error: " << status;
         return false;
     }
-      
+
+    status = GXSetEnum(hDevice_, GX_ENUM_TRIGGER_MODE, GX_TRIGGER_MODE_ON);
+    if (status != GX_STATUS_SUCCESS)
+    {
+
+        LOG(INFO) << "GX_TRIGGER_MODE_ON Error: " << status;
+        return false;
+    }
+       
     return true;
     
 }

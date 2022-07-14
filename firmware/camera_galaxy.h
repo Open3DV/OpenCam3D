@@ -39,5 +39,5 @@ private:
     PGX_FRAME_BUFFER pFrameBuffer_; 
 
 	std::timed_mutex stream_mutex_;
- 
+  
 };
