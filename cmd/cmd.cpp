@@ -1464,6 +1464,7 @@ int configure_focusing(const char* ip)
 
 
 	int num = 1000;
+	int overheating_num = 0;
 	while (num-- > 0)
 	{
 
@@ -1486,6 +1487,13 @@ int configure_focusing(const char* ip)
 		DfGetProjectorTemperature(temperature);
 
 		if (temperature > 75)
+		{
+			std::cout << "too high temperature: " << temperature << " degree" << std::endl;
+			overheating_num++;
+			//break;
+		}
+
+		if (overheating_num > 50)
 		{
 			break;
 		}

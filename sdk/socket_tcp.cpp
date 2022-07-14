@@ -169,7 +169,7 @@ int recv_buffer(char* buffer, int buffer_size, SOCKET& sock)
 	while (ret != -1)
 	{
 		ret = recv(sock, buffer, buffer_size, 0);
-		LOG(INFO) << "recv: " << "ret=" << ret << std::endl;
+		//LOG(INFO) << "recv: " << "ret=" << ret << std::endl;
 		if (ret > 0)
 		{
 			buffer_size -= ret;
