@@ -28,7 +28,7 @@ LightCrafter3010::LightCrafter3010()
 	memset(&_MCP3221, 0, sizeof(_MCP3221));
 	i2c_init_device(&_MCP3221);
     _MCP3221.bus = fd;
-    _MCP3221.addr = 0x4d;
+    _MCP3221.addr = 0x4f;               //MCP3221A7T-E/OT 
     _MCP3221.page_bytes = 256;
     _MCP3221.iaddr_bytes = 1;  
 }
@@ -58,7 +58,7 @@ void LightCrafter3010::init()
 	write(0x05, buffer, 1);
 
 	//LED set to brightest
-	//SetLedCurrent(1023, 1023, 1023);
+	// SetLedCurrent(1023, 1023, 1023);
 
 	//enable tigger out 1
 	buffer[4] = 0x00;
@@ -77,7 +77,7 @@ void LightCrafter3010::init()
 	buffer[0] = 0x03;
 	write(0x92, buffer, 5);
 
-	//pattern_mode01();
+	// pattern_mode01();
 	//write_pattern_table();
 }
 
@@ -561,6 +561,32 @@ size_t LightCrafter3010::read_mcp3221(void* buffer, size_t buffer_size)
 	return	i2c_read(&_MCP3221, 0, buffer, buffer_size);
 }
 
+float LightCrafter3010::lookup_table(float fRntc)
+{
+    float temperature = 30.0;
+    float last = 0, current = 0;
+    int i = 0, number = 0;
+
+    last = abs(fRntc - R_table[0]);
+
+    for (i = 0; i < R_TABLE_NUM; i++)
+    {
+        current = abs(fRntc - R_table[i]);
+
+        if (current < last) 
+        {
+            last = current;
+            number = i;
+        }
+    }
+
+    temperature = number - 40.0;
+
+    printf("temperature = %f, R_table[%d] = %f\n", temperature, number, R_table[number]);
+
+    return temperature;
+}
+
 float LightCrafter3010::get_projector_temperature()
 {
     unsigned char buffer[2];
@@ -573,6 +599,9 @@ float LightCrafter3010::get_projector_temperature()
     // Rntc = 10 * (4096 - AD) / AD, unit=KO
     float fAD = OutputCode;
     float fRntc = 10.0 * (4096.0 - fAD) / fAD;
+    printf("R = %f\n", fRntc);
 
-    return fRntc;
+    float temperature = lookup_table(fRntc);
+
+    return temperature;
 }

@@ -1191,6 +1191,7 @@ bool CameraDh::openCamera()
         //�� �� �� �� ֵ
         status = GXSetFloat(hDevice_, GX_FLOAT_GAIN, scan_camera_gain_);
 
+        // status = GXSetFloat(hDevice_, GX_FLOAT_ACQUISITION_FRAME_RATE, 168);
 
         //�� �� �� �� ѡ �� Ϊ Line2
         status = GXSetEnum(hDevice_, GX_ENUM_LINE_SELECTOR, GX_ENUM_LINE_SELECTOR_LINE2);

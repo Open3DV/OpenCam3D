@@ -116,11 +116,13 @@ open_cam3d.exe --set-auto-exposure-roi  --ip 192.168.x.x\n\
 open_cam3d.exe --self-test --ip 192.168.x.x\n\
 \n\
 31.Get projector temperature: \n\
-\n\
 open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
 \n\
 30.Get Repetition Phase 02: \n\
 open_cam3d.exe --get-repetition-phase-02 --count 3 --ip 192.168.x.x --path  ./phase02_image_dir\n\
+\n\
+31.Enable Focusing: \n\
+open_cam3d.exe --enable-focusing --ip 192.168.x.x \n\
 \n\
 ";
 
@@ -165,6 +167,7 @@ int set_auto_exposure_base_board(const char* ip);
 int self_test(const char* ip);
 int get_projector_temperature(const char* ip);
 int get_repetition_phase_02(const char* ip, int count, const char* phase_image_dir);
+int configure_focusing(const char* ip);
 
 extern int optind, opterr, optopt;
 extern char* optarg;
@@ -212,7 +215,8 @@ enum opt_set
 	SET_AUTO_EXPOSURE_BASE_BOARD,
 	SELF_TEST,
 	GET_PROJECTOR_TEMPERATURE,
-	GET_REPETITION_PHASE_02
+	GET_REPETITION_PHASE_02,
+	ENABLE_FOCUSING
 };
 
 static struct option long_options[] =
@@ -259,6 +263,7 @@ static struct option long_options[] =
 	{"set-auto-exposure-board",no_argument,NULL,SET_AUTO_EXPOSURE_BASE_BOARD},
 	{"self-test",no_argument,NULL,SELF_TEST},
 	{"get-projector-temperature",no_argument,NULL,GET_PROJECTOR_TEMPERATURE},
+	{"enable-focusing",no_argument,NULL,ENABLE_FOCUSING},
 };
 
 
@@ -276,6 +281,8 @@ struct CameraCalibParam calibration_param_;
 
 int main(int argc, char* argv[])
 {
+
+
 	int c = 0;
 
 	while (EOF != (c = getopt_long(argc, argv, "i:h", long_options, NULL)))
@@ -450,6 +457,9 @@ int main(int argc, char* argv[])
 		break;
 	case GET_PROJECTOR_TEMPERATURE:
 		get_projector_temperature(camera_id);
+		break;
+	case ENABLE_FOCUSING:
+		configure_focusing(camera_id);
 		break;
 	default:
 		break;
@@ -1405,6 +1415,118 @@ int get_temperature(const char* ip)
 	std::cout << "Device temperature: " << temperature << std::endl;
 
 	DfDisconnectNet();
+	return 1;
+}
+
+int configure_focusing(const char* ip)
+{
+
+	cv::namedWindow("focusing", cv::WINDOW_NORMAL);
+	cv::resizeWindow("focusing", 960, 600);
+	cv::imshow("focusing", cv::Mat(1200, 1920, CV_8UC1, cv::Scalar(0)));
+	cv::waitKey(5);
+
+	enable_checkerboard(camera_id);
+	clock_t startTime, endTime;
+	startTime = clock();//��ʱ��ʼ
+
+
+
+
+	/*********************************************************************************************/
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int width, height;
+	DfGetCameraResolution(&width, &height);
+
+	ret = DfSetParamLedCurrent(255);
+	//cv::waitKey(10);
+	if (DF_SUCCESS != ret)
+	{
+		std::cout << "Set Led Failed! " << std::endl;
+		return 0;
+	}
+
+	int image_size = width * height;
+	cv::Mat img(height, width, CV_8UC1, cv::Scalar(0));
+
+
+	float f_val = 0;
+	DfGetParamCameraExposure(f_val);
+	int exposure = f_val / 1000;
+	cv::createTrackbar("Exposure", "focusing", &exposure, 60);
+
+
+	int num = 1000;
+	while (num-- > 0)
+	{
+
+		int val = cv::getTrackbarPos("Exposure", "focusing");
+
+		//if (val != exposure)
+		//{
+
+		ret = DfSetParamCameraExposure(val * 1000);
+		//cv::waitKey(10);
+		if (DF_SUCCESS == ret)
+		{
+			exposure = val;
+		}
+		//}
+
+		DfGetFocusingImage(img.data, image_size * sizeof(char));
+
+		float temperature = 0;
+		DfGetProjectorTemperature(temperature);
+
+		if (temperature > 75)
+		{
+			break;
+		}
+
+		std::string str_val = std::to_string(temperature);
+		std::string title = "Focusing   T: " + str_val.substr(0, str_val.find(".") + 3) + " ℃";
+		cv::setWindowTitle("focusing", title);
+
+		cv::imshow("focusing", img);
+		int key = cv::waitKey(1);
+		//std::cout << "temperature: " << temperature << std::endl;
+		//std::cout << "exposure: " << exposure << std::endl;
+		//std::cout << "key: " << key << std::endl;
+		if (32 == key || 27 == key)
+		{
+			break;
+		}
+
+		endTime = clock();//��ʱ����
+		int count_sec = (endTime - startTime) / CLOCKS_PER_SEC;
+		std::cout << "The run time is: " << (double)(endTime - startTime) / CLOCKS_PER_SEC << "s" << endl;
+
+		if (count_sec > 600)
+		{
+			break;
+		}
+
+	}
+
+
+	DfDisconnectNet();
+
+
+
+
+
+	disable_checkerboard(camera_id);
+
+
+	cv::destroyAllWindows();
+
 	return 1;
 }
 

@@ -1,12 +1,14 @@
 ﻿// Dexforce_DF_Source.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 //
-
+#ifdef _WIN32  
+#include <windows.h>
+#elif __linux 
+#endif
 #include <iostream>
 #include "solution.h"
 #include "../firmware/camera_param.h"
 #include "../cmd/getopt.h"
 #include <string.h>  
-#include <windows.h>
 #include <iomanip>
 
 const char* help_info =

@@ -68,7 +68,7 @@ extern "C"
 
 	//函数名： DfGetHeightMapData
 	//功能： 获取校正到基准平面的高度映射图
-	//输入参数：无
+	//输入参数：无  
 	//输出参数： height_map(高度映射图)
 	//返回值： 类型（int）:返回0表示获取数据成功;返回-1表示采集数据失败.
 	DF_SDK_API int DfGetHeightMapData(float* height_map);
@@ -278,6 +278,13 @@ DF_SDK_API int DfGetCameraData(
 //输出参数：brightness
 //返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
 DF_SDK_API int GetBrightness(unsigned char* brightness, int brightness_buf_size);
+
+//函数名： DfGetFocusingImage
+//功能： 获取一个对焦图数据
+//输入参数：image_buf_size（亮度图尺寸sizeof(unsigned char) * width * height）
+//输出参数：image
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetFocusingImage(unsigned char* image, int image_buf_size);
 
 //函数名： DfGetCameraRawData01
 //功能： 采集一组相移图，一共24幅四步相移条纹图
@@ -572,3 +579,4 @@ DF_SDK_API int DfGetProjectorTemperature(float& temperature);
 //输出参数： timestamp(时间戳)
 //返回值： 类型（int）:返回0表示获取采集数据成功;返回-1表示采集数据失败.
 DF_SDK_API int DfCaptureRepetitionData(int repetition_count, int exposure_num, char* timestamp);
+

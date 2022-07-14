@@ -243,13 +243,14 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 		{
 			double undistort_x = c;
 			double undistort_y = r;
-
-			undistortPoint(c, r, camera_fx, camera_fy,
-				camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+			 
 
 			int offset = r * camera_width_ + c;
 			if (depth_map[offset] > 0)
 			{
+				undistortPoint(c, r, camera_fx, camera_fy,
+					camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+
 				point_cloud_map[3 * offset + 0] = (undistort_x - camera_cx) * depth_map[offset] / camera_fx;
 				point_cloud_map[3 * offset + 1] = (undistort_y - camera_cy) * depth_map[offset] / camera_fy;
 				point_cloud_map[3 * offset + 2] = depth_map[offset];
@@ -440,12 +441,20 @@ DF_SDK_API int DfCaptureData(int exposure_num, char* timestamp)
 	{
 		LOG(TRACE) << " Get Frame HDR:";
 		ret = DfGetFrameHdr(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+		if (DF_FAILED == ret)
+		{
+			return DF_FAILED;
+		}
 	}
 	else
 	{
 
 		LOG(TRACE) << " Get Frame04:";
 		ret = DfGetFrame04(depth_buf_, depth_buf_size_, brightness_buf_, brightness_bug_size_);
+		if (DF_FAILED == ret)
+		{
+			return DF_FAILED;
+		}
 	}
 
 
@@ -875,6 +884,7 @@ int HeartBeat_loop()
 		if (ret == DF_FAILED)
 		{
 			connected = false;
+			//close_socket(g_sock); 
 			p_OnDropped(0);
 		}
 		for (int i = 0; i < 100; i++)
@@ -892,6 +902,7 @@ int HeartBeat_loop()
 
 DF_SDK_API int DfConnectNet(const char* ip)
 {
+
 	camera_id_ = ip;
 	LOG(INFO) << "start connection: " << ip;
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
@@ -953,6 +964,7 @@ DF_SDK_API int DfDisconnectNet()
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{
+		LOG(INFO) << "Failed to setup_socket";
 		close_socket(g_sock);
 		return DF_FAILED;
 	}
@@ -985,7 +997,48 @@ DF_SDK_API int DfDisconnectNet()
 	return close_socket(g_sock);
 }
 
+//函数名： DfGetFocusingImage
+//功能： 获取一个对焦图数据
+//输入参数：image_buf_size（亮度图尺寸sizeof(unsigned char) * width * height）
+//输出参数：image
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetFocusingImage(unsigned char* image, int image_buf_size)
+{
+	LOG(INFO) << "DfGetFocusingImage";
+	assert(brightness_buf_size >= image_size * sizeof(unsigned char));
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	//std::cout << "1" << std::endl;
+	ret = send_command(DF_CMD_GET_FOCUSING_IMAGE, g_sock);
+	//std::cout << "send token " << token<< std::endl;
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		LOG(INFO) << "token checked ok";
+		ret = recv_buffer((char*)image, image_buf_size, g_sock);
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get Focusing Image rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
 
+	LOG(INFO) << "Get  Focusing Image success";
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
 
 DF_SDK_API int GetBrightness(unsigned char* brightness, int brightness_buf_size)
 {
