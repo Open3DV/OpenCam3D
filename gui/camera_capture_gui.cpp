@@ -1562,13 +1562,14 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 	if (true)
 	{
 		//ICP
-		cv::Mat undist_img;
-		cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
+		//cv::Mat undist_img;
+		//cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
+		//std::vector<cv::Point2f> undist_circle_points;
 
 
 		Calibrate_Function calib_function;
-		std::vector<cv::Point2f> undist_circle_points;
-		bool found = calib_function.findCircleBoardFeature(undist_img, undist_circle_points);
+		std::vector<cv::Point2f> circle_points;
+		bool found = calib_function.findCircleBoardFeature(brightness_map_, circle_points);
 
 		if (!found)
 		{
@@ -1583,7 +1584,7 @@ void CameraCaptureGui::do_pushButton_calibrate_external_param()
 
 		/*******************************************************************************************/
 		std::vector<cv::Point3f> point_3d;
-		bilinearInterpolationFeaturePoints(undist_circle_points, point_3d, points_map);
+		bilinearInterpolationFeaturePoints(circle_points, point_3d, points_map);
 
 		PrecisionTest precision_machine;
 		cv::Mat pc1(point_3d.size(), 3, CV_64F, cv::Scalar(0));
@@ -1806,11 +1807,12 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 	if (true)
 	{
 		//ICP
-		cv::Mat undist_img;
-		cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
+		//cv::Mat undist_img;
+		//cv::undistort(brightness_map_, undist_img, cameraMatrix, distCoeffs);
+		//std::vector<cv::Point2f> undist_circle_points;
 		Calibrate_Function calib_function;
-		std::vector<cv::Point2f> undist_circle_points;
-		bool found = calib_function.findCircleBoardFeature(undist_img, undist_circle_points);
+		std::vector<cv::Point2f> circle_points;
+		bool found = calib_function.findCircleBoardFeature(brightness_map_, circle_points);
 
 		if (!found)
 		{
@@ -1823,7 +1825,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 			cv::Mat color_img;
 			cv::Size board_size = calib_function.getBoardSize();
 			cv::cvtColor(brightness_map_, color_img, cv::COLOR_GRAY2BGR);
-			cv::drawChessboardCorners(color_img, board_size, undist_circle_points, found);
+			cv::drawChessboardCorners(color_img, board_size, circle_points, found);
 			render_image_brightness_ = color_img.clone();
 			showImage();
 		}
@@ -1835,7 +1837,7 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 
 		/*******************************************************************************************/
 		std::vector<cv::Point3f> point_3d;
-		bilinearInterpolationFeaturePoints(undist_circle_points, point_3d, points_map);
+		bilinearInterpolationFeaturePoints(circle_points, point_3d, points_map);
 
 		PrecisionTest precision_machine;
 		cv::Mat pc1(point_3d.size(), 3, CV_64F, cv::Scalar(0));
@@ -1890,15 +1892,16 @@ void CameraCaptureGui::do_pushButton_test_accuracy()
 				plane_list_[center_points_list_.size() - 2]);
 
 
-			addLogMessage(u8"标定精度: " + QString::number(diff) +
-				u8"	距离: " + QString::number(dist));
+			//addLogMessage(u8"标定精度: " + QString::number(diff) +
+			//	u8"	距离: " + QString::number(dist));
+			addLogMessage(u8"标定精度: " + QString::number(diff, 'f', 3));
 		}
 		else
 		{
-			addLogMessage(u8"标定精度: " + QString::number(diff) +
-				u8"	距离: " + QString::number(0));
+			//addLogMessage(u8"标定精度: " + QString::number(diff) +
+			//	u8"	距离: " + QString::number(0));
+			addLogMessage(u8"标定精度: " + QString::number(diff, 'f', 3));
 		}
-
 
 
 	}
