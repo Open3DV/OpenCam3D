@@ -140,6 +140,8 @@ private slots:
 
 	void do_spin_exposure_num_changed(int val);
 
+	void do_more_exposure_param_changed(int val);
+
 	void do_spin_repetition_count_changed(int val);
 
 	void do_spin_min_z_changed(int val);

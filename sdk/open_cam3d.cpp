@@ -243,7 +243,7 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 		{
 			double undistort_x = c;
 			double undistort_y = r;
-			 
+
 
 			int offset = r * camera_width_ + c;
 			if (depth_map[offset] > 0)
@@ -1005,7 +1005,7 @@ DF_SDK_API int DfDisconnectNet()
 DF_SDK_API int DfGetFocusingImage(unsigned char* image, int image_buf_size)
 {
 	LOG(INFO) << "DfGetFocusingImage";
-	assert(brightness_buf_size >= image_size * sizeof(unsigned char));
+	assert(image_buf_size >= image_size * sizeof(unsigned char));
 	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 	if (ret == DF_FAILED)
 	{

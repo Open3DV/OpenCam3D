@@ -444,13 +444,21 @@ void CameraCaptureGui::add_exposure_item(int row, int exposure, int led)
 	exposureSpinBoxItem->setValue(exposure);
 	exposureSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
 	exposureSpinBoxItem->setAlignment(Qt::AlignHCenter);
+	exposureSpinBoxItem->setKeyboardTracking(false);
+	exposureSpinBoxItem->setSingleStep(6000);
 
+	connect(exposureSpinBoxItem, SIGNAL(valueChanged(int)), this, SLOT(do_more_exposure_param_changed(int)));
 
 	QSpinBox* ledSpinBoxItem = new QSpinBox();
 	ledSpinBoxItem->setRange(0, 1023);//设置数值显示范围
 	ledSpinBoxItem->setValue(led);
 	ledSpinBoxItem->setButtonSymbols(QAbstractSpinBox::NoButtons);
 	ledSpinBoxItem->setAlignment(Qt::AlignHCenter);
+	ledSpinBoxItem->setKeyboardTracking(false);
+	ledSpinBoxItem->setSingleStep(100);
+
+
+	connect(ledSpinBoxItem, SIGNAL(valueChanged(int)), this, SLOT(do_more_exposure_param_changed(int)));
 
 	ui.tableWidget_more_exposure->setItem(row, 0, new QTableWidgetItem(QString::number(row + 1)));
 	ui.tableWidget_more_exposure->setCellWidget(row, 1, exposureSpinBoxItem);
@@ -991,6 +999,42 @@ void CameraCaptureGui::updateManyExposureParam()
 }
 
 
+void CameraCaptureGui::do_more_exposure_param_changed(int val)
+{
+	qDebug() << "value changed!";
+
+	bool changed = manyExposureParamHasChanged();
+	if (changed)
+	{
+
+		if (camera_setting_flag_)
+		{
+			return;
+		}
+
+
+		//设置参数时加锁
+		camera_setting_flag_ = true;
+		if (connected_flag_)
+		{
+			//如果连续采集在用、先暂停
+			if (start_timer_flag_)
+			{
+				stopCapturingOneFrameBaseThread();
+				updateManyExposureParam();
+				do_pushButton_capture_continuous();
+			}
+			else
+			{
+				updateManyExposureParam();
+			}
+		}
+
+		camera_setting_flag_ = false;
+
+	}
+
+}
 
 
 void CameraCaptureGui::do_spin_exposure_num_changed(int val)
@@ -1017,6 +1061,14 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 		old_led_list.push_back(led_current_list_.at(i)->value());
 	}
 
+	for (int i = 0; i < exposure_time_list_.size(); i++)
+	{
+
+		disconnect(exposure_time_list_[i], SIGNAL(valueChanged(int)), this, SLOT(do_more_exposure_param_changed(int)));
+		disconnect(led_current_list_[i], SIGNAL(valueChanged(int)), this, SLOT(do_more_exposure_param_changed(int)));
+		delete exposure_time_list_[i];
+		delete led_current_list_[i];
+	}
 
 	exposure_time_list_.clear();
 	led_current_list_.clear();
@@ -1037,6 +1089,8 @@ void CameraCaptureGui::do_spin_exposure_num_changed(int val)
 	//qDebug() << "exposure_time_list size: " << exposure_time_list_.size();
 	ui.tableWidget_more_exposure->repaint();
 	ui.verticalLayout->update();
+
+	do_more_exposure_param_changed(0);
 }
 
 /*************************************************************************************************************************************/
