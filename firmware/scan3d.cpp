@@ -1174,17 +1174,12 @@ bool Scan3D::captureFrame03()
 
 
 bool Scan3D::captureFrame01()
-{
-
-
- 
-
-    int buffer_size = 1920*1200*24;
+{ 
+    int buffer_size = image_width_*image_height_*24;
     unsigned char* buffer = new unsigned char[buffer_size];
 
     if (!captureRaw01(buffer))
-    {
-
+    { 
         LOG(INFO) << "capture Raw 01 Failed!"; 
         delete[] buffer;
     }
@@ -1192,14 +1187,27 @@ bool Scan3D::captureFrame01()
     std::vector<unsigned char*> patterns_ptr_list;
     for(int i=0; i<24; i++)
     {
-	    patterns_ptr_list.push_back(((unsigned char*)(buffer+i*1920*1200)));
+	    patterns_ptr_list.push_back(((unsigned char*)(buffer+i*image_width_*image_height_)));
     }
   
     cuda_get_frame_base_24(patterns_ptr_list, buff_depth_,buff_brightness_);
 
+
+    delete[] buffer;
     return true;
 }
 
+
+bool Scan3D::testCaptureFrame01(unsigned char* buffer)
+{
+    std::vector<unsigned char*> patterns_ptr_list;
+    for(int i=0; i<24; i++)
+    {
+	    patterns_ptr_list.push_back(((unsigned char*)(buffer+i*image_width_*image_height_)));
+    }
+  
+    cuda_get_frame_base_24(patterns_ptr_list, buff_depth_,buff_brightness_);
+}
 /***********************************************************************************************************************/
 
 bool Scan3D::readCalibParam()
@@ -1228,7 +1236,7 @@ bool Scan3D::loadCalibData()
     if(!readCalibParam())
     {
         LOG(INFO)<<"Read Calib Param Error!";  
-        return true; 
+        return false; 
     }
     else
     {
