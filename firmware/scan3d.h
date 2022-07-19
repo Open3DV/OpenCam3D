@@ -62,6 +62,8 @@ public:
     bool captureFrame03();
     
     bool captureFrame01();
+    
+    bool testCaptureFrame01(unsigned char* buffer);
     /************************************************************************/
  
     bool readCalibParam();
