@@ -386,6 +386,30 @@ bool Solution::reconstructFrame01BaseFirmware(const char* ip, std::vector<cv::Ma
 	return true;
 }
 
+
+bool Solution::readPatterns(std::string dir, std::vector<cv::Mat>& patterns)
+{
+
+	std::vector<std::string> files;
+	getFiles(dir, files);
+	patterns.clear();
+
+	for (int i = 0; i < files.size(); i++)
+	{
+		std::string path = files[i];
+
+		cv::Mat img = cv::imread(path, 0);
+		if (img.empty())
+		{
+			return false;
+		}
+		std::cout << path << std::endl;
+		patterns.push_back(img.clone());
+	}
+
+	return true;
+}
+
 bool Solution::savePatterns(std::string dir, std::vector<cv::Mat> patterns)
 {
 	if (patterns.empty())
@@ -407,4 +431,55 @@ bool Solution::savePatterns(std::string dir, std::vector<cv::Mat> patterns)
 	}
 
 	return true;
+}
+
+
+void Solution::getFiles(std::string path, std::vector<std::string>& files)
+{
+
+#ifdef _WIN32 
+	//�ļ����  
+	intptr_t    hFile = 0;
+	//�ļ���Ϣ������һ���洢�ļ���Ϣ�Ľṹ��  
+	struct _finddata_t fileinfo;
+	std::string p;//�ַ��������·��
+	if ((hFile = _findfirst(p.assign(path).append("/*.bmp").c_str(), &fileinfo)) != -1)//�����ҳɹ��������
+	{
+		do
+		{
+			//�����Ŀ¼,����֮�����ļ����ڻ����ļ��У�  
+			if ((fileinfo.attrib & _A_SUBDIR))
+			{
+				//�ļ���������"."&&�ļ���������".."
+					//.��ʾ��ǰĿ¼
+					//..��ʾ��ǰĿ¼�ĸ�Ŀ¼
+					//�ж�ʱ�����߶�Ҫ���ԣ���Ȼ�����޵ݹ�������ȥ�ˣ�
+				//if (strcmp(fileinfo.name, ".") != 0 && strcmp(fileinfo.name, "..") != 0)
+				//	getFiles(p.assign(path).append("\\").append(fileinfo.name), files);
+			}
+			//�������,�����б�  
+			else
+			{
+				files.push_back(p.assign(path).append("/").append(fileinfo.name));
+			}
+		} while (_findnext(hFile, &fileinfo) == 0);
+		//_findclose������������
+		_findclose(hFile);
+	}
+
+
+#elif __linux
+	DIR* pDir;
+	struct dirent* ptr;
+	if (!(pDir = opendir(path.c_str())))
+		return;
+	while ((ptr = readdir(pDir)) != 0) {
+		if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0)
+			files.push_back(path + "/" + ptr->d_name);
+	}
+	closedir(pDir);
+
+#endif 
+
+
 }

@@ -1,12 +1,10 @@
 ﻿#include <iostream>
 #include <fstream>
 #include "case.h"
-#include "status.h"
-#include "file_io.h"
+#include "status.h" 
 #include "../src/solution.h"
 
 using namespace std;
-
 
 
 bool get_frame_01(const char* ip)
@@ -19,7 +17,6 @@ bool get_frame_01(const char* ip)
 	//采集条纹
 	std::string raw_path = folderPath + "\\raw_01";
 	std::string calib_path = folderPath + "\\param.txt";
-	//get_raw_01(ip, raw_Path.c_str());
 
 	//读图
 	struct CameraCalibParam calibration_param_;
@@ -27,12 +24,12 @@ bool get_frame_01(const char* ip)
 	std::vector<cv::Mat> patterns_;
 
 	bool ret = solution_.captureRaw01(ip, patterns_);
-
 	if (ret)
 	{
 		solution_.savePatterns(raw_path, patterns_);
 	}
 
+	std::cout << "Capture Raw 01 Finished!" << std::endl;
 	ret = solution_.getCameraCalibData(ip, calibration_param_);
 
 	if (ret)
@@ -43,6 +40,8 @@ bool get_frame_01(const char* ip)
 	{
 		std::cout << "Get Camera Calib Data Failure!";
 	}
+
+	std::cout << "Get Camera Calib Data Finished!" << std::endl;
 
 	int camera_version = 0;
 	ret = solution_.getCameraVersion(ip, camera_version);
@@ -68,6 +67,7 @@ bool get_frame_01(const char* ip)
 		return false;
 	}
 
+	std::cout << "Reconstruct Frame 01 Finished!" << std::endl;
 	cv::Mat depth_remote;
 	cv::Mat brightness_remote;
 	ret = solution_.reconstructFrame01BaseFirmware(ip, patterns_, depth_remote, brightness_remote);

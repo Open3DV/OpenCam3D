@@ -29,7 +29,12 @@ public:
 
 	bool reconstructFrame01BaseFirmware(const char* ip, std::vector<cv::Mat>& patterns, cv::Mat& depth, cv::Mat& brightness);
 
+	bool readPatterns(std::string dir, std::vector<cv::Mat>& patterns);
+
 	bool savePatterns(std::string dir, std::vector<cv::Mat> patterns);
+
+private:
+	void getFiles(std::string path, std::vector<std::string>& files);
 
 private:
 	int camera_version_;

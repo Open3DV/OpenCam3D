@@ -3657,7 +3657,7 @@ DF_SDK_API int DfGetTestFrame01(unsigned char* raw, int raw_buf_size, float* dep
 	{
 		LOG(INFO) << "token checked ok";
 
-		ret = send_buffer((const char*)&raw, raw_buf_size, g_sock);
+		ret = send_buffer((char*)raw, raw_buf_size, g_sock);
 		if (ret == DF_FAILED)
 		{
 			LOG(INFO) << "send raw Failed!";
