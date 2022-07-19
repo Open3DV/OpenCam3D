@@ -98,6 +98,8 @@ void CameraCaptureGui::setCalibrationBoard(int flag)
 	default:
 		break;
 	}
+
+
 }
 
 
@@ -159,8 +161,8 @@ bool CameraCaptureGui::initializeFunction()
 	generate_brightness_model_ = GENERATE_BRIGHTNESS_DEFAULT_;
 	generate_brightness_exposure_ = 12000;
 
-	board_size_.width = 20.0;
-	board_size_.height = 10.0;
+	//board_size_.width = 20.0;
+	//board_size_.height = 10.0;
 
 	camera_version_ = 800;
 	/**********************************************************************************************************************/
@@ -396,8 +398,8 @@ void CameraCaptureGui::setUiData()
 
 	ui.checkBox_hdr->setChecked(processing_gui_settings_data_.Instance().use_hdr_model);
 
-
-
+	setCalibrationBoard(processing_gui_settings_data_.Instance().calibration_board);
+	qDebug() << "processing_gui_settings_data_.Instance().calibration_board: " << processing_gui_settings_data_.Instance().calibration_board;
 	//ui.spinBox_exposure_num->setDisabled(true);
 	//ui.spinBox_led->setDisabled(true);
 }

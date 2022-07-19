@@ -902,6 +902,21 @@ int HeartBeat_loop()
 
 DF_SDK_API int DfConnectNet(const char* ip)
 {
+	/*******************************************************************************************************************/
+	//关闭log输出
+	el::Configurations conf;
+	conf.setToDefault();
+	conf.setGlobally(el::ConfigurationType::Format, "[%datetime{%H:%m:%s} | %level] %msg");
+	conf.setGlobally(el::ConfigurationType::Filename, "log\\log_%datetime{%Y%M%d}.log");
+	conf.setGlobally(el::ConfigurationType::Enabled, "true");
+	conf.setGlobally(el::ConfigurationType::ToFile, "true");
+	el::Loggers::reconfigureAllLoggers(conf);
+	el::Loggers::reconfigureAllLoggers(el::ConfigurationType::ToStandardOutput, "false");
+
+
+	//DfRegisterOnDropped(on_dropped);
+	/*******************************************************************************************************************/
+
 
 	camera_id_ = ip;
 	LOG(INFO) << "start connection: " << ip;
@@ -1878,7 +1893,7 @@ DF_SDK_API int DfGetCameraRawData01(unsigned char* raw, int raw_buf_size)
 	if (raw)
 	{
 		LOG(INFO) << "Get Raw 01";
-		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 72);
+		assert(raw_buf_size >= image_size * sizeof(unsigned char) * 24);
 		int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
 		if (ret == DF_FAILED)
 		{
@@ -3613,6 +3628,71 @@ DF_SDK_API int DfGetCameraVersion(int& version)
 		return DF_UNKNOWN;
 	}
 
+	close_socket(g_sock);
+	return DF_SUCCESS;
+}
+
+//函数名： DfGetTestFrame01
+//功能： 传送一组Raw01的相移图到firmware,重建回一帧数据（亮度图+深度图）
+//输入参数：raw（相移图地址）、raw_buf_size（相移图尺寸）、 depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetTestFrame01(unsigned char* raw, int raw_buf_size, float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size)
+{
+	LOG(INFO) << "GetTestFrame01";
+	assert(depth_buf_size == image_size * sizeof(float) * 1);
+	assert(brightness_buf_size == image_size * sizeof(char) * 1);
+	int ret = setup_socket(camera_id_.c_str(), DF_PORT, g_sock);
+	if (ret == DF_FAILED)
+	{
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+	ret = send_command(DF_CMD_TEST_GET_FRAME_01, g_sock);
+	ret = send_buffer((char*)&token, sizeof(token), g_sock);
+	int command;
+	ret = recv_command(&command, g_sock);
+	if (command == DF_CMD_OK)
+	{
+		LOG(INFO) << "token checked ok";
+
+		ret = send_buffer((const char*)&raw, raw_buf_size, g_sock);
+		if (ret == DF_FAILED)
+		{
+			LOG(INFO) << "send raw Failed!";
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer, depth_buf_size=" << depth_buf_size;
+		ret = recv_buffer((char*)depth, depth_buf_size, g_sock);
+		LOG(INFO) << "depth received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+		LOG(INFO) << "receiving buffer, brightness_buf_size=" << brightness_buf_size;
+		ret = recv_buffer((char*)brightness, brightness_buf_size, g_sock);
+		LOG(INFO) << "brightness received";
+		if (ret == DF_FAILED)
+		{
+			close_socket(g_sock);
+			return DF_FAILED;
+		}
+
+
+	}
+	else if (command == DF_CMD_REJECT)
+	{
+		LOG(INFO) << "Get frame rejected";
+		close_socket(g_sock);
+		return DF_FAILED;
+	}
+
+	LOG(INFO) << "Get frame success";
 	close_socket(g_sock);
 	return DF_SUCCESS;
 }

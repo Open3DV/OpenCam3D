@@ -144,6 +144,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\cmd\getopt.c" />
+    <ClCompile Include="..\src\encode.cpp" />
+    <ClCompile Include="..\src\reconstruct.cpp" />
+    <ClCompile Include="..\src\solution.cpp" />
+    <ClCompile Include="..\src\triangulation.cpp" />
+    <ClCompile Include="case_GetFrame01.cpp" />
     <ClCompile Include="functest.cpp" />
     <ClCompile Include="case_GetPointCloud.cpp" />
     <ClCompile Include="help.cpp" />
@@ -151,6 +156,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\cmd\getopt.h" />
+    <ClInclude Include="..\src\encode.h" />
+    <ClInclude Include="..\src\reconstruct.h" />
+    <ClInclude Include="..\src\solution.h" />
+    <ClInclude Include="..\src\triangulation.h" />
     <ClInclude Include="case.h" />
     <ClInclude Include="help.h" />
     <ClInclude Include="status.h" />

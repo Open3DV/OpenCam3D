@@ -1,4 +1,5 @@
-﻿#include "help.h"
+﻿#pragma once
+#include "help.h"
 #include "status.h"
 #include "case.h"
 
@@ -17,21 +18,21 @@ int main(int argc, char* argv[])
 	{
 		switch (c)
 		{
-			case IP:
-				camera_id = optarg;
-				break;
-			case PATH:
-				path = optarg;
-				break;
-			case HELP:
-				Help();
-				break;
-			case '?':
-				printf("unknow option:%c\n", optopt);
-				break;
-			default:
-				command = c;
-				break;
+		case IP:
+			camera_id = optarg;
+			break;
+		case PATH:
+			path = optarg;
+			break;
+		case HELP:
+			Help();
+			break;
+		case '?':
+			printf("unknow option:%c\n", optopt);
+			break;
+		default:
+			command = c;
+			break;
 		}
 	}
 
