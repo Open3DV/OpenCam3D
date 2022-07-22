@@ -5,6 +5,7 @@ firmware/build
 *.log
 .vscode
 tools/patterns
+tools/patterns_gray
 example/*.dll
 example/*.lib
 build

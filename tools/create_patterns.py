@@ -3,7 +3,9 @@ import cv2
 import numpy as np
 import math
 import os
+import sys
 
+os.chdir(sys.path[0])# 使用文件所在目录
 PI = 3.1415926
 filename = "pattern.csv"
 
@@ -38,7 +40,7 @@ with open(filename) as f:
                     # p1 = -math.cos((x + 1) / period * PI * 2 + phase * 2*PI / step)
                     # img_x[y, x, :] = (p1 - p0) / (1 / period * PI * 2) * 120 + 127.0 + gray_offset
 
-                    img_x[y_, x_, :] = math.sin(x / period * PI * 2 + phase * 2*PI / step) * 120 + 127.0 + gray_offset
+                    img_x[y_, x_, :] = math.sin(x / period * PI * 2 + phase * 2*PI / step) * 128 + 127.0 + gray_offset
 
                     # if 4 == step:
                     #     img_x[y_, x_, :] = math.sin(x / period * PI * 2 + phase * PI / 2) * 120 + 127.0 + gray_offset
@@ -59,7 +61,7 @@ with open(filename) as f:
                     # p1 = -math.cos((y + 1) / period * PI * 2 + phase * 2*PI / step)
                     # img_y[y, x, :] = (p1 - p0) / (1 / period * PI * 2) * 120 + 127.0 + gray_offset
 
-                    img_y[y_, x_, :] = math.sin(y / period * PI * 2 + phase * 2*PI / step) * 120 + 127.0 + gray_offset
+                    img_y[y_, x_, :] = math.sin(y / period * PI * 2 + phase * 2*PI / step) * 128 + 127.0 + gray_offset
                     # if 4 == step:
                     #     img_y[y_, x_, :] = math.sin(y / period * PI * 2 + phase * PI / 2) * 120 + 127.0 + gray_offset
                     # elif 6 == step:

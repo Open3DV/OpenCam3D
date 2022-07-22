@@ -10,7 +10,280 @@ DF_Encode::~DF_Encode()
 {
 }
 
+bool DF_Encode::unwrapBase2Kmap(cv::Mat wrap_map, cv::Mat k1_map, cv::Mat k2_map, cv::Mat& unwrap_map)
+{
+	if (wrap_map.empty() || k1_map.empty() || k2_map.empty())
+	{
+		return false;
+	}
+	int nr = wrap_map.rows;
+	int nc = wrap_map.cols;
 
+
+	cv::Mat unwrap(nr, nc, CV_32F, cv::Scalar(0));
+
+
+	for (int r = 0; r < nr; r++)
+	{
+		uchar* ptr_k1 = k1_map.ptr<uchar>(r);
+		uchar* ptr_k2 = k2_map.ptr<uchar>(r);
+		float* ptr_wrap = wrap_map.ptr<float>(r);
+		float* ptr_unwrap = unwrap.ptr<float>(r);
+
+		for (int c = 0; c < nc; c++)
+		{
+
+			int k2 = (ptr_k2[c] + 1) / 2;
+
+			if (ptr_wrap[c] < CV_PI / 2.0)
+			{
+				ptr_unwrap[c] = ptr_wrap[c] + 2 * CV_PI * k2;
+			}
+			else if (ptr_wrap[c] < 3 * CV_PI / 2.0)
+			{
+
+				ptr_unwrap[c] = ptr_wrap[c] + 2 * CV_PI * ptr_k1[c];
+			}
+			else
+			{
+				ptr_unwrap[c] = ptr_wrap[c] + 2 * CV_PI * (k2 - 1);
+			}
+		}
+
+
+	}
+
+	unwrap_map = unwrap.clone();
+
+
+	return false;
+}
+
+bool DF_Encode::computePhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& confidence_map, cv::Mat& average_map, cv::Mat& brightness_map, cv::Mat& mask_map)
+{
+	if (patterns.empty())
+	{
+		return false;
+	}
+
+	int nr = patterns[0].rows;
+	int nc = patterns[0].cols;
+
+	cv::Mat wrap(nr, nc, CV_32F, cv::Scalar(0));
+	cv::Mat confidence(nr, nc, CV_32F, cv::Scalar(0));
+	cv::Mat average(nr, nc, CV_8U, cv::Scalar(0));
+	cv::Mat brightness(nr, nc, CV_8U, cv::Scalar(0));
+	cv::Mat mask(nr, nc, CV_8U, cv::Scalar(0));
+
+	switch (patterns.size())
+	{
+	case 6:
+	{
+#pragma omp parallel for
+		for (int r = 0; r < nr; r++)
+		{
+			uchar* ptr0 = patterns[0 + 3].ptr<uchar>(r);
+			uchar* ptr1 = patterns[1 + 3].ptr<uchar>(r);
+			uchar* ptr2 = patterns[2 + 3].ptr<uchar>(r);
+			uchar* ptr3 = patterns[3 - 3].ptr<uchar>(r);
+			uchar* ptr4 = patterns[4 - 3].ptr<uchar>(r);
+			uchar* ptr5 = patterns[5 - 3].ptr<uchar>(r);
+
+			uchar* ptr_m = mask.ptr<uchar>(r);
+			uchar* ptr_avg = average.ptr<uchar>(r);
+			uchar* ptr_b = brightness.ptr<uchar>(r);
+			float* ptr_con = confidence.ptr<float>(r);
+			float* ptr_wrap = wrap.ptr<float>(r);
+
+			for (int c = 0; c < nc; c++)
+			{
+				int exposure_num = 0;
+
+				if (255 == ptr0[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr1[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr2[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr3[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr4[c])
+				{
+					exposure_num++;
+				}
+				if (255 == ptr5[c])
+				{
+					exposure_num++;
+				}
+
+
+				float b = ptr0[c] * std::sin(0 * CV_2PI / 6.0) + ptr1[c] * std::sin(1 * CV_2PI / 6.0) + ptr2[c] * std::sin(2 * CV_2PI / 6.0)
+					+ ptr3[c] * std::sin(3 * CV_2PI / 6.0) + ptr4[c] * std::sin(4 * CV_2PI / 6.0) + ptr5[c] * std::sin(5 * CV_2PI / 6.0);
+
+				float a = ptr0[c] * std::cos(0 * CV_2PI / 6.0) + ptr1[c] * std::cos(1 * CV_2PI / 6.0) + ptr2[c] * std::cos(2 * CV_2PI / 6.0)
+					+ ptr3[c] * std::cos(3 * CV_2PI / 6.0) + ptr4[c] * std::cos(4 * CV_2PI / 6.0) + ptr5[c] * std::cos(5 * CV_2PI / 6.0);
+
+				float ave = (ptr0[c] + ptr1[c] + ptr2[c] + ptr3[c] + ptr4[c] + ptr5[c]) / 6.0;
+
+				float r = std::sqrt(a * a + b * b);
+
+				ptr_avg[c] = ave + 0.5;
+				ptr_con[c] = r / 3.0;
+				ptr_b[c] = ave + 0.5 + r / 3.0;
+
+				/***********************************************************************/
+
+				if (exposure_num > 3)
+				{
+					ptr_m[c] = 0;
+					ptr_wrap[c] = -1;
+				}
+				else
+				{
+					ptr_wrap[c] = CV_PI + std::atan2(a, b);
+				}
+
+
+			}
+		}
+	}
+	break;
+	default:
+		break;
+	}
+
+
+
+
+	/*****************************************************************************************************************************/
+
+	confidence_map = confidence.clone();
+	wrap_map = wrap.clone();
+	brightness_map = brightness.clone();
+	average_map = average.clone();
+	mask_map = mask.clone();
+
+	return true;
+}
+
+bool DF_Encode::grayCodeToBinCode(std::vector<bool> gray_code, std::vector<bool>& bin_code)
+{
+	if (gray_code.empty())
+	{
+		return false;
+	}
+
+	bin_code.push_back(gray_code[0]);
+
+	for (int i = 1; i < gray_code.size(); i++)
+	{
+		bool val = bin_code[i - 1] ^ gray_code[i];
+		bin_code.push_back(val);
+	}
+
+	return true;
+}
+
+bool DF_Encode::decodeGrayCode(std::vector<cv::Mat> patterns, cv::Mat average_brightness, cv::Mat& k1_map, cv::Mat& k2_map)
+{
+	//bin threshold
+
+	int nr = average_brightness.rows;
+	int nc = average_brightness.cols;
+
+	//std::vector<std::vector<bool>> gray_code_list;
+	//threshold bin
+	std::vector<cv::Mat> bin_patterns;
+	for (int i = 0; i < patterns.size(); i++)
+	{
+		cv::Mat bin_mat(nr, nc, CV_8U, cv::Scalar(0));
+
+		for (int r = 0; r < nr; r++)
+		{
+			uchar* ptr_bin = bin_mat.ptr<uchar>(r);
+			uchar* ptr_avg = average_brightness.ptr<uchar>(r);
+			uchar* ptr_gray = patterns[i].ptr<uchar>(r);
+
+			for (int c = 0; c < nc; c++)
+			{
+				if (ptr_gray[c] < ptr_avg[c])
+				{
+					ptr_bin[c] = 0;
+				}
+				else
+				{
+					ptr_bin[c] = 255;
+				}
+			}
+		}
+		bin_patterns.push_back(bin_mat.clone());
+	}
+
+	cv::Mat k1(nr, nc, CV_8U, cv::Scalar(0));
+	cv::Mat k2(nr, nc, CV_8U, cv::Scalar(0));
+
+
+	for (int r = 0; r < nr; r++)
+	{
+		uchar* ptr_k1 = k1.ptr<uchar>(r);
+		uchar* ptr_k2 = k2.ptr<uchar>(r);
+
+		for (int c = 0; c < nc; c++)
+		{
+			std::vector<bool> gray_code_list;
+			std::vector<bool> bin_code_list;
+
+			for (int i = 0; i < bin_patterns.size(); i++)
+			{
+				uchar val = bin_patterns[i].at<uchar>(r, c);
+
+				if (255 == val)
+				{
+					gray_code_list.push_back(true);
+				}
+				else
+				{
+					gray_code_list.push_back(false);
+				}
+			}
+
+			grayCodeToBinCode(gray_code_list, bin_code_list);
+
+			uchar k_2 = 0;
+			uchar k_1 = 0;
+			for (int i = 0; i < bin_code_list.size(); i++)
+			{
+				k_2 += bin_code_list[i] * std::pow(2, bin_code_list.size() - i - 1);
+
+				if (i < bin_code_list.size() - 1)
+				{
+					k_1 += bin_code_list[i] * std::pow(2, bin_code_list.size() - i - 2);
+				}
+			}
+			ptr_k2[c] = k_2;
+			ptr_k1[c] = k_1;
+		}
+
+	}
+
+
+	k1_map = k1.clone();
+	k2_map = k2.clone();
+
+
+	return true;
+}
+
+
+/**************************************************************************************************************/
 
 bool DF_Encode::mergePatterns(std::vector<std::vector<cv::Mat>> patterns_list, std::vector<cv::Mat>& patterns)
 {

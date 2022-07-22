@@ -33,6 +33,8 @@ public:
 
 	bool reconstructBasePhase02(cv::Mat phase_x, cv::Mat phase_y, cv::Mat brightness, struct CameraCalibParam calib_param, std::string pointcloud_path);
 
+	bool reconstructPatterns06BaseTable(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path = "./");
+
 	bool reconstructMixedVariableWavelengthXPatternsBaseMiniTable(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path = "./");
 
 	bool testCalibrationParamBasePlane(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string err_map_path = "./");

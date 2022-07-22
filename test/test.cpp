@@ -87,6 +87,7 @@ void capture_03();
 void capture_04();
 void read_03();
 void read_04();
+void read_06();
 void capture_04_repetition_02(int repetition);
 void read_04_repetition_02();
 void capture_04_repetition_01(int repetition);
@@ -193,6 +194,10 @@ int main(int argc, char* argv[])
 		else if ("patterns-04" == model)
 		{
 			read_04();
+		}
+		else if ("patterns-06" == model)
+		{
+			read_06();
 		}
 		else if ("patterns-04-repetition-02" == model)
 		{
@@ -639,6 +644,38 @@ void read_04_repetition_02()
 
 	solution_machine_.reconstructPatterns04RepetitionBaseTable(patterns_list_, calibration_param_, pointcloud_path);
 
+}
+
+
+void read_06()
+{
+	struct CameraCalibParam calibration_param_;
+	DfSolution solution_machine_;
+	std::vector<cv::Mat> patterns_;
+
+	bool ret = solution_machine_.readImages(patterns_path, patterns_);
+
+	if (!ret)
+	{
+		std::cout << "Read Image Error!";
+	}
+
+	ret = solution_machine_.readCameraCalibData(calib_path, calibration_param_);
+
+	if (!ret)
+	{
+		std::cout << "Read Calib Param Error!" << std::endl;
+	}
+
+	ret = solution_machine_.setCameraVersion(version_number);
+	if (!ret)
+	{
+		std::cout << "Set Camera Version Error!" << std::endl;
+		return;
+	}
+
+
+	solution_machine_.reconstructPatterns06BaseTable(patterns_, calibration_param_, pointcloud_path);
 }
 
 void read_04()

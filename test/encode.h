@@ -31,5 +31,13 @@ public:
 	bool maskMap(cv::Mat mask, cv::Mat& map);
 
 	bool mergePatterns(std::vector<std::vector<cv::Mat>> patterns_list, std::vector<cv::Mat>& patterns);
+
+	bool decodeGrayCode(std::vector<cv::Mat> patterns, cv::Mat average_brightness, cv::Mat& k1_map, cv::Mat& k2_map);
+
+	bool grayCodeToBinCode(std::vector<bool> gray_code, std::vector<bool>& bin_code);
+
+	bool computePhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& confidence_map, cv::Mat& average_map, cv::Mat& brightness_map, cv::Mat& mask_map);
+
+	bool unwrapBase2Kmap(cv::Mat wrap_map, cv::Mat k1_map, cv::Mat k2_map, cv::Mat& unwrap_map);
 };
 

@@ -1784,6 +1784,36 @@ bool DfSolution::reconstructBasePhase02(cv::Mat phase_x, cv::Mat phase_y, cv::Ma
 	return true;
 }
 
+
+bool DfSolution::reconstructPatterns06BaseTable(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path)
+{
+	int nr = patterns[0].rows;
+	int nc = patterns[0].cols;
+
+	int gray_code_num = 8;
+	std::vector<cv::Mat> gray_code_patterns_img(patterns.begin(), patterns.begin() + gray_code_num);
+	std::vector<cv::Mat> phase_shift_patterns_img(patterns.begin() + gray_code_num, patterns.end());
+
+	cv::Mat mask;
+	cv::Mat confidence;
+	cv::Mat wrap;
+	cv::Mat average;
+	cv::Mat brightness;
+
+	DF_Encode encode;
+	bool ret = encode.computePhaseShift(phase_shift_patterns_img, wrap, confidence, average, brightness, mask);
+
+
+	cv::Mat k1_map, k2_map;
+	ret = encode.decodeGrayCode(gray_code_patterns_img, average, k1_map, k2_map);
+
+	cv::Mat unwrap;
+	ret = encode.unwrapBase2Kmap(wrap, k1_map, k2_map, unwrap);
+
+
+	return true;
+}
+
 bool DfSolution::reconstructMixedVariableWavelengthPatternsBaseXYSR(std::vector<cv::Mat> patterns, struct CameraCalibParam calib_param, std::string pointcloud_path)
 {
 
