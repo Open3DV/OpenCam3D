@@ -8,11 +8,11 @@ public:
 	Encode();
 	~Encode();
 
-	bool sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence);
+	bool sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence, cv::Mat& merge_brightness);
 
-	bool fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence);
+	bool fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence, cv::Mat& merge_brightness);
 
-	bool computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector<cv::Mat>& wrap_list, std::vector<cv::Mat>& mask_list, std::vector<cv::Mat>& confidence_list);
+	bool computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector<cv::Mat>& wrap_list, std::vector<cv::Mat>& mask_list, std::vector<cv::Mat>& confidence_list, std::vector<cv::Mat>& brightness_list);
 
 	bool maskBaseConfidence(cv::Mat confidence, int threshold, cv::Mat& mask);
 

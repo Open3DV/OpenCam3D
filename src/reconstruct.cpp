@@ -276,7 +276,7 @@ bool Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int pe
 		uchar* ptr_m = mask.ptr<uchar>(r);
 		for (int c = 0; c < nc; c++)
 		{
-			if (0 != ptr_x[c])
+			if (0 < ptr_x[c] && 0 < ptr_y[c])
 			{
 				cv::Point2f dlp_p;
 				dlp_p.x = dlp_width_ * ptr_x[c] / phase_max;
@@ -338,7 +338,7 @@ bool Reconstruct::rebuildData(cv::Mat unwrap_map_x, cv::Mat unwrap_map_y, int pe
 
 					ptr_err[c] = error_list[points_num];
 
-					if (error_list[points_num] < 2)
+					if (error_list[points_num] < 3 && rebuild_points[points_num].z >0)
 					{
 						ptr_dr[c][0] = rebuild_points[points_num].x;
 						ptr_dr[c][1] = rebuild_points[points_num].y;

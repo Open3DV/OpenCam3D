@@ -11,7 +11,7 @@ Encode::~Encode()
 }
 
 
-bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence)
+bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence, cv::Mat& merge_brightness)
 {
 	if (6 != patterns.size())
 	{
@@ -28,6 +28,7 @@ bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map,
 
 	cv::Mat result(img1.rows, img1.cols, CV_32F, cv::Scalar(-1));
 	cv::Mat confidence_map(img1.rows, img1.cols, CV_32F, cv::Scalar(0));
+	cv::Mat merge_brightness_map(img1.rows, img1.cols, CV_8U, cv::Scalar(0));
 
 	if (!mask.data)
 	{
@@ -80,6 +81,7 @@ bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map,
 			ushort* ptr5 = img5.ptr<ushort>(r);
 			uchar* ptr_m = mask.ptr<uchar>(r);
 			float* ptr_con = confidence_map.ptr<float>(r);
+			uchar* ptr_brightness = merge_brightness_map.ptr<uchar>(r);
 
 			float* optr = result.ptr<float>(r);
 			for (int c = 0; c < nc; c++)
@@ -126,10 +128,15 @@ bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map,
 
 					float r = std::sqrt(a * a + b * b);
 
-					//if (r > 255)
-					//{
-					//	r = 255;
-					//}
+					float ave = (ptr0[c] + ptr1[c] + ptr2[c] + ptr3[c] + ptr4[c] + ptr5[c]) / 6.0;
+
+					float val = ave + r / 3.0;
+					if (val > 255)
+					{
+						val = 255.0;
+					}
+
+					ptr_brightness[c] = val;
 
 					ptr_con[c] = r;
 
@@ -174,6 +181,7 @@ bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map,
 			uchar* ptr5 = img5.ptr<uchar>(r);
 			uchar* ptr_m = mask.ptr<uchar>(r);
 			float* ptr_con = confidence_map.ptr<float>(r);
+			uchar* ptr_brightness = merge_brightness_map.ptr<uchar>(r);
 
 			float* optr = result.ptr<float>(r);
 			for (int c = 0; c < nc; c++)
@@ -220,10 +228,16 @@ bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map,
 
 					float r = std::sqrt(a * a + b * b);
 
-					//if (r > 255)
-					//{
-					//	r = 255;
-					//}
+					float ave = (ptr0[c] + ptr1[c] + ptr2[c] + ptr3[c] + ptr4[c] + ptr5[c]) / 6.0;
+
+					float val = ave + r / 3.0;
+					if (val > 255)
+					{
+						val = 255.0;
+					}
+
+					ptr_brightness[c] = val;
+
 
 					ptr_con[c] = r;
 
@@ -251,13 +265,14 @@ bool Encode::sixStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map,
 
 		wrap_map = result.clone();
 
+		merge_brightness = merge_brightness_map.clone();
 		return true;
 	}
 
 	return false;
 }
 
-bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence)
+bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map, cv::Mat& mask, cv::Mat& confidence, cv::Mat& merge_brightness)
 {
 	if (4 != patterns.size())
 	{
@@ -272,6 +287,7 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 
 	cv::Mat result(img1.rows, img1.cols, CV_32F, cv::Scalar(-1));
 	cv::Mat confidence_map(img1.rows, img1.cols, CV_32F, cv::Scalar(0));
+	cv::Mat merge_brightness_map(img1.rows, img1.cols, CV_8U, cv::Scalar(0));
 
 	if (!mask.data)
 	{
@@ -313,6 +329,7 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 			ushort* ptr4 = img4.ptr<ushort>(i);
 			uchar* ptr_m = mask.ptr<uchar>(i);
 			float* ptr_con = confidence_map.ptr<float>(i);
+			uchar* ptr_brightness = merge_brightness_map.ptr<uchar>(i);
 
 			float* optr = result.ptr<float>(i);
 			for (int j = 0; j < nc; j++)
@@ -340,14 +357,17 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 					float a = ptr4[j] - ptr2[j];
 					float b = ptr1[j] - ptr3[j];
 
-					float r = std::sqrt(a * a + b * b) + 0.5;
+					float r = std::sqrt(a * a + b * b);
 
-					//if(r> 255)
-					//{
-					//	r = 255;
-					//}
+					float ave = (ptr1[j] + ptr2[j] + ptr3[j] + ptr4[j]) / 4.0;
 
-					ptr_con[j] = r;
+					float val = ave + std::sqrt(a * a + b * b) / 2.0;
+					if (val > 255)
+					{
+						val = 255.0;
+					}
+					ptr_brightness[j] = val;
+
 
 					/***********************************************************************/
 
@@ -360,6 +380,7 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 					else
 					{
 						optr[j] = CV_PI + std::atan2(a, b);
+						ptr_con[j] = r;
 					}
 
 				}
@@ -388,6 +409,7 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 			uchar* ptr4 = img4.ptr<uchar>(i);
 			uchar* ptr_m = mask.ptr<uchar>(i);
 			float* ptr_con = confidence_map.ptr<float>(i);
+			uchar* ptr_brightness = merge_brightness_map.ptr<uchar>(i);
 
 			float* optr = result.ptr<float>(i);
 			for (int j = 0; j < nc; j++)
@@ -415,12 +437,16 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 					float a = ptr4[j] - ptr2[j];
 					float b = ptr1[j] - ptr3[j];
 
-					float r = std::sqrt(a * a + b * b) + 0.5;
+					float r = std::sqrt(a * a + b * b);
 
-					//if(r> 255)
-					//{
-					//	r = 255;
-					//}
+					float ave = (ptr1[j] + ptr2[j] + ptr3[j] + ptr4[j]) / 4.0;
+					float val = ave + std::sqrt(a * a + b * b) / 2.0;
+
+					if (val > 255)
+					{
+						val = 255.0;
+					}
+					ptr_brightness[j] = val;
 
 					ptr_con[j] = r;
 
@@ -446,7 +472,7 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 
 		confidence = confidence_map.clone();
 		wrap_map = result.clone();
-
+		merge_brightness = merge_brightness_map.clone();
 		return true;
 	}
 
@@ -455,12 +481,13 @@ bool Encode::fourStepPhaseShift(std::vector<cv::Mat> patterns, cv::Mat& wrap_map
 	return false;
 }
 
-bool Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector<cv::Mat>& wrap_list, std::vector<cv::Mat>& mask_list, std::vector<cv::Mat>& confidence_list)
+bool Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector<cv::Mat>& wrap_list, std::vector<cv::Mat>& mask_list, std::vector<cv::Mat>& confidence_list, std::vector<cv::Mat>& brightness_list)
 {
 
 	std::vector<cv::Mat> wrap_img_list;
 	std::vector<cv::Mat> mask_map_list;
 	std::vector<cv::Mat> confidence_map_list;
+	std::vector<cv::Mat> brightness_map_list;
 	std::vector<int> number_list;
 
 
@@ -471,9 +498,10 @@ bool Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector
 		cv::Mat wrap_img;
 		cv::Mat confidence;
 		cv::Mat mask;
+		cv::Mat brightness;
 
 		std::vector<cv::Mat> phase_list(patterns.begin() + i, patterns.begin() + i + 4);
-		fourStepPhaseShift(phase_list, wrap_img, mask, confidence);
+		fourStepPhaseShift(phase_list, wrap_img, mask, confidence, brightness);
 
 
 #pragma omp critical
@@ -482,6 +510,7 @@ bool Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector
 			wrap_img_list.push_back(wrap_img);
 			mask_map_list.push_back(mask);
 			confidence_map_list.push_back(confidence);
+			brightness_map_list.push_back(brightness);
 		}
 	}
 
@@ -495,17 +524,21 @@ bool Encode::computePhaseBaseFourStep(std::vector<cv::Mat> patterns, std::vector
 	std::vector<cv::Mat> sort_confidencce_list;
 	sort_confidencce_list.resize(confidence_map_list.size());
 
+	std::vector<cv::Mat> sort_brightness_list;
+	sort_brightness_list.resize(brightness_map_list.size());
+
 	for (int i = 0; i < wrap_img_list.size(); i++)
 	{
 		sort_img_list[number_list[i]] = wrap_img_list[i];
 		sort_mask_list[number_list[i]] = mask_map_list[i];
 		sort_confidencce_list[number_list[i]] = confidence_map_list[i];
+		sort_brightness_list[number_list[i]] = brightness_map_list[i];
 	}
 
 	wrap_list = sort_img_list;
 	mask_list = sort_mask_list;
 	confidence_list = sort_confidencce_list;
-
+	brightness_list = sort_brightness_list;
 	return true;
 }
 
@@ -527,7 +560,7 @@ bool Encode::maskBaseConfidence(cv::Mat confidence, int threshold, cv::Mat& mask
 
 		for (int c = 0; c < nc; c++)
 		{
-			if (ptr_c[c] < threshold)
+			if (ptr_c[c] <= threshold)
 			{
 				ptr_m[c] = 0;
 			}

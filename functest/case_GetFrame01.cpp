@@ -3,6 +3,7 @@
 #include "case.h"
 #include "status.h" 
 #include "../src/solution.h"
+#include "evaluate.h"
 
 using namespace std;
 
@@ -23,11 +24,18 @@ bool get_frame_01(const char* ip)
 	Solution solution_;
 	std::vector<cv::Mat> patterns_;
 
-	bool ret = solution_.captureRaw01(ip, patterns_);
-	if (ret)
-	{
-		solution_.savePatterns(raw_path, patterns_);
-	}
+
+	bool ret = solution_.readPatterns(raw_path, patterns_);
+
+	//bool ret = solution_.captureRaw01(ip, patterns_);
+
+	//if (!ret)
+	//{
+	//	std::cout << "Capture Raw 01 Failed!" << std::endl;
+	//	return -1;
+	//} 
+	//solution_.savePatterns(raw_path, patterns_);
+
 
 	std::cout << "Capture Raw 01 Finished!" << std::endl;
 	ret = solution_.getCameraCalibData(ip, calibration_param_);
@@ -68,23 +76,41 @@ bool get_frame_01(const char* ip)
 	}
 
 	std::cout << "Reconstruct Frame 01 Finished!" << std::endl;
-	cv::Mat depth_remote;
-	cv::Mat brightness_remote;
-	ret = solution_.reconstructFrame01BaseFirmware(ip, patterns_, depth_remote, brightness_remote);
+
+	std::string host_brightness_path = folderPath + "\\host_brightness.bmp";
+	cv::imwrite(host_brightness_path, brightness);
+
+	std::string host_depth_path = folderPath + "\\host_depth.tiff";
+	cv::imwrite(host_depth_path, depth);
+
+
+	cv::Mat depth_firmware;
+	cv::Mat brightness_firmware;
+	ret = solution_.reconstructFrame01BaseFirmware(ip, patterns_, depth_firmware, brightness_firmware);
 	if (!ret)
 	{
 		std::cout << "Reconstruct Frame01 Base Firmware Failed!" << std::endl;
 		return false;
 	}
 
-	bool brightness_same = memcmp(brightness.data, brightness_remote.data, brightness.total() * brightness.elemSize());
-	std::cout << "Reconstruct brightness is the same: " << brightness_same << std::endl;
+
+	std::string firmware_brightness_path = folderPath + "\\firmware_brightness.bmp";
+	cv::imwrite(firmware_brightness_path, brightness_firmware);
+
+	std::string firmware_depth_path = folderPath + "\\firmware_depth.tiff";
+	cv::imwrite(firmware_depth_path, depth_firmware);
 
 
-	bool depth_same = memcmp(depth.data, depth_remote.data, depth.total() * depth.elemSize());
-	std::cout << "Reconstruct depth is the same: " << depth_same << std::endl;
+	bool brightness_compare = singlePixelCompare(brightness, brightness_firmware, 0.5);
 
-	return brightness_same && depth_same;
+	bool depth_compare = singlePixelCompare(depth, depth_firmware, 0.2);
+
+	std::cout << "Reconstruct brightness memcmp code: " << brightness_compare << std::endl;
+
+
+	std::cout << "Reconstruct depth memcmp code: " << depth_compare << std::endl;
+
+	return brightness_compare && depth_compare;
 }
 
 

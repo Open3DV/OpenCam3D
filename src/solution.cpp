@@ -203,6 +203,8 @@ bool Solution::reconstructFrame01(std::vector<cv::Mat> patterns, cv::Mat& depth,
 	std::vector<cv::Mat> hor_mask_map_4;
 	std::vector<cv::Mat> ver_confidence_map_4;
 	std::vector<cv::Mat> hor_confidence_map_4;
+	std::vector<cv::Mat> ver_brightness_map_4;
+	std::vector<cv::Mat> hor_brightness_map_4;
 
 
 	std::vector<cv::Mat> ver_patterns_img_4(ver_patterns_img.begin(), ver_patterns_img.begin() + ver_pstterns_num);
@@ -210,8 +212,8 @@ bool Solution::reconstructFrame01(std::vector<cv::Mat> patterns, cv::Mat& depth,
 
 
 	Encode encode;
-	ret = encode.computePhaseBaseFourStep(ver_patterns_img_4, ver_wrap_img_4, ver_mask_map_4, ver_confidence_map_4);
-	ret = encode.computePhaseBaseFourStep(hor_patterns_img_4, hor_wrap_img_4, hor_mask_map_4, hor_confidence_map_4);
+	ret = encode.computePhaseBaseFourStep(ver_patterns_img_4, ver_wrap_img_4, ver_mask_map_4, ver_confidence_map_4, ver_brightness_map_4);
+	ret = encode.computePhaseBaseFourStep(hor_patterns_img_4, hor_wrap_img_4, hor_mask_map_4, hor_confidence_map_4, hor_brightness_map_4);
 
 
 
@@ -265,18 +267,29 @@ bool Solution::reconstructFrame01(std::vector<cv::Mat> patterns, cv::Mat& depth,
 	}
 
 
-
 	float confidence_val = 10;
 	float ver_period = ver_period_num;
 	float hor_period = hor_period_num * 720.0 / 1280.0;
+
+	ret = encode.maskBaseConfidence(ver_confidence_map_4[2], confidence_val, unwrap_mask_ver);
+	if (!ret)
+	{
+		std::cout << "mask Base Confidence Failed!";
+		return false;
+	}
+
+	ret = encode.maskBaseConfidence(ver_confidence_map_4[2], confidence_val, unwrap_mask_hor);
+	if (!ret)
+	{
+		std::cout << "mask Base Confidence Failed!";
+		return false;
+	}
 
 	unwrap_ver /= ver_period;
 	unwrap_hor /= hor_period;
 
 	encode.maskMap(unwrap_mask_ver, unwrap_ver);
 	encode.maskMap(unwrap_mask_hor, unwrap_hor);
-
-
 
 	cv::Mat deep_map;
 
@@ -300,24 +313,24 @@ bool Solution::reconstructFrame01(std::vector<cv::Mat> patterns, cv::Mat& depth,
 
 	depth = channels[2].clone();
 
-	cv::Mat merge_brightness(nr, nc, CV_8U, cv::Scalar(0));
+	//cv::Mat merge_brightness(nr, nc, CV_8U, cv::Scalar(0));
 
-	for (int r = 0; r < nr; r++)
-	{
-		uchar* ptr_0 = patterns[0].ptr<uchar>(r);
-		uchar* ptr_1 = patterns[1].ptr<uchar>(r);
-		uchar* ptr_2 = patterns[2].ptr<uchar>(r);
-		uchar* ptr_3 = patterns[3].ptr<uchar>(r);
-		uchar* ptr_b = merge_brightness.ptr<uchar>(r);
+	//for (int r = 0; r < nr; r++)
+	//{
+	//	uchar* ptr_0 = patterns[0].ptr<uchar>(r);
+	//	uchar* ptr_1 = patterns[1].ptr<uchar>(r);
+	//	uchar* ptr_2 = patterns[2].ptr<uchar>(r);
+	//	uchar* ptr_3 = patterns[3].ptr<uchar>(r);
+	//	uchar* ptr_b = merge_brightness.ptr<uchar>(r);
 
-		for (int c = 0; c < nc; c++)
-		{
-			float val = (ptr_0[c] + ptr_1[c] + ptr_2[c] + ptr_3[c]) / 4;
-			ptr_b[c] = val;
-		}
-	}
+	//	for (int c = 0; c < nc; c++)
+	//	{
+	//		float val = (ptr_0[c] + ptr_1[c] + ptr_2[c] + ptr_3[c]) / 4;
+	//		ptr_b[c] = val;
+	//	}
+	//}
 
-	brightness = merge_brightness.clone();
+	brightness = ver_brightness_map_4[0].clone();
 
 	return true;
 }
