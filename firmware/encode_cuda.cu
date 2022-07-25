@@ -98,11 +98,11 @@ float* d_translation_matrix_;
 
 __device__ int d_dlp_width_ = 1920;
 __device__ int d_dlp_height_ = 1080;
-__device__ float d_max_phase_ = 2* 3.1415926535;
+__device__ float d_max_phase_ = 2* CV_PI;
 
 bool load_calib_data_flag_ = false;
 
-#define DF_PI 3.1415926535
+#define DF_PI CV_PI
 /*********************************************************************************/
 
 
@@ -1663,7 +1663,7 @@ bool cuda_unwrap_phase()
 			image_height_, image_width_, d_unwrap_map_list[i]);
 	}
 	
-	cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],32.0, d_unwrap_map_list[1],32.0*720/1280,
+	cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],32.0, d_unwrap_map_list[1],32.0*720./1280.,
 			image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
 	
 
@@ -2046,7 +2046,7 @@ __global__ void cuda_merge_brightness(unsigned char* const d_in_0,unsigned char*
 
 		float ave = (d_in_0[offset] + d_in_1[offset] + d_in_2[offset] +d_in_3[offset])/4.0;
   
-		float val = ave + std::sqrt(a*a + b*b);
+		float val = ave + std::sqrt(a*a + b*b)/2.0;
  
 
 		if(val> 255)
@@ -2395,7 +2395,7 @@ __global__ void cuda_four_step_phase_shift(unsigned char * const d_in_0, unsigne
 		else
 		{
 			confidence[offset] = std::sqrt(a*a + b*b);
-			d_out[offset] = DF_PI + std::atan2(a, b);
+			d_out[offset] = CV_PI + std::atan2(a, b);
 		}
 
 
@@ -2475,27 +2475,27 @@ __global__ void cuda_mul_phase_unwrap(float * const d_in_wrap_0, float * const d
 
 		/*****************************************************************************/
 
-		double temp = 0.5 + (8 * d_in_wrap_0[idy * img_width + idx] - d_in_wrap_1[idy * img_width + idx]) / (DF_PI);
+		float temp = 0.5 + (8 * d_in_wrap_0[idy * img_width + idx] - d_in_wrap_1[idy * img_width + idx]) / (2 *DF_PI);
 		int k = temp;
 		
 		
-		d_out[idy * img_width + idx] = DF_PI*k + d_in_wrap_1[idy * img_width + idx];
+		d_out[idy * img_width + idx] =2 * DF_PI*k + d_in_wrap_1[idy * img_width + idx];
 
 		float err = d_out[offset] - 8 *d_in_wrap_0[offset];
-		if(abs(err)> 1.0)
+		if(abs(err)> CV_PI)
 		{
 			d_out[offset] = -10;
 		}
 		
 		float old_val = d_out[offset];
 		/******************************************************************/
-		temp = 0.5 + (4 * d_out[idy * img_width + idx] - d_in_wrap_2[idy * img_width + idx]) / (DF_PI);
+		temp = 0.5 + (4 * d_out[idy * img_width + idx] - d_in_wrap_2[idy * img_width + idx]) / (2 *DF_PI);
 		k = temp;
 
-		d_out[idy * img_width + idx] = DF_PI*k + d_in_wrap_2[idy * img_width + idx];
+		d_out[idy * img_width + idx] = 2 * DF_PI*k + d_in_wrap_2[idy * img_width + idx];
 
 	        err = d_out[offset] - 4 * old_val;
-		if(abs(err)> 1.0)
+		if(abs(err)> CV_PI)
 		{
 			d_out[offset] = -10;
 		}
@@ -2595,8 +2595,8 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 	{
 		/****************************************************************************/
 		//phase to position
-		float dlp_x = d_in_unwrap_x[idy * d_image_width_ + idx] * d_dlp_width_ / (128.0*2*DF_PI);
-		float dlp_y = d_in_unwrap_y[idy * d_image_width_ + idx] * d_dlp_height_ / (18.0*2*DF_PI);
+		float dlp_x = d_in_unwrap_x[idy * d_image_width_ + idx] * d_dlp_width_ / (1.0*2*DF_PI);
+		float dlp_y = d_in_unwrap_y[idy * d_image_width_ + idx] * d_dlp_height_ / (1.0*2*DF_PI);
 
 		//if(100 == idx && 100 == idy)
 		//{
@@ -2631,7 +2631,17 @@ __global__ void cuda_rebuild(float * const d_in_unwrap_x, float * const d_in_unw
 
 		triangulation(x_norm_L, y_norm_L, x_norm_R, y_norm_R, rotation_matrix, translation_matrix,
 			X_L, Y_L, Z_L, X_R, Y_R, Z_R, error);
-		if(confidence_map[serial_id] > 10 && error< 3.0 && dlp_x > 0 && dlp_y > 0)	
+
+		// if(1298 == idx && 972 == idy)
+		// {
+		// 	printf("confidence_map:%f\n", confidence_map[serial_id]); 
+		// 	printf("d_in_unwrap_x:%f\n", d_in_unwrap_x[serial_id]);
+		// 	printf("d_in_unwrap_y:%f\n", d_in_unwrap_y[serial_id]);
+		// 	printf("error:%f\n", error);
+		// 	printf("Z_L:%f\n", Z_L); 
+		// }
+
+		if(confidence_map[serial_id] > 10 && error< 3.0 && dlp_x > 0 && dlp_y > 0 && Z_L> 0)	
 		//if(confidence_map[serial_id] > 10 && error< 0.5 && dlp_x> 0.0 && dlp_y > 0.0)
 		{
 		    d_out_point_cloud_map[3 * serial_id + 0] = X_L;
