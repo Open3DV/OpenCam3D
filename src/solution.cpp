@@ -68,6 +68,87 @@ bool Solution::getCameraCalibData(std::string ip, struct CameraCalibParam& param
 	return true;
 }
 
+
+bool Solution::readCameraCalibData(std::string path, struct CameraCalibParam& param)
+{
+	std::ifstream myfile(path);
+
+	if (!myfile.is_open())
+	{
+		std::cout << "can not open this file" << std::endl;
+		return 0;
+	}
+
+	float I[40] = { 0 };
+
+	//��data1�ļ��ж���int����
+	for (int i = 0; i < 40; i++)
+	{
+
+		myfile >> I[i];
+		//std::cout << I[i] << std::endl;
+
+	}
+	myfile.close();
+
+
+	param.camera_intrinsic[0] = I[0];
+	param.camera_intrinsic[1] = I[1];
+	param.camera_intrinsic[2] = I[2];
+	param.camera_intrinsic[3] = I[3];
+	param.camera_intrinsic[4] = I[4];
+	param.camera_intrinsic[5] = I[5];
+	param.camera_intrinsic[6] = I[6];
+	param.camera_intrinsic[7] = I[7];
+	param.camera_intrinsic[8] = I[8];
+
+	param.camera_distortion[0] = I[9];
+	param.camera_distortion[1] = I[10];
+	param.camera_distortion[2] = I[11];
+	param.camera_distortion[3] = I[12];
+	param.camera_distortion[4] = I[13];
+
+
+	param.projector_intrinsic[0] = I[14];
+	param.projector_intrinsic[1] = I[15];
+	param.projector_intrinsic[2] = I[16];
+	param.projector_intrinsic[3] = I[17];
+	param.projector_intrinsic[4] = I[18];
+	param.projector_intrinsic[5] = I[19];
+	param.projector_intrinsic[6] = I[20];
+	param.projector_intrinsic[7] = I[21];
+	param.projector_intrinsic[8] = I[22];
+
+
+	param.projector_distortion[0] = I[23];
+	param.projector_distortion[1] = I[24];
+	param.projector_distortion[2] = I[25];
+	param.projector_distortion[3] = I[26];
+	param.projector_distortion[4] = I[27];
+
+
+	param.rotation_matrix[0] = I[28];
+	param.rotation_matrix[1] = I[29];
+	param.rotation_matrix[2] = I[30];
+	param.rotation_matrix[3] = I[31];
+	param.rotation_matrix[4] = I[32];
+	param.rotation_matrix[5] = I[33];
+	param.rotation_matrix[6] = I[34];
+	param.rotation_matrix[7] = I[35];
+	param.rotation_matrix[8] = I[36];
+
+
+	param.translation_matrix[0] = I[37];
+	param.translation_matrix[1] = I[38];
+	param.translation_matrix[2] = I[39];
+
+
+
+	return true;
+}
+
+
+
 bool Solution::saveCameraCalibData(std::string path, struct CameraCalibParam& param)
 {
 	std::ofstream ofile;

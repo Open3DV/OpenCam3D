@@ -25,16 +25,16 @@ bool get_frame_01(const char* ip)
 	std::vector<cv::Mat> patterns_;
 
 
-	bool ret = solution_.readPatterns(raw_path, patterns_);
+	bool ret = solution_.captureRaw01(ip, patterns_);
 
-	//bool ret = solution_.captureRaw01(ip, patterns_);
+	if (!ret)
+	{
+		std::cout << "Capture Raw 01 Failed!" << std::endl;
+		return -1;
+	}
+	solution_.savePatterns(raw_path, patterns_);
 
-	//if (!ret)
-	//{
-	//	std::cout << "Capture Raw 01 Failed!" << std::endl;
-	//	return -1;
-	//} 
-	//solution_.savePatterns(raw_path, patterns_);
+
 
 
 	std::cout << "Capture Raw 01 Finished!" << std::endl;
@@ -103,12 +103,12 @@ bool get_frame_01(const char* ip)
 
 	bool brightness_compare = singlePixelCompare(brightness, brightness_firmware, 0.5);
 
-	bool depth_compare = singlePixelCompare(depth, depth_firmware, 0.2);
+	bool depth_compare = singlePixelCompare(depth, depth_firmware, 0.5);
 
 	std::cout << "Reconstruct brightness memcmp code: " << brightness_compare << std::endl;
-
-
 	std::cout << "Reconstruct depth memcmp code: " << depth_compare << std::endl;
+
+	cv::Mat diff = depth - depth_firmware;
 
 	return brightness_compare && depth_compare;
 }

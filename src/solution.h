@@ -19,6 +19,8 @@ public:
 
 	bool saveCameraCalibData(std::string path, struct CameraCalibParam& param);
 
+	bool readCameraCalibData(std::string path, struct CameraCalibParam& param);
+
 	bool getCameraVersion(const char* ip, int& version);
 
 	bool setCameraVersion(int version);
@@ -31,7 +33,7 @@ public:
 
 	bool readPatterns(std::string dir, std::vector<cv::Mat>& patterns);
 
-	bool savePatterns(std::string dir, std::vector<cv::Mat> patterns); 
+	bool savePatterns(std::string dir, std::vector<cv::Mat> patterns);
 
 private:
 	void getFiles(std::string path, std::vector<std::string>& files);
