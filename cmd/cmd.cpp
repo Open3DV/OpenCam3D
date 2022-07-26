@@ -50,7 +50,7 @@ open_cam3d.exe --get-frame-hdr --ip 192.168.x.x --path ./frame_hdr\n\
 open_cam3d.exe --get-calib-param --ip 192.168.x.x --path ./param.txt\n\
 \n\
 9.Set calibration parameters: \n\
-open_cam3d.exe--set-calib-param --ip 192.168.x.x --path ./param.txt\n\
+open_cam3d.exe --set-calib-param --ip 192.168.x.x --path ./param.txt\n\
 \n\
 10.Get raw images (Mode 01): \n\
 open_cam3d.exe --get-raw-01 --ip 192.168.x.x --path ./raw01_image_dir\n\
@@ -138,6 +138,9 @@ void save_frame(float* depth_buffer, unsigned char* bright_buffer, const char* f
 void save_images(const char* raw_image_dir, unsigned char* buffer, int image_size, int image_num);
 void save_point_cloud(float* point_cloud_buffer, const char* pointcloud_path);
 void save_color_point_cloud(float* point_cloud_buffer, unsigned char* brightness_buffer, const char* pointcloud_path);
+void write_fbin(std::ofstream& out, float val);
+void write_fbin(std::ofstream& out, unsigned char val);
+bool SaveBinPointsToPly(cv::Mat deep_mat, string path, cv::Mat texture_map);
 int on_dropped(void* param);
 int get_brightness(const char* ip, const char* image_path);
 int get_pointcloud(const char* ip, const char* pointcloud_path);
@@ -577,10 +580,11 @@ void save_frame(float* depth_buffer, unsigned char* bright_buffer, const char* f
 	depthTransformPointcloud(depth_map, point_cloud_map);
 
 
-	std::string pointcloud_path = folderPath + ".xyz";
+	//std::string pointcloud_path = folderPath + ".xyz";
+	std::string pointcloud_path = folderPath + ".ply";
 
-	save_color_point_cloud((float*)point_cloud_map.data, (unsigned char*)bright_map.data, pointcloud_path.c_str());
-
+	//save_color_point_cloud((float*)point_cloud_map.data, (unsigned char*)bright_map.data, pointcloud_path.c_str());
+	SaveBinPointsToPly(point_cloud_map, pointcloud_path, bright_map);
 	std::cout << "save point cloud: " << pointcloud_path << "\n";
 
 	//struct CameraCalibParam calibration_param;
@@ -617,6 +621,312 @@ void save_color_point_cloud(float* point_cloud_buffer, unsigned char* brightness
 	ofile.close();
 }
 
+inline void write_fbin(std::ofstream& out, float val) {
+	out.write(reinterpret_cast<char*>(&val), sizeof(float));
+}
+
+inline void write_fbin(std::ofstream& out, unsigned char val) {
+	out.write(reinterpret_cast<char*>(&val), sizeof(unsigned char));
+}
+
+//保存Bin点云到ply文件
+bool SaveBinPointsToPly(cv::Mat deep_mat, string path, cv::Mat texture_map)
+{
+
+	if (deep_mat.empty())
+	{
+		return false;
+	}
+
+	if (path.empty())
+	{
+		return false;
+	}
+
+	std::ofstream file;
+	file.open(path);
+	if (!file.is_open())
+	{
+		std::cout << "Save points Error";
+		return false;
+	}
+	else
+	{
+
+		if (texture_map.data)
+		{
+
+			std::vector<cv::Vec3f> points_list;
+			std::vector<cv::Vec3b> color_list;
+
+
+
+			if (1 == texture_map.channels())
+			{
+
+				/****************************************************************************************************/
+
+				string str = "";
+
+				if (CV_32FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+						uchar* ptr_color = texture_map.ptr<uchar>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c];
+								color[1] = ptr_color[c];
+								color[2] = ptr_color[c];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+							}
+
+						}
+					}
+				}
+				else if (CV_64FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+						uchar* ptr_color = texture_map.ptr<uchar>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c];
+								color[1] = ptr_color[c];
+								color[2] = ptr_color[c];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+
+				/*****************************************************************************************************/
+			}
+			else if (3 == texture_map.channels())
+			{
+				/****************************************************************************************************/
+
+				string str = "";
+
+				if (CV_32FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+						cv::Vec3b* ptr_color = texture_map.ptr<cv::Vec3b>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+
+
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c][2];
+								color[1] = ptr_color[c][1];
+								color[2] = ptr_color[c][0];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+				else if (CV_64FC3 == deep_mat.type())
+				{
+					for (int r = 0; r < deep_mat.rows; r++)
+					{
+						cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+						cv::Vec3b* ptr_color = texture_map.ptr<cv::Vec3b>(r);
+
+						for (int c = 0; c < deep_mat.cols; c++)
+						{
+							if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+							{
+								cv::Vec3f point;
+								cv::Vec3b color;
+
+								point[0] = ptr_dr[c][0];
+								point[1] = ptr_dr[c][1];
+								point[2] = ptr_dr[c][2];
+
+								color[0] = ptr_color[c][2];
+								color[1] = ptr_color[c][1];
+								color[2] = ptr_color[c][0];
+
+								points_list.push_back(point);
+								color_list.push_back(color);
+
+							}
+
+						}
+					}
+				}
+
+				/*****************************************************************************************************/
+			}
+
+			
+			//Header 
+			file << "ply" << "\n";
+			file << "format binary_little_endian 1.0" << "\n";
+			file << "element vertex " << points_list.size() << "\n";
+			file << "property float x" << "\n";
+			file << "property float y" << "\n";
+			file << "property float z" << "\n";
+			file << "property uchar red" << "\n";
+			file << "property uchar green" << "\n";
+			file << "property uchar blue" << "\n";
+			file << "end_header" << "\n";
+
+			file.close();
+
+
+			/*********************************************************************************************************/
+			//以二进行制保存
+			std::ofstream outFile(path, std::ios::app | std::ios::binary);
+
+
+			for (int i = 0; i < points_list.size(); i++)
+			{
+				write_fbin(outFile, static_cast<float>(points_list[i][0]));
+				write_fbin(outFile, static_cast<float>(points_list[i][1]));
+				write_fbin(outFile, static_cast<float>(points_list[i][2]));
+				write_fbin(outFile, static_cast<unsigned char>(color_list[i][0]));
+				write_fbin(outFile, static_cast<unsigned char>(color_list[i][1]));
+				write_fbin(outFile, static_cast<unsigned char>(color_list[i][2]));
+			}
+
+
+			outFile.close();
+
+
+			/**********************************************************************************************************/
+
+		}
+		else
+		{
+
+			std::vector<cv::Vec3f> points_list;
+
+			if (CV_32FC3 == deep_mat.type())
+			{
+				for (int r = 0; r < deep_mat.rows; r++)
+				{
+					cv::Vec3f* ptr_dr = deep_mat.ptr<cv::Vec3f>(r);
+					for (int c = 0; c < deep_mat.cols; c++)
+					{
+						if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+						{
+
+							cv::Vec3f point;
+
+							point[0] = ptr_dr[c][0];
+							point[1] = ptr_dr[c][1];
+							point[2] = ptr_dr[c][2];
+							points_list.push_back(point);
+
+						}
+
+					}
+				}
+			}
+			else if (CV_64FC3 == deep_mat.type())
+			{
+				for (int r = 0; r < deep_mat.rows; r++)
+				{
+					cv::Vec3d* ptr_dr = deep_mat.ptr<cv::Vec3d>(r);
+					for (int c = 0; c < deep_mat.cols; c++)
+					{
+						if (0 != ptr_dr[c][0] && 0 != ptr_dr[c][1] && 0 != ptr_dr[c][2])
+						{
+
+
+							cv::Vec3f point;
+
+							point[0] = ptr_dr[c][0];
+							point[1] = ptr_dr[c][1];
+							point[2] = ptr_dr[c][2];
+							points_list.push_back(point);
+
+						}
+
+					}
+				}
+			}
+
+			//Header 
+			file << "ply" << "\n";
+			file << "format binary_little_endian 1.0" << "\n";
+			file << "element vertex " << points_list.size() << "\n";
+			file << "property float x" << "\n";
+			file << "property float y" << "\n";
+			file << "property float z" << "\n";
+			file << "end_header" << "\n";
+			file.close();
+
+			/*********************************************************************************************************/
+			//以二进行制保存
+			std::ofstream outFile(path, std::ios::app | std::ios::binary);
+
+			for (int i = 0; i < points_list.size(); i++)
+			{
+				write_fbin(outFile, static_cast<float>(points_list[i][0]));
+				write_fbin(outFile, static_cast<float>(points_list[i][1]));
+				write_fbin(outFile, static_cast<float>(points_list[i][2]));
+			}
+
+
+			outFile.close();
+
+
+			/**********************************************************************************************************/
+		}
+
+		std::cout << "Save points" << path;
+	}
+
+	return true;
+}
 
 void save_point_cloud(float* point_cloud_buffer, const char* pointcloud_path)
 {
