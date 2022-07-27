@@ -1235,6 +1235,11 @@ bool MiniLookupTableFunction::generateLookTable(cv::Mat& xL_rotate_x, cv::Mat& x
 	generateRotateTable(camera_intrinsic_, camera_distortion_, R1, image_size_, xL_undistort_map_x, xL_undistort_map_y);
 	generateRotateTable(project_intrinsic_, projector_distortion_, R2, cv::Size(1920, 1200), xR_undistort_map_x, xR_undistort_map_y);
 
+	// 取四个点作为裁剪map的依据
+	projector_left_up_y = (xR_undistort_map_y.at<double>(5, 0) + 1 ) * 2000;
+	projector_right_up_y = (xR_undistort_map_y.at<double>(5, 1279) + 1 ) * 2000;
+	projector_left_down_y = (xR_undistort_map_y.at<double>(714, 0) + 1 ) * 2000;
+	projector_right_down_y = (xR_undistort_map_y.at<double>(714, 1279) + 1 ) * 2000;
 
 	cv::Mat mapping, mini_mapping;
 	generateMiniGridMapping(mapping, mini_mapping);
@@ -1284,6 +1289,11 @@ bool MiniLookupTableFunction::generateBigLookTable(cv::Mat& xL_rotate_x, cv::Mat
 	generateRotateTable(camera_intrinsic_, camera_distortion_, R1, image_size_, xL_undistort_map_x, xL_undistort_map_y);
 	generateRotateTable(project_intrinsic_, projector_distortion_, R2, cv::Size(1920, 1200), xR_undistort_map_x, xR_undistort_map_y);
 
+	// 取四个点作为裁剪map的依据
+	projector_left_up_y = (xR_undistort_map_y.at<double>(5, 0) + 1) * 2000;
+	projector_right_up_y = (xR_undistort_map_y.at<double>(5, 1279) + 1) * 2000;
+	projector_left_down_y = (xR_undistort_map_y.at<double>(714, 0) + 1) * 2000;
+	projector_right_down_y = (xR_undistort_map_y.at<double>(714, 1279) + 1) * 2000;
 
 	cv::Mat mapping, mini_mapping;
 	generateMiniGridMapping(mapping, mini_mapping);
@@ -1350,6 +1360,7 @@ bool MiniLookupTableFunction::makeMapFull(cv::Mat& _cameraMatrix, cv::Mat& _dist
 	//cv::Mat cuttedFullData;
 	//cutTheMap(_notFullData, cuttedFullData);
 	// 先计算填充满这个不满的表，然后计算
+
 	for (int row = 0; row < nr; row += 1)
 	{
 		float* ptr_mask = _theMask.ptr<float>(row);
@@ -1550,6 +1561,7 @@ double MiniLookupTableFunction::calculateNormalizedCol(cv::InputArray _cameraMat
 	double guess_left = -1;
 	double guess_right = 1;
 	double guess_col_distorted = -1;
+	double guess_col_distorted_r = -1.1;
 
 	double _xx = _row_undistorted * ir[1] + ir[2];
 	double _yy = _row_undistorted * ir[4] + ir[5];
@@ -1557,6 +1569,62 @@ double MiniLookupTableFunction::calculateNormalizedCol(cv::InputArray _cameraMat
 
 	// 添加一个计数器，查看插值了几次
 	int num = 0;
+
+
+	// 寻找极值点
+	for (col_undistorted = (guess_left + guess_right) / 2; abs(guess_col_distorted_r - guess_col_distorted) > 1e-16; col_undistorted = (guess_left + guess_right) / 2)
+	{
+		//std::cout << "运行进入函数" << col_undistorted << std::endl;
+		double _x = _xx + col_undistorted * ir[0];
+		double _y = _yy + col_undistorted * ir[3];
+		double _w = _ww + col_undistorted * ir[6];
+		//获取摄像机坐标系第四列参数
+		//归一化坐标，此处的X，Y是已经投影结束的坐标
+		double w = 1. / _w, x = _x * w, y = _y * w;
+		double x2 = x * x, y2 = y * y;
+		double r2 = x2 + y2, _2xy = 2 * x * y;
+		double kr = (1 + ((k3 * r2 + k2) * r2 + k1) * r2) / (1 + ((k6 * r2 + k5) * r2 + k4) * r2);
+		//归一化坐标转化为图像坐标
+		double u = fx * (x * kr + p1 * _2xy + p2 * (r2 + 2 * x2)) + u0;
+		double v = fy * (y * kr + p1 * (r2 + 2 * y2) + p2 * _2xy) + v0;
+		guess_col_distorted = u;
+
+		//std::cout << "运行进入函数" << col_undistorted << std::endl;
+		_x = _xx + (col_undistorted + 1e-8) * ir[0];
+		_y = _yy + (col_undistorted + 1e-8) * ir[3];
+		_w = _ww + (col_undistorted + 1e-8) * ir[6];
+		//获取摄像机坐标系第四列参数
+		//归一化坐标，此处的X，Y是已经投影结束的坐标
+		w = 1. / _w, x = _x * w, y = _y * w;
+		x2 = x * x, y2 = y * y;
+		r2 = x2 + y2, _2xy = 2 * x * y;
+		kr = (1 + ((k3 * r2 + k2) * r2 + k1) * r2) / (1 + ((k6 * r2 + k5) * r2 + k4) * r2);
+		//归一化坐标转化为图像坐标
+		u = fx * (x * kr + p1 * _2xy + p2 * (r2 + 2 * x2)) + u0;
+		v = fy * (y * kr + p1 * (r2 + 2 * y2) + p2 * _2xy) + v0;
+		guess_col_distorted_r = u;
+
+		if (guess_col_distorted_r - guess_col_distorted > 0.0)
+		{
+			guess_left = col_undistorted;
+		}
+		else
+		{
+			guess_right = col_undistorted;
+		}
+		num += 1;
+		if (num >= 200)
+		{
+			//std::cout << "1001" << std::endl;
+			break;
+		}
+	}
+	//std::cout << guess_col_distorted << std::endl;
+	//std::cout << col_undistorted << std::endl;
+	guess_left = -1;
+	guess_right = col_undistorted;
+	guess_col_distorted = -1;
+	num = 0;
 
 	//std::cout << "_col_distorted" << _col_distorted << std::endl;
 	for (col_undistorted = (guess_left + guess_right) / 2; abs(_col_distorted - guess_col_distorted) > precision; col_undistorted = (guess_left + guess_right) / 2)
@@ -1589,6 +1657,7 @@ double MiniLookupTableFunction::calculateNormalizedCol(cv::InputArray _cameraMat
 		}
 		if (num >= 200)
 		{
+			return -2.;
 			break;
 		}
 	}
@@ -1596,6 +1665,99 @@ double MiniLookupTableFunction::calculateNormalizedCol(cv::InputArray _cameraMat
 }
 
 
+bool MiniLookupTableFunction::generateColOfDistorted(cv::InputArray _cameraMatrix, cv::InputArray _distCoeffs,
+	cv::InputArray _matR, cv::InputArray _newCameraMatrix, cv::Mat dis_col_data)
+{
+
+	// 精度
+	double precision = 1e-8;
+	// 需要返回的参数
+	double col_undistorted;
+	//相机内参、畸变矩阵
+	cv::Mat cameraMatrix = _cameraMatrix.getMat(), distCoeffs = _distCoeffs.getMat();
+	//旋转矩阵、摄像机参数矩阵
+	cv::Mat matR = _matR.getMat(), newCameraMatrix = _newCameraMatrix.getMat();
+
+
+	cv::Mat_<double> R = cv::Mat_<double>::eye(3, 3);
+	//A为相机内参
+	cv::Mat_<double> A = cv::Mat_<double>(cameraMatrix), Ar;
+
+	//Ar 为摄像机坐标参数
+	Ar = cv::Mat_<double>(newCameraMatrix);
+	//R  为旋转矩阵
+	R = cv::Mat_<double>(matR);
+	// distCoeffs为畸变矩阵
+	distCoeffs = cv::Mat_<double>(distCoeffs);
+	// 取逆
+	cv::Mat_<double> iR = (Ar.colRange(0, 3) * R).inv(cv::DECOMP_LU);
+	//ir IR矩阵的指针
+	const double* ir = &iR(0, 0);
+	//获取相机的内参 u0  v0 为主坐标点   fx fy 为焦距
+	double u0 = A(0, 2), v0 = A(1, 2);
+	double fx = A(0, 0), fy = A(1, 1);
+
+	if (distCoeffs.rows != 1 && !distCoeffs.isContinuous())
+		distCoeffs = distCoeffs.t();
+
+	//畸变参数计算
+	double k1 = ((double*)distCoeffs.data)[0];
+	double k2 = ((double*)distCoeffs.data)[1];
+	double p1 = ((double*)distCoeffs.data)[2];
+	double p2 = ((double*)distCoeffs.data)[3];
+	double k3 = distCoeffs.cols + distCoeffs.rows - 1 >= 5 ? ((double*)distCoeffs.data)[4] : 0.;
+	double k4 = distCoeffs.cols + distCoeffs.rows - 1 >= 8 ? ((double*)distCoeffs.data)[5] : 0.;
+	double k5 = distCoeffs.cols + distCoeffs.rows - 1 >= 8 ? ((double*)distCoeffs.data)[6] : 0.;
+	double k6 = distCoeffs.cols + distCoeffs.rows - 1 >= 8 ? ((double*)distCoeffs.data)[7] : 0.;
+
+	//k1 = 0;
+	//k2 = 0;
+	//p1 = 0;
+	//p2 = 0;
+	//k3 = 0;
+	//k4 = 0;
+	//k5 = 0;
+	//k6 = 0;
+
+	// 核心算法：输入的行已知，但输入的列是未知的，所以要根据猜测的列计算出一个畸变矫正前的列，根据大小的对比可以优化输入的列，当精度达到时就退出
+	double guess_left = -1;
+	double guess_right = 1;
+	double guess_col_distorted = -1;
+	double guess_col_distorted_r = -1.1;
+
+	double _xx = 0 * ir[1] + ir[2];
+	double _yy = 0 * ir[4] + ir[5];
+	double _ww = 0 * ir[7] + ir[8];
+
+	cv::Mat col_of_distorted_data(1, 2000, CV_32F, cv::Scalar(-2));
+	float* dis_col = col_of_distorted_data.ptr<float>(0);
+	//std::cout << "_col_distorted" << _col_distorted << std::endl;
+	
+	for (int col = 0; col < 2000; col += 1)
+	{
+		col_undistorted = col / 1000. - 1.;
+		//std::cout << "运行进入函数" << col_undistorted << std::endl;
+		double _x = _xx + col_undistorted * ir[0];
+		double _y = _yy + col_undistorted * ir[3];
+		double _w = _ww + col_undistorted * ir[6];
+		//获取摄像机坐标系第四列参数
+		//归一化坐标，此处的X，Y是已经投影结束的坐标
+		double w = 1. / _w, x = _x * w, y = _y * w;
+		double x2 = x * x, y2 = y * y;
+		double r2 = x2 + y2, _2xy = 2 * x * y;
+		double kr = (1 + ((k3 * r2 + k2) * r2 + k1) * r2) / (1 + ((k6 * r2 + k5) * r2 + k4) * r2);
+		//归一化坐标转化为图像坐标
+		double u = fx * (x * kr + p1 * _2xy + p2 * (r2 + 2 * x2)) + u0;
+		double v = fy * (y * kr + p1 * (r2 + 2 * y2) + p2 * _2xy) + v0;
+
+		dis_col[col] = u;
+
+	}
+	dis_col_data = col_of_distorted_data.clone();
+
+	std::cout << "great!!success!!" << std::endl;
+	return 1;
+}
 // 
 bool MiniLookupTableFunction::generateMiniGridMapping(cv::Mat& _LookupTable, cv::Mat& _MiniLookupTable)
 {
@@ -1617,8 +1779,7 @@ bool MiniLookupTableFunction::generateMiniGridMapping(cv::Mat& _LookupTable, cv:
 	cv::Mat theMask(4000, 2033, CV_32F, cv::Scalar(0));
 	cv::Mat theLookUpTable(4000, 2033, CV_32F, cv::Scalar(0));
 	cv::Mat resultTable(4000, 2033, CV_32F, cv::Scalar(-2));
-	//generateTheMaskToFillData(theOriginalMap, theMask);
-	//saveBinMappingFloat("C:\\Users\\68253\\Desktop\\test_map_0618\\mask1.bin", theMask);
+
 	for (int row = 1301; row < 3334; row += 1)
 	{
 		float* ptr_mask = theMask.ptr<float>(row);
@@ -1637,15 +1798,16 @@ bool MiniLookupTableFunction::generateMiniGridMapping(cv::Mat& _LookupTable, cv:
 	projector_distortion_.convertTo(dist_projector, CV_32F);
 	makeMapFull(intrinsicMatrix_projector, dist_projector, RR, theLookUpTable, theMask, theLookUpTable);
 	//saveBinMappingFloat("C:\\Users\\68253\\Desktop\\test_map_0618\\myTable.bin", theLookUpTable);
-	//system("pause");
+	//std::cout << "myTable.bin" << theLookUpTable.size << std::endl;
+
 	cv::Mat cuttedMap;
 	// 3.cutTheMap:输入一个裁剪前的表，输出一个裁剪后的表；
 	cutTheMap(theLookUpTable, cuttedMap);
-	//saveBinMappingFloat("C:\\Users\\68253\\Desktop\\test_map_0618\\cuttedMap.bin", cuttedMap);
+
 	// 4.generateMiniLookupTable:下采样生成我需要的表；
 	cv::Mat theMiniMap;
 	generateMiniLookupTable(cuttedMap, theMiniMap);
-	//saveBinMappingFloat("C:\\Users\\68253\\Desktop\\test_map_0618\\theMiniMap.bin", theMiniMap);
+
 	// 5.takeMiniMapBack:将下采样的表根据插值回去，并且根据掩膜还原回去，得到一个原始表；
 	cv::Mat theOriginalMap1;
 	cv::Mat LookupTable(4000, 2000, CV_32F, cv::Scalar(-2));
@@ -1665,13 +1827,29 @@ bool MiniLookupTableFunction::generateMiniGridMapping(cv::Mat& _LookupTable, cv:
 
 	//将插值的数据存入theBigLookUpTable，以便使用
 	cv::Mat theBigLookUpTable(4000, 2000, CV_32F, cv::Scalar(-2));
+	// 斜率
+	double k_up = (projector_right_up_y - projector_left_up_y) / 1279;
+	double k_down = (projector_right_down_y - projector_left_down_y) / 1279;
+	
 	for (int row = 0; row < 4000; row += 1)
 	{
 		float* ptr_before = theLookUpTable.ptr<float>(row);
 		float* ptr_after = theBigLookUpTable.ptr<float>(row);
 		for (int col = 0; col < 2000; col += 1)
 		{
-			ptr_after[col] = ptr_before[col];
+			if (col < 7 || col > 1273)
+			{
+				ptr_after[col] = -2;
+			}
+			else if (row < (k_up * col + projector_left_up_y) || row >(k_down * col + projector_left_down_y))
+			{
+				ptr_after[col] = -2;
+			}
+			else
+			{
+				ptr_after[col] = ptr_before[col];
+			}
+			
 		}
 
 	}
@@ -1689,8 +1867,6 @@ bool MiniLookupTableFunction::generateMiniGridMapping(cv::Mat& _LookupTable, cv:
 	single_pattern_mapping_ = LookupTable.clone();
 	the_mini_map_ = MiniLookupTable.clone();
 	std::cout << "the_mini_map_";
-
-	//saveBinMappingFloat("C:\\Users\\68253\\Desktop\\test_map_0618\\takeMiniMapBack.bin", theOriginalMap1);
 
 	return true;
 }

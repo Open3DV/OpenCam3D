@@ -105,6 +105,9 @@ class MiniLookupTableFunction : public LookupTableFunction
 {
 public:
 
+	bool generateColOfDistorted(cv::InputArray _cameraMatrix, cv::InputArray _distCoeffs,
+		cv::InputArray _matR, cv::InputArray _newCameraMatrix, cv::Mat dis_col_data);
+
 	virtual bool rebuildData(cv::Mat unwrap_map_x, int group_num, cv::Mat& deep_map, cv::Mat& mask);
 
 	virtual double depth_per_point_6patterns_combine(double Xc, double Yc, double Xp, cv::Mat xL_rotate_x, cv::Mat xL_rotate_y, cv::Mat single_pattern_mapping, double b);
@@ -143,5 +146,7 @@ public:
 protected:
 
 	cv::Mat the_mini_map_;
+
+	double projector_left_up_y, projector_right_up_y, projector_left_down_y, projector_right_down_y;
 };
 
