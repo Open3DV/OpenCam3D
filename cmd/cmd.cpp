@@ -580,12 +580,12 @@ void save_frame(float* depth_buffer, unsigned char* bright_buffer, const char* f
 	depthTransformPointcloud(depth_map, point_cloud_map);
 
 
-	//std::string pointcloud_path = folderPath + ".xyz";
-	std::string pointcloud_path = folderPath + ".ply";
+	std::string xyz_pointcloud_path = folderPath + ".xyz";
+	std::string ply_pointcloud_path = folderPath + ".ply";
 
-	//save_color_point_cloud((float*)point_cloud_map.data, (unsigned char*)bright_map.data, pointcloud_path.c_str());
-	SaveBinPointsToPly(point_cloud_map, pointcloud_path, bright_map);
-	std::cout << "save point cloud: " << pointcloud_path << "\n";
+	save_color_point_cloud((float*)point_cloud_map.data, (unsigned char*)bright_map.data, xyz_pointcloud_path.c_str());
+	SaveBinPointsToPly(point_cloud_map, ply_pointcloud_path, bright_map);
+	std::cout << "save point cloud: " << xyz_pointcloud_path << ", " << ply_pointcloud_path << "\n";
 
 	//struct CameraCalibParam calibration_param;
 	//DfGetCalibrationParam(calibration_param);
