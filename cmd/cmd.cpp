@@ -40,88 +40,91 @@ open_cam3d.exe --get-frame-01 --ip 192.168.x.x --path ./frame_01\n\
 5.Get Frame 03:\n\
 open_cam3d.exe --get-frame-03 --ip 192.168.x.x --path ./frame_03\n\
 \n\
-6.Get Frame 05:\n\
+6.Get Frame 04:\n\
+open_cam3d.exe --get-frame-04 --ip 192.168.x.x --path ./frame_03\n\
+\n\
+7.Get Frame 05:\n\
 open_cam3d.exe --get-frame-05 --ip 192.168.x.x --path ./frame_05\n\
 \n\
-7.Get Frame Hdr:\n\
+8.Get Frame Hdr:\n\
 open_cam3d.exe --get-frame-hdr --ip 192.168.x.x --path ./frame_hdr\n\
 \n\
-8.Get calibration parameters: \n\
+9.Get calibration parameters: \n\
 open_cam3d.exe --get-calib-param --ip 192.168.x.x --path ./param.txt\n\
 \n\
-9.Set calibration parameters: \n\
+10.Set calibration parameters: \n\
 open_cam3d.exe --set-calib-param --ip 192.168.x.x --path ./param.txt\n\
 \n\
-10.Get raw images (Mode 01): \n\
+11.Get raw images (Mode 01): \n\
 open_cam3d.exe --get-raw-01 --ip 192.168.x.x --path ./raw01_image_dir\n\
 \n\
-11.Get raw images (Mode 02): \n\
+12.Get raw images (Mode 02): \n\
 open_cam3d.exe --get-raw-02 --ip 192.168.x.x --path ./raw02_image_dir\n\
 \n\
-12.Get raw images (Mode 03): \n\
+13.Get raw images (Mode 03): \n\
 open_cam3d.exe --get-raw-03 --ip 192.168.x.x --path ./raw03_image_dir\n\
 \n\
-13.Enable checkerboard: \n\
+14.Enable checkerboard: \n\
 open_cam3d.exe --enable-checkerboard --ip 192.168.x.x\n\
 \n\
-14.Disable checkerboard: \n\
+15.Disable checkerboard: \n\
 open_cam3d.exe --disable-checkerboard --ip 192.168.x.x\n\
 \n\
-15.Get Repetition Frame 03: \n\
+16.Get Repetition Frame 03: \n\
 open_cam3d.exe --get-repetition-frame-03 --count 6 --ip 192.168.x.x --path ./frame03_repetition\n\
 \n\
-16.Load pattern data: \n\
+17.Load pattern data: \n\
 open_cam3d.exe --load-pattern-data --ip 192.168.x.x\n\
 \n\
-17.Program pattern data: \n\
+18.Program pattern data: \n\
 open_cam3d.exe --program-pattern-data --ip 192.168.x.x\n\
 \n\
-18.Get network bandwidth: \n\
+19.Get network bandwidth: \n\
 open_cam3d.exe --get-network-bandwidth --ip 192.168.x.x\n\
 \n\
-19.Get firmware version: \n\
+20.Get firmware version: \n\
 open_cam3d.exe --get-firmware-version --ip 192.168.x.x\n\
 \n\
-20.Test camera calibration parameters: \n\
+21.Test camera calibration parameters: \n\
 open_cam3d.exe --test-calib-param --use plane --ip 192.168.x.x --path ./capture\n\
 \n\
-21.Set calibration lookTable: \n\
+22.Set calibration lookTable: \n\
 open_cam3d.exe --set-calib-looktable --ip 192.168.x.x --path ./param.txt\n\
 \n\
-22.Set calibration minilookTable: \n\
+23.Set calibration minilookTable: \n\
 open_cam3d.exe --set-calib-minilooktable --ip 192.168.x.x --path ./param.txt\n\
 \n\
-23.Set Generate Brightness Param: \n\
+24.Set Generate Brightness Param: \n\
 open_cam3d.exe --set-generate-brigntness-param --ip 192.168.x.x --model 1 --exposure 12000\n\
 \n\
-24.Get Generate Brightness Param: \n\
+25.Get Generate Brightness Param: \n\
 open_cam3d.exe --get-generate-brigntness-param --ip 192.168.x.x\n\
 \n\
-25.Set Camera Exposure Param: \n\
+26.Set Camera Exposure Param: \n\
 open_cam3d.exe --set-camera-exposure-param --ip 192.168.x.x --exposure 12000\n\
 \n\
-26.Get Camera Exposure Param: \n\
+27.Get Camera Exposure Param: \n\
 open_cam3d.exe --get-camera-exposure-param --ip 192.168.x.x\n\
 \n\
-27.Set Offset Param: \n\
+28.Set Offset Param: \n\
 open_cam3d.exe --set-offset-param --offset 12 --ip 192.168.x.x\n\
 \n\
-28.Get Camera Version: \n\
+29.Get Camera Version: \n\
 open_cam3d.exe --get-camera-version --ip 192.168.x.x\n\
 \n\
-29.Set Auto Exposure: \n\
+30.Set Auto Exposure: \n\
 open_cam3d.exe --set-auto-exposure-roi  --ip 192.168.x.x\n\
 \n\
-30.Self-test: \n\
+31.Self-test: \n\
 open_cam3d.exe --self-test --ip 192.168.x.x\n\
 \n\
-31.Get projector temperature: \n\
+32.Get projector temperature: \n\
 open_cam3d.exe --get-projector-temperature --ip 192.168.x.x\n\
 \n\
-30.Get Repetition Phase 02: \n\
+33.Get Repetition Phase 02: \n\
 open_cam3d.exe --get-repetition-phase-02 --count 3 --ip 192.168.x.x --path  ./phase02_image_dir\n\
 \n\
-31.Enable Focusing: \n\
+34.Enable Focusing: \n\
 open_cam3d.exe --enable-focusing --ip 192.168.x.x \n\
 \n\
 ";
@@ -130,6 +133,7 @@ void help_with_version(const char* help);
 bool depthTransformPointcloud(cv::Mat depth_map, cv::Mat& point_cloud_map);
 int get_frame_01(const char* ip, const char* frame_path);
 int get_frame_03(const char* ip, const char* frame_path);
+int get_frame_04(const char* ip, const char* frame_path);
 int get_frame_05(const char* ip, const char* frame_path);
 int get_repetition_frame_03(const char* ip, int count, const char* frame_path);
 int get_repetition_frame_04(const char* ip, int count, const char* frame_path);
@@ -193,6 +197,7 @@ enum opt_set
 	GET_POINTCLOUD,
 	GET_FRAME_01,
 	GET_FRAME_03,
+	GET_FRAME_04,
 	GET_FRAME_05,
 	GET_REPETITION_FRAME_03,
 	GET_REPETITION_FRAME_04,
@@ -244,6 +249,7 @@ static struct option long_options[] =
 	{"get-pointcloud",no_argument,NULL,GET_POINTCLOUD},
 	{"get-frame-01",no_argument,NULL,GET_FRAME_01},
 	{"get-frame-03",no_argument,NULL,GET_FRAME_03},
+	{"get-frame-04",no_argument,NULL,GET_FRAME_04},
 	{"get-frame-05",no_argument,NULL,GET_FRAME_05},
 	{"get-repetition-frame-03",no_argument,NULL,GET_REPETITION_FRAME_03},
 	{"get-repetition-frame-04",no_argument,NULL,GET_REPETITION_FRAME_04},
@@ -365,6 +371,9 @@ int main(int argc, char* argv[])
 		break;
 	case GET_FRAME_03:
 		get_frame_03(camera_id, path);
+		break;
+	case GET_FRAME_04:
+		get_frame_04(camera_id, path);
 		break;
 	case GET_FRAME_05:
 		get_frame_05(camera_id, path);
@@ -1123,6 +1132,45 @@ int get_frame_03(const char* ip, const char* frame_path)
 	return 1;
 }
 
+int get_frame_04(const char* ip, const char* frame_path)
+{
+	DfRegisterOnDropped(on_dropped);
+
+	int ret = DfConnectNet(ip);
+	if (ret == DF_FAILED)
+	{
+		return 0;
+	}
+
+	int width, height;
+	DfGetCameraResolution(&width, &height);
+
+
+	ret = DfGetCalibrationParam(calibration_param_);
+
+	int image_size = width * height;
+
+	int depth_buf_size = image_size * 1 * 4;
+	float* depth_buf = (float*)(new char[depth_buf_size]);
+
+	int brightness_bug_size = image_size;
+	unsigned char* brightness_buf = new unsigned char[brightness_bug_size];
+
+	ret = DfGetFrame04(depth_buf, depth_buf_size, brightness_buf, brightness_bug_size);
+
+	DfDisconnectNet();
+
+	save_frame(depth_buf, brightness_buf, frame_path);
+
+
+
+	delete[] depth_buf;
+	delete[] brightness_buf;
+
+
+
+	return 1;
+}
 
 int get_frame_05(const char* ip, const char* frame_path)
 {
