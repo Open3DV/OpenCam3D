@@ -1,4 +1,4 @@
-#include "help.h"
+﻿#include "help.h"
 #include "case.h"
 #include "status.h"
 
@@ -14,7 +14,8 @@ bool NetLink(const char* ip)
 
 	if (DfConnectNet(ip) == DF_SUCCESS) {
 		return true;
-	} else {
+	}
+	else {
 		return false;
 	}
 }
@@ -23,27 +24,28 @@ bool NetDisLink()
 {
 	if (DfDisconnectNet() == DF_SUCCESS) {
 		return true;
-	} else {
+	}
+	else {
 		return false;
 	}
 }
 
-void Case(int cmd, const char *camera)
+void Case(int cmd, const char* camera)
 {
-//	if (NetLink(camera) == false) { 
-//		return; 
-//	}
+	//	if (NetLink(camera) == false) { 
+	//		return; 
+	//	}
 
 	switch (cmd)
 	{
-	case GET_POINT_CLOUD:
-		get_point_cloud(camera);
+	case GET_FRAME_01:
+		get_frame_01(camera);
 		break;
 	default:
 		break;
 	}
 
-//	if (NetDisLink() == false) { 
-//		printf("Network DisLink Error."); 
-//	}
+	//	if (NetDisLink() == false) { 
+	//		printf("Network DisLink Error."); 
+	//	}
 }

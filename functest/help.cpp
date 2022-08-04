@@ -1,12 +1,12 @@
-#include "../firmware/version.h"
+﻿#include "../firmware/version.h"
 #include "case.h"
 #include "help.h"
 
 const char* help_info =
 "--Help:\n\
 \n\
-1.Get Point Cloud:\n\
-functest.exe --get-point-cloud --ip 192.168.x.x\n\
+1.Get Frame 01 Data:\n\
+functest.exe --get-frame-01 --ip 192.168.x.x\n\
 \n\
 ";
 

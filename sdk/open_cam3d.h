@@ -580,3 +580,11 @@ DF_SDK_API int DfGetProjectorTemperature(float& temperature);
 //返回值： 类型（int）:返回0表示获取采集数据成功;返回-1表示采集数据失败.
 DF_SDK_API int DfCaptureRepetitionData(int repetition_count, int exposure_num, char* timestamp);
 
+//函数名： DfGetTestFrame01
+//功能： 传送一组Raw01的相移图到firmware,重建回一帧数据（亮度图+深度图）
+//输入参数：raw（相移图地址）、raw_buf_size（相移图尺寸）、 depth_buf_size（深度图尺寸）、brightness_buf_size（亮度图尺寸）
+//输出参数：depth（深度图）、brightness（亮度图）
+//返回值： 类型（int）:返回0表示连接成功;返回-1表示连接失败.
+DF_SDK_API int DfGetTestFrame01(unsigned char* raw, int raw_buf_size, float* depth, int depth_buf_size,
+	unsigned char* brightness, int brightness_buf_size);
+

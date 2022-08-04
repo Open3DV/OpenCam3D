@@ -2402,6 +2402,106 @@ int handle_cmd_get_frame_03_parallel(int client_sock)
 
 
 
+int handle_cmd_test_get_frame_01(int client_sock)
+{
+    
+  if(check_token(client_sock) == DF_FAILED)
+    {
+        return DF_FAILED;	
+    }
+
+    int image_num= 24; 
+    int width = 0;
+    int height = 0;
+
+    scan3d_.getCameraResolution(width,height);
+ 
+    int buffer_size = height*width*image_num;
+    unsigned char* buffer = new unsigned char[buffer_size];
+
+    int depth_buf_size = 1920 * 1200 * 4;
+    float* depth_map = new float[depth_buf_size];
+
+    int brightness_buf_size = 1920*1200*1;
+    unsigned char* brightness = new unsigned char[brightness_buf_size]; 
+
+    LOG(INFO) << "recv raw 01 data:";
+    int ret= recv_buffer(client_sock,(char*)buffer,buffer_size);
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!";
+        delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+ 
+    LOG(INFO) << "recv raw 01 finished!";
+ 
+
+    LOG(INFO)<<"testCaptureFrame01";
+    scan3d_.testCaptureFrame01(buffer);
+     
+    LOG(INFO)<<"Reconstruct Frame01 Finished!";
+    scan3d_.copyBrightnessData(brightness);
+    scan3d_.copyDepthData(depth_map);
+
+ 
+    LOG(INFO)<<"copy depth";  
+
+    // if(1 == system_config_settings_machine_.Instance().firwmare_param_.use_bilateral_filter)
+    // { 
+    //     cv::Mat depth_mat(1200, 1920, CV_32FC1, depth_map);
+    //     cv::Mat depth_bilateral_mat(1200, 1920, CV_32FC1, cv::Scalar(0));
+    //     cv::bilateralFilter(depth_mat, depth_bilateral_mat, system_config_settings_machine_.Instance().firwmare_param_.bilateral_filter_param_d, 2.0, 10.0); 
+    //     memcpy(depth_map,(float*)depth_bilateral_mat.data,depth_buf_size);
+    //     LOG(INFO) << "Bilateral"; 
+    // }
+  
+
+    LOG(INFO) << "start send depth, buffer_size= "<< depth_buf_size;
+    ret = send_buffer(client_sock, (const char *)depth_map, depth_buf_size);
+    LOG(INFO) << "depth ret= "<<ret;
+
+    if (ret == DF_FAILED)
+    {
+        LOG(INFO) << "send error, close this connection!";
+        delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+
+    LOG(INFO) << "start send brightness, buffer_size= "<<brightness_buf_size;
+    ret = send_buffer(client_sock, (const char *)brightness, brightness_buf_size);
+    LOG(INFO) << "brightness ret= "<<ret;
+
+    LOG(INFO) << "Send Frame01";
+
+    float temperature = read_temperature(0);
+
+    LOG(INFO) << "temperature: " << temperature << " deg";
+
+    if (ret == DF_FAILED)
+    {
+        printf("send error, close this connection!\n");
+        delete [] buffer;
+        delete[] depth_map;
+        delete[] brightness;
+
+        return DF_FAILED;
+    }
+    LOG(INFO) << "frame sent!";
+    delete [] buffer;
+    delete[] depth_map;
+    delete[] brightness;
+    return DF_SUCCESS;
+  
+}
+
+
 int handle_cmd_get_frame_01(int client_sock)
 {
     
@@ -4119,11 +4219,14 @@ int handle_commands(int client_sock)
     case DF_CMD_GET_RAW_04_REPETITION:
 	    LOG(INFO)<<"DF_CMD_GET_RAW_04_REPETITION"; 
 	    handle_cmd_get_raw_04_repetition(client_sock);
-	    break;
-        
+	    break; 
 	case DF_CMD_GET_FRAME_01:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_01"; 
 	    handle_cmd_get_frame_01(client_sock); 
+	    break;
+	case DF_CMD_TEST_GET_FRAME_01:
+	    LOG(INFO)<<"DF_CMD_TEST_GET_FRAME_01"; 
+	    handle_cmd_test_get_frame_01(client_sock); 
 	    break;
     case DF_CMD_GET_FRAME_HDR:
 	    LOG(INFO)<<"DF_CMD_GET_FRAME_HDR";  
