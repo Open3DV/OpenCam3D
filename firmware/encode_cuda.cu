@@ -494,8 +494,8 @@ bool parallel_cuda_unwrap_phase(int serial_flag)
 		{
 			cuda_variable_phase_unwrap << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[1], d_wrap_map_list[6], 4.0,
 				image_height_, image_width_,CV_PI, d_unwrap_map_list[1]);
-			// cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],128.0, d_unwrap_map_list[1],18.0,
-			// image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
+			cuda_normalize_phase << <blocksPerGrid, threadsPerBlock >> >(d_unwrap_map_list[0],128.0, d_unwrap_map_list[1],18.0,
+			image_height_, image_width_, d_unwrap_map_list[0],d_unwrap_map_list[1]);
 			
 			LOG(INFO)<<"unwrap 6:  ";
 
