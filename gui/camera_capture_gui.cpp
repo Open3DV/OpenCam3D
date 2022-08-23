@@ -314,8 +314,9 @@ bool CameraCaptureGui::renderDepthImage(cv::Mat depth)
 
 	FileIoFunction io_machine;
 
-
-	io_machine.depthToColor(depth, render_image_color_depth_, render_image_gray_depth_, min_depth_value_, max_depth_value_);
+	int max_depth = io_machine.percentile(depth, 95);
+	int min_depth = io_machine.percentile(depth, 5);
+	io_machine.depthToColor(depth, render_image_color_depth_, render_image_gray_depth_, min_depth, max_depth);
 
 	return true;
 

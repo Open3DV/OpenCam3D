@@ -570,6 +570,26 @@ bool  FileIoFunction::cutDeepMapBaseZ(cv::Mat &deep_map, cv::Mat &mask, int low_
 	return true;
 }
 
+int FileIoFunction::percentile(cv::Mat& image, int percent)
+{
+	int size = image.rows * image.cols;
+	float* data = new float[size];
+	int count = 0;
+	for (int i = 0; i < size; i++)
+	{
+		if (((float*)(image.data))[i] > 0)
+		{
+			data[count] = ((float*)(image.data))[i];
+			count++;
+		}
+	}
+	std::sort(data, data + count);
+	int index = (count - 1) * percent / 100;
+	int result = data[index];
+	delete[] data;
+	return result;
+}
+
 //深度图转z-map图
 bool  FileIoFunction::depthToColor(cv::Mat depth_map, cv::Mat& color_map, cv::Mat& grey_map, int low_z, int high_z)
 {
@@ -599,9 +619,21 @@ bool  FileIoFunction::depthToColor(cv::Mat depth_map, cv::Mat& color_map, cv::Ma
 
 		for (int c = 0; c < handle_map.cols; c++)
 		{
-			if (low_z<= ptr_dr[c] && ptr_dr[c] <= high_z)
+			if (low_z >= ptr_dr[c])
 			{
-				ptr_h[c] = 0.45 + 255.0 * (ptr_dr[c] - low_z) / range;
+				ptr_h[c] = 0;
+			}
+			else if (ptr_dr[c] >= high_z)
+			{
+				ptr_h[c] = 255;
+			}
+			else
+			{
+				ptr_h[c] = 255.0 * (ptr_dr[c] - low_z) / range;
+			}
+				
+			if (ptr_dr[c] > 0)
+			{
 				ptr_m[c] = 255;
 			}
 		}
