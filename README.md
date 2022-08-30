@@ -1,4 +1,4 @@
-# OpenCam3D
+# XEMA
  A low cost, full featured open source, industrial 3D camera.
 
 ![DFX800](images/DFX804.jpg)
@@ -83,7 +83,23 @@
 
 
 
+<div style="width: 150pt"><img src='images/logo/dexforce.png'></div>
 
-
-Code: <https://github.com/Open3DV/OpenCam3D>  
+Code: <https://github.com/Open3DV/Xema>  
 Email: <wudi@dexforce.com>
+
+## Partners:
+ <table>
+    <tr>
+        <td ><div style="width: 100pt"><img src='images/logo/seeed.png'>  <a href='https://www.seeedstudio.com/pcb-assembly.html'>Fusion PCB Assembly Service </a> </div></td>
+        <td><div style="width: 100pt"><img src='images/logo/nvidia.png'>  <a href='https://www.seeedstudio.com/blog/2020/05/13/seeed-provide-manufacture-service-for-nvidia-jetson-modules-based-products/'>NVIDIA Jetson Super Sponsorship </a> </div></td>
+        <td><div style="width: 100pt"><img src='images/logo/anhua.png'></div></td>
+        <td><div style="width: 100pt"><img src='images/logo/cbc.png'></div></td>
+    </tr>
+    <tr>
+        <td><img src='images/logo/daheng.png'> </td>
+        <td><img src='images/logo/basler.png'></td>
+        <td></td>
+        <td></td>
+    </tr>
+</table>
