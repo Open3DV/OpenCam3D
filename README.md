@@ -91,14 +91,14 @@ Email: <wudi@dexforce.com>
 ## Partners:
  <table>
     <tr>
-        <td ><div style="width: 100pt"><img src='images/logo/seeed.png'>  <a href='https://www.seeedstudio.com/pcb-assembly.html'>Fusion PCB Assembly Service </a> </div></td>
-        <td><div style="width: 100pt"><img src='images/logo/nvidia.png'>  <a href='https://www.seeedstudio.com/blog/2020/05/13/seeed-provide-manufacture-service-for-nvidia-jetson-modules-based-products/'>NVIDIA Jetson Super Sponsorship </a> </div></td>
-        <td><div style="width: 100pt"><img src='images/logo/anhua.png' width=150></div></td>
-        <td><div style="width: 100pt"><img src='images/logo/cbc.png'></div></td>
+        <td ><div style="width: 100pt"><img src='images/logo/seeed.png' width=100>  <a href='https://www.seeedstudio.com/pcb-assembly.html'>Fusion PCB Assembly Service </a> </div></td>
+        <td><div style="width: 100pt"><img src='images/logo/nvidia.png' width=100>  <a href='https://www.seeedstudio.com/blog/2020/05/13/seeed-provide-manufacture-service-for-nvidia-jetson-modules-based-products/'>NVIDIA Jetson Super Sponsorship </a> </div></td>
+        <td><div style="width: 100pt"><img src='images/logo/anhua.png' width=100></div></td>
+        <td><div style="width: 100pt"><img src='images/logo/cbc.png' width=100></div></td>
     </tr>
     <tr>
-        <td><img src='images/logo/daheng.png'> </td>
-        <td><img src='images/logo/basler.png'></td>
+        <td><img src='images/logo/daheng.png' width=100> </td>
+        <td><img src='images/logo/basler.png' width=100></td>
         <td></td>
         <td></td>
     </tr>
