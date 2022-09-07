@@ -209,12 +209,10 @@ bool CameraCaptureGui::saveOneFrameData(QString path_name)
 	cv::imwrite(height_str.toLocal8Bit().toStdString(), height_map_);
 
 	QString points_str = path_name + ".ply";
-	cv::Mat points_map(brightness_map_.size(), CV_32FC3, cv::Scalar(0., 0., 0.));
-
-	depthTransformPointcloud((float*)depth_map_.data, (float*)points_map.data);
+ 
 
 	FileIoFunction file_io_machine;
-	file_io_machine.SaveBinPointsToPly(points_map, points_str, brightness_map_);
+	file_io_machine.SaveBinPointsToPly(pointcloud_map_, points_str, brightness_map_);
 
 	return true;
 }
@@ -1291,13 +1289,15 @@ bool CameraCaptureGui::captureOneFrameData()
 	{
 
 
-		addLogMessage(u8"采集完成！");
 
 
 		brightness_map_ = brightness.clone();
 		depth_map_ = depth.clone();
 
-		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data);
+		depthTransformPointcloud((float*)depth.data, (float*)point_cloud.data); 
+		pointcloud_map_ = point_cloud.clone();
+		addLogMessage(u8"采集完成！");
+
 		transformPointcloud((float*)point_cloud.data, (float*)point_cloud.data, system_config_param_.standard_plane_external_param, &system_config_param_.standard_plane_external_param[9]);
 
 		std::vector<cv::Mat> channels;

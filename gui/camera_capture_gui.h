@@ -190,6 +190,7 @@ private:
 	int radio_button_flag_;
 
 	cv::Mat depth_map_;
+	cv::Mat pointcloud_map_;
 	cv::Mat brightness_map_;
 	cv::Mat height_map_;
 	cv::Mat render_image_brightness_;

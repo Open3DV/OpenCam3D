@@ -56,7 +56,8 @@ float* trans_point_cloud_buf_ = NULL;
 bool transform_pointcloud_flag_ = false;
 float* depth_buf_ = NULL;
 unsigned char* brightness_buf_ = NULL;
-
+float* undistort_map_x_ = NULL;
+float* undistort_map_y_ = NULL;
 
 /**************************************************************************************************************************/
 
@@ -217,7 +218,10 @@ bool transformPointcloud(float* org_point_cloud_map, float* transform_point_clou
 
 bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 {
-
+	if (!connected_flag_)
+	{
+		return false;
+	}
 	float camera_fx = calibration_param_.camera_intrinsic[0];
 	float camera_fy = calibration_param_.camera_intrinsic[4];
 
@@ -241,15 +245,18 @@ bool depthTransformPointcloud(float* depth_map, float* point_cloud_map)
 
 		for (int c = 0; c < nc; c++)
 		{
-			double undistort_x = c;
-			double undistort_y = r;
-
+ 
 
 			int offset = r * camera_width_ + c;
 			if (depth_map[offset] > 0)
 			{
-				undistortPoint(c, r, camera_fx, camera_fy,
-					camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+				//double undistort_x = c;
+				//double undistort_y = r;
+				//undistortPoint(c, r, camera_fx, camera_fy,
+				//	camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+
+				float undistort_x = undistort_map_x_[offset];
+				float undistort_y = undistort_map_y_[offset];
 
 				point_cloud_map[3 * offset + 0] = (undistort_x - camera_cx) * depth_map[offset] / camera_fx;
 				point_cloud_map[3 * offset + 1] = (undistort_y - camera_cy) * depth_map[offset] / camera_fy;
@@ -346,6 +353,52 @@ DF_SDK_API int DfConnect(const char* camera_id)
 	brightness_bug_size_ = image_size;
 	brightness_buf_ = new unsigned char[brightness_bug_size_];
 
+
+	/******************************************************************************************************/
+	//产生畸变校正表
+	undistort_map_x_ = (float*)(new char[depth_buf_size_]);
+	undistort_map_y_ = (float*)(new char[depth_buf_size_]);
+
+
+	float camera_fx = calibration_param_.camera_intrinsic[0];
+	float camera_fy = calibration_param_.camera_intrinsic[4];
+
+	float camera_cx = calibration_param_.camera_intrinsic[2];
+	float camera_cy = calibration_param_.camera_intrinsic[5];
+
+
+	float k1 = calibration_param_.camera_distortion[0];
+	float k2 = calibration_param_.camera_distortion[1];
+	float p1 = calibration_param_.camera_distortion[2];
+	float p2 = calibration_param_.camera_distortion[3];
+	float k3 = calibration_param_.camera_distortion[4];
+
+
+	int nr = camera_height_;
+	int nc = camera_width_;
+
+#pragma omp parallel for
+	for (int r = 0; r < nr; r++)
+	{
+
+		for (int c = 0; c < nc; c++)
+		{
+			double undistort_x = c;
+			double undistort_y = r;
+
+
+			int offset = r * camera_width_ + c;
+
+			undistortPoint(c, r, camera_fx, camera_fy,
+				camera_cx, camera_cy, k1, k2, k3, p1, p2, undistort_x, undistort_y);
+
+			undistort_map_x_[offset] = (float)undistort_x;
+			undistort_map_y_[offset] = (float)undistort_y;
+		}
+
+	}
+
+	/********************************************************************************************************/
 
 	LOG(INFO) << "Connect Camera: " << camera_ip_;
 
@@ -780,6 +833,8 @@ DF_SDK_API int DfDisconnect(const char* camera_id)
 	delete[] brightness_buf_;
 	delete[] point_cloud_buf_;
 	delete[] trans_point_cloud_buf_;
+	delete[] undistort_map_x_;
+	delete[] undistort_map_y_;
 
 	connected_flag_ = false;
 
