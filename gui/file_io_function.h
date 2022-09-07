@@ -53,7 +53,7 @@ public:
 	//xyz-map图转z-map图
 	bool mapToColor(cv::Mat deep_map, cv::Mat &color_map, cv::Mat &grey_map,int low_z, int high_z);
 
-	int FileIoFunction::percentile(cv::Mat& image, int percent);
+	int percentile(cv::Mat& image, int percent);
 
 	//深度图转z-map图
 	bool depthToColor(cv::Mat depth_map, cv::Mat& color_map, cv::Mat& grey_map, int low_z, int high_z);
