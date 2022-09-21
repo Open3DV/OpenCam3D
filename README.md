@@ -85,14 +85,13 @@
 
 <img src='images/logo/dexforce.png' width=150>
 
-Code: <https://github.com/Open3DV/Xema>  
-Email: <wudi@dexforce.com>
+Email: <info@dexforce.com>
 
 ## Partners:
  <table>
     <tr>
-        <td ><div style="width: 100pt"><img src='images/logo/seeed.png' width=100> <br> <a href='https://www.seeedstudio.com/pcb-assembly.html'>Fusion PCB Assembly Service </a> </div></td>
-        <td><div style="width: 100pt"><img src='images/logo/nvidia.png' width=100> <br> <a href='https://www.seeedstudio.com/blog/2020/05/13/seeed-provide-manufacture-service-for-nvidia-jetson-modules-based-products/'>NVIDIA Jetson Sponsorship </a> </div></td>
+        <td ><div style="width: 150pt"><img src='images/logo/seeed.png' width=100> <br> <a href='https://www.seeedstudio.com/pcb-assembly.html'>Fusion PCB Assembly Service </a> </div></td>
+        <td><div style="width: 150pt"><img src='images/logo/nvidia_inception_program.jpg' width=100></div></td>
         <td><div style="width: 100pt"><img src='images/logo/anhua.png' width=100></div></td>
         <td><div style="width: 100pt"><img src='images/logo/cbc.png' width=100></div></td>
     </tr>
